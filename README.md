@@ -60,3 +60,7 @@ The following python major versions are tested:
 - Python 3.10
 
 You can see the coverage report by simply running `python python_coverage.py`.
+
+# Full Python Syntax Is Not Supported
+
+This package is intended to understand the generated pytorch bytecode, and does not aim to fully cover all the syntax of python. For example, async operations like `async/await` is not supported.

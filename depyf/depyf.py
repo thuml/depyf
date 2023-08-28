@@ -361,6 +361,17 @@ def decompile_block(block: BasicBlock, stack: List[str], indentation=4) -> str:
             values = stack[-n:]
             values = [values[-1]] + values[:-1]
             stack[-n:] = values
+        elif inst.opname == "NOP":
+            continue
+        elif inst.opname == "DUP_TOP":
+            # not tested
+            stack.append(stack[-1])
+        elif inst.opname == "DUP_TOP_TWO":
+            # not tested
+            tos = stack[-1]
+            tos1 = stack[-2]
+            stack.append(tos1)
+            stack.append(tos)
         else:
             # "EXTENDED_ARG" is unsupported
             # "MAKE_FUNCTION" is unsupported
