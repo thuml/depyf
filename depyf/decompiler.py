@@ -82,7 +82,7 @@ class BasicBlock:
         return blocks
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class LoopBody:
     """A loop body, the final block will jump back to the first block, with conditions."""
     blocks: List[BasicBlock]
@@ -146,14 +146,14 @@ class Decompiler:
         return header
 
     def get_loop_body(self, starting_block: BasicBlock) -> LoopBody:
-        end_blocks = [block for block in self.blocks if starting_block in block.to_blocks]
+        end_blocks = [block for block in starting_block.from_blocks if block.code_end() >= starting_block.code_end()]
         if not end_blocks:
             # not a loop back edge
-            return LoopBody([], None, None)
+            return LoopBody([])
         # loop end block is the largest block looping back to the starting block
         loop_end_block = max(end_blocks, key=BasicBlock.code_end)
         loop_body_blocks = [block for block in self.blocks if starting_block.code_start() <= block.code_start() and block.code_end() <= loop_end_block.code_end()]
-        return LoopBody(blocks=blocks, loop_start=blocks[0].code_start(), loop_end=blocks[-1].code_end())
+        return LoopBody(blocks=blocks)
 
 
     def get_temp_name(self):
