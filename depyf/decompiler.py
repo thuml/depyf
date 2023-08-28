@@ -36,7 +36,8 @@ class BasicBlock:
 
     def jump_to_block(self, offset: int) -> 'BasicBlock':
         return [b for b in self.to_blocks if b.instructions[0].offset == offset][0]
-    
+
+
 @dataclasses.dataclass
 class LoopBody:
     """A loop body"""
@@ -72,13 +73,7 @@ class Decompiler:
                 self.cfg.add_edge(str(block), str(to_block))
             for from_block in block.from_blocks:
                 self.cfg.add_edge(str(from_block), str(block))
-        all_cycles = list(nx.simple_cycles(self.cfg))
-
-    def decompile(self):
-        header = self.get_function_signature()
-        source_code = self.decompile_block(self.blocks[0], [])
-        source_code = header + source_code
-        return source_code
+        self.all_cycles = list(nx.simple_cycles(self.cfg))
 
     def visualize_cfg(self):
         pos = nx.spring_layout(self.cfg)
@@ -149,6 +144,12 @@ class Decompiler:
     def get_temp_name(self):
         self.temp_count += 1
         return f"__temp_{self.temp_count}"
+
+    def decompile(self):
+        header = self.get_function_signature()
+        source_code = self.decompile_block(self.blocks[0], [])
+        source_code = header + source_code
+        return source_code
 
     def decompile_block(
             self,
