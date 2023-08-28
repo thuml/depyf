@@ -146,6 +146,7 @@ class Decompiler:
         return f"__temp_{self.temp_count}"
 
     def decompile(self):
+        self.temp_count = 0
         header = self.get_function_signature()
         source_code = self.decompile_block(self.blocks[0], [])
         source_code = header + source_code
