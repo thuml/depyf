@@ -742,6 +742,29 @@ def test_DICT_MERGE():
     exec(decompile(f.__code__), scope)
     assert scope['f']() == ans
 
+unittest.skipIf(
+    "CALL_FUNCTION_EX" not in dis.opname,
+    "CALL_FUNCTION_EX not supported in this version of Python: {}".format(sys.version),
+)
+def test_CALL_FUNCTION_EX():
+    def func(*args, **kwargs):
+        return (args, kwargs)
+    def f():
+        a = [1, 2, 3]
+        b = {'a': 4}
+        ans1 = func(*a)
+        ans2 = func(**b)
+        ans3 = func(*a, **b)
+        ans4 = func()
+        ans5 = func(1, 2, 3, *a)
+        ans6 = func(1, 2, 3, **b)
+        ans7 = func(b=2, **b)
+        return ans1, ans2, ans3, ans4, ans5, ans6, ans7
+    ans = f()
+    scope = {'func': func}
+    exec(decompile(f.__code__), scope)
+    assert scope['f']() == ans
+
 
 unittest.skipIf(
     "LOAD_ATTR" not in dis.opname,
