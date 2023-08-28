@@ -714,6 +714,21 @@ def test_SET_UPDATE():
     assert scope['f']() == ans
 
 unittest.skipIf(
+    "DICT_UPDATE" not in dis.opname,
+    "DICT_UPDATE not supported in this version of Python: {}".format(sys.version),
+)
+def test_DICT_UPDATE():
+    def f():
+        a = {1: 2}
+        b = {'a': 4}
+        return {**a, **b}
+    ans = f()
+    scope = {}
+    exec(decompile(f.__code__), scope)
+    assert scope['f']() == ans
+
+
+unittest.skipIf(
     "LOAD_ATTR" not in dis.opname,
     "LOAD_ATTR not supported in this version of Python: {}".format(sys.version),
 )
