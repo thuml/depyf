@@ -1,8 +1,11 @@
-from depyf import decompile
 import dis
 import sys
+import inspect
 
-filepath = decompile.__code__.co_filename
+from depyf import decompile, Decompiler
+
+
+filepath = inspect.getfile(Decompiler)
 
 codecontent = open(filepath, "r").read()
 

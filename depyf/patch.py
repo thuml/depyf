@@ -1,4 +1,4 @@
-"""Add a method to dis.Instruction to get jump target."""
+"""Add a method to `dis.Instruction` to get jump target."""
 
 import dis
 
