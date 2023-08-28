@@ -190,72 +190,66 @@ class Decompiler:
             self,
             block: BasicBlock,
             stack: List[str],
-            indentation=4,
-            loop_start: Optional[int]=None,
-            loop_end: Optional[int]=None,
+            indentation: int=4,
+            loop: Optional[LoopBody]=None,
         ) -> str:
         """Decompile a basic block into source code.
         The `stack` holds expressions in string, like "3 + 4".
-        `loop_start` and `loop_end` are the offsets of the loop start and end instructions.
-        Instructions in [loop_start, loop_end) are considered as the loop body.
+        The `loop` indicates which loop structure the block is in, so that it can decompile jump instructions.
+        This function returns the source code of the block, which is already indented..
         """
         source_code = ""
         for inst in block.instructions:
-            if inst.opname == "LOAD_CONST":
+            # ==================== Load Instructions =============================
+            if inst.opname in ["LOAD_CONST"]:
                 # `inst.argval` is the constant value, we have to use `repr` to get the source code
                 stack.append(repr(inst.argval))
-            elif inst.opname == "LOAD_FAST" or inst.opname == "LOAD_GLOBAL" or inst.opname == "LOAD_DEREF" or inst.opname == "LOAD_CLOSURE" or inst.opname == "LOAD_NAME" or inst.opname == "LOAD_CLASSDEREF":
+            elif inst.opname in ["LOAD_FAST", "LOAD_GLOBAL", "LOAD_DEREF", "LOAD_CLOSURE", "LOAD_NAME", "LOAD_CLASSDEREF"]:
                 # `inst.argval` is the variable name, in string
                 stack.append(inst.argval)
-            elif inst.opname == "LOAD_ATTR":
+            elif inst.opname in ["LOAD_ATTR"]:
                 stack.append(f"getattr({stack.pop()}, {repr(inst.argval)})")
-            elif inst.opname == "LOAD_METHOD":
+            elif inst.opname in ["LOAD_METHOD"]:
                 stack.append(f"{stack.pop()}.{inst.argval}")
-            elif inst.opname == "LOAD_ASSERTION_ERROR":
+            elif inst.opname in ["LOAD_ASSERTION_ERROR"]:
                 stack.append("AssertionError")
-            elif inst.opname == "RAISE_VARARGS":
-                if inst.argval == 0:
-                    source_code += "raise\n"
-                elif inst.argval == 1:
-                    source_code += f"raise {stack.pop()}\n"
-                elif inst.argval == 2:
-                    tos = stack.pop()
-                    tos1 = stack.pop()
-                    source_code += f"raise {tos1} from {tos}\n"
-            elif inst.opname == "STORE_FAST" or inst.opname == "STORE_GLOBAL" or inst.opname == "STORE_DEREF" or inst.opname == "STORE_NAME":
+            # ==================== Store Instructions =============================
+            elif inst.opname in ["STORE_FAST", "STORE_GLOBAL", "STORE_DEREF", "STORE_NAME"]:
                 source_code += f"{inst.argval} = {stack.pop()}\n"
-                # stack.append(inst.argval)
-            elif inst.opname == "STORE_SUBSCR":
+            elif inst.opname in ["STORE_SUBSCR"]:
                 index = stack.pop()
                 x = stack.pop()
                 value = stack.pop()
                 source_code += f"{x}[{index}] = {value}\n"
-            elif inst.opname == "STORE_ATTR":
+            elif inst.opname in ["STORE_ATTR"]:
                 x = stack.pop()
                 value = stack.pop()
                 source_code += f"{x}.{inst.argval} = {value}\n"
-            elif inst.opname == "DELETE_SUBSCR":
+            # ==================== Del Instructions =============================
+            elif inst.opname in ["DELETE_SUBSCR"]:
                 index = stack.pop()
                 x = stack.pop()
                 source_code += f"del {x}[{index}]\n"
-            elif inst.opname == "DELETE_NAME" or inst.opname == "DELETE_FAST" or inst.opname == "DELETE_GLOBAL" or inst.opname == "DELETE_DEREF":
-                x = inst.argval
-                source_code += f"del {x}\n"
-            elif inst.opname == "DELETE_ATTR":
+            elif inst.opname in ["DELETE_NAME", "DELETE_FAST", "DELETE_GLOBAL", "DELETE_DEREF"]:
+                source_code += f"del {inst.argval}\n"
+            elif inst.opname in ["DELETE_ATTR"]:
                 x = stack.pop()
                 source_code += f"del {x}.{inst.argval}\n"
-            elif inst.opname == "IMPORT_NAME":
-                name = inst.argval
+            # ==================== Import Instructions =============================
+            elif inst.opname in ["IMPORT_NAME"]:
+                # TODO: check multi-level import, e.g. `import a.b.c`
+                name = inst.argval.split(".")[0]
                 fromlist = stack.pop()
                 level = stack.pop()
-                source_code += f"{inst.argval} = __import__({repr(name)}, fromlist={fromlist}, level={level})\n"
+                source_code += f"{name} = __import__({repr(inst.argval)}, fromlist={fromlist}, level={level})\n"
                 stack.append(name)
-            elif inst.opname == "IMPORT_FROM":
+            elif inst.opname in ["IMPORT_FROM"]:
                 name = inst.argval
                 module = stack[-1]
                 source_code += f"{name} = {module}.{name}\n"
                 stack.append(name)
-            elif inst.opname == "UNARY_NEGATIVE" or inst.opname == "UNARY_POSITIVE" or inst.opname == "UNARY_INVERT" or inst.opname == "UNARY_NOT":
+            # ==================== Unary Instructions =============================
+            elif inst.opname in ["UNARY_NEGATIVE", "UNARY_POSITIVE", "UNARY_INVERT", "UNARY_NOT"]:
                 op = {
                     "UNARY_NEGATIVE": "-",
                     "UNARY_POSITIVE": "+",
@@ -263,11 +257,10 @@ class Decompiler:
                     "UNARY_NOT": "not",
                 }[inst.opname]
                 stack.append(f"({op} {stack.pop()})")
-            elif inst.opname == "GET_ITER":
-                raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
-                # "GET_YIELD_FROM_ITER" is not supported
-                stack.append(f"iter({stack.pop()})")
-            elif inst.opname == "BINARY_MULTIPLY" or inst.opname == "BINARY_ADD" or inst.opname == "BINARY_SUBTRACT" or inst.opname == "BINARY_TRUE_DIVIDE" or inst.opname == "BINARY_FLOOR_DIVIDE" or inst.opname == "BINARY_MODULO" or inst.opname == "BINARY_POWER" or inst.opname == "BINARY_AND" or inst.opname == "BINARY_OR" or inst.opname == "BINARY_XOR" or inst.opname == "BINARY_LSHIFT" or inst.opname == "BINARY_RSHIFT" or inst.opname == "BINARY_MATRIX_MULTIPLY":
+            elif inst.opname in ["GET_LEN"]:
+                stack.append(f"len({stack[-1]})")
+            # ==================== Binary Instructions =============================
+            elif inst.opname in ["BINARY_MULTIPLY", "BINARY_ADD", "BINARY_SUBTRACT", "BINARY_TRUE_DIVIDE", "BINARY_FLOOR_DIVIDE", "BINARY_MODULO", "BINARY_POWER", "BINARY_AND", "BINARY_OR", "BINARY_XOR", "BINARY_LSHIFT", "BINARY_RSHIFT", "BINARY_MATRIX_MULTIPLY"]:
                 rhs = stack.pop()
                 lhs = stack.pop()
                 op = {
@@ -286,7 +279,12 @@ class Decompiler:
                     "BINARY_MATRIX_MULTIPLY": "@",
                 }[inst.opname]
                 stack.append(f"({lhs} {op} {rhs})")
-            elif inst.opname == "INPLACE_MULTIPLY" or inst.opname == "INPLACE_ADD" or inst.opname == "INPLACE_SUBTRACT" or inst.opname == "INPLACE_TRUE_DIVIDE" or inst.opname == "INPLACE_FLOOR_DIVIDE" or inst.opname == "INPLACE_MODULO" or inst.opname == "INPLACE_POWER" or inst.opname == "INPLACE_AND" or inst.opname == "INPLACE_OR" or inst.opname == "INPLACE_XOR" or inst.opname == "INPLACE_LSHIFT" or inst.opname == "INPLACE_RSHIFT" or inst.opname == "INPLACE_MATRIX_MULTIPLY":
+            elif inst.opname in ["BINARY_SUBSCR"]:
+                rhs = stack.pop()
+                lhs = stack.pop()
+                stack.append(f"{lhs}[{rhs}]")
+            # ==================== Binary Inplace Instructions =============================
+            elif inst.opname in ["INPLACE_MULTIPLY", "INPLACE_ADD", "INPLACE_SUBTRACT", "INPLACE_TRUE_DIVIDE", "INPLACE_FLOOR_DIVIDE", "INPLACE_MODULO", "INPLACE_POWER", "INPLACE_AND", "INPLACE_OR", "INPLACE_XOR", "INPLACE_LSHIFT", "INPLACE_RSHIFT", "INPLACE_MATRIX_MULTIPLY"]:
                 rhs = stack.pop()
                 lhs = stack.pop()
                 op = {
@@ -306,24 +304,22 @@ class Decompiler:
                 }[inst.opname]
                 source_code += f"{lhs} {op}= {rhs}\n"
                 stack.append(lhs)
-            elif inst.opname == "BINARY_SUBSCR":
-                rhs = stack.pop()
-                lhs = stack.pop()
-                stack.append(f"{lhs}[{rhs}]")
-            elif inst.opname == "COMPARE_OP":
+            # ==================== Conditional Test Instructions =============================
+            elif inst.opname in ["COMPARE_OP"]:
                 rhs = stack.pop()
                 lhs = stack.pop()
                 stack.append(f"({lhs} {inst.argval} {rhs})")
-            elif inst.opname == "IS_OP":
+            elif inst.opname in ["IS_OP"]:
                 rhs = stack.pop()
                 lhs = stack.pop()
                 op = "is" if inst.argval == 0 else "is not"
                 stack.append(f"({lhs} {op} {rhs})")
-            elif inst.opname == "CONTAINS_OP":
+            elif inst.opname in ["CONTAINS_OP"]:
                 rhs = stack.pop()
                 lhs = stack.pop()
                 op = "in" if inst.argval == 0 else "not in"
                 stack.append(f"({lhs} {op} {rhs})")
+            # ==================== Control Flow Instructions =============================
             elif inst.opname == "POP_JUMP_IF_FALSE" or inst.opname == "POP_JUMP_IF_TRUE":
                 cond = stack.pop()
                 jump_offset = inst.get_jump_target()
@@ -366,16 +362,15 @@ class Decompiler:
             elif inst.opname == "GEN_START":
                 # stack.pop()
                 assert inst.argval == 0, "Only generator expression is supported"
-            elif inst.opname == "GET_LEN":
-                stack.append(f"len({stack[-1]})")
-            elif inst.opname == "CALL_FUNCTION" or inst.opname == "CALL_METHOD":
+            # ==================== Function Call Instructions =============================
+            elif inst.opname in ["CALL_FUNCTION", "CALL_METHOD"]:
                 args = [(stack.pop()) for _ in range(inst.argval)]
                 args = args[::-1]
                 func = stack.pop()
                 temp = self.get_temp_name()
                 source_code += f"{temp} = {func}({', '.join(args)})\n"
                 stack.append(temp)
-            elif inst.opname == "CALL_FUNCTION_KW":
+            elif inst.opname in ["CALL_FUNCTION_KW"]:
                 kw_args = eval(stack.pop())
                 kwcalls = []
                 for name in kw_args:
@@ -386,7 +381,7 @@ class Decompiler:
                 temp = self.get_temp_name()
                 source_code += f"{temp} = {func}({', '.join(pos_args + kwcalls)})\n"
                 stack.append(temp)
-            elif inst.opname == "CALL_FUNCTION_EX":
+            elif inst.opname in ["CALL_FUNCTION_EX"]:
                 if inst.argval == 0:
                     args = stack.pop()
                     func = stack.pop()
@@ -400,18 +395,17 @@ class Decompiler:
                     temp = self.get_temp_name()
                     source_code += f"{temp} = {func}(*{args}, **{kw_args})\n"
                     stack.append(temp)
-            elif inst.opname == "POP_TOP":
-                stack.pop()
-            elif inst.opname == "UNPACK_SEQUENCE":
+            # ==================== Container Related Instructions (tuple, list, set, dict) =============================
+            elif inst.opname in ["UNPACK_SEQUENCE"]:
                 varname = stack.pop()
                 for i in range(inst.argval):
                     stack.append(f"{varname}[{inst.argval - 1 - i}]")
-            elif inst.opname == "UNPACK_EX":
+            elif inst.opname in ["UNPACK_EX"]:
                 varname = stack.pop()
                 stack.append(f"list({varname}[{inst.argval}:])")
                 for i in range(inst.argval):
                     stack.append(f"{varname}[{inst.argval - 1 - i}]")
-            elif inst.opname == "BUILD_SLICE":
+            elif inst.opname in ["BUILD_SLICE"]:
                 tos = stack.pop()
                 tos1 = stack.pop()
                 if inst.argval == 2:
@@ -419,44 +413,44 @@ class Decompiler:
                 elif inst.argval == 3:
                     tos2 = stack.pop()
                     stack.append(f"slice({tos2}, {tos1}, {tos})")
-            elif inst.opname == "BUILD_TUPLE":
+            elif inst.opname in ["BUILD_TUPLE"]:
                 args = [stack.pop() for _ in range(inst.argval)]
                 args = args[::-1]
                 if inst.argval == 1:
                     stack.append(f"({args[0]},)")
                 else:
                     stack.append(f"({', '.join(args)})")
-            elif inst.opname == "BUILD_LIST":
+            elif inst.opname in ["BUILD_LIST"]:
                 args = [stack.pop() for _ in range(inst.argval)]
                 args = args[::-1]
                 stack.append(f"[{', '.join(args)}]")
-            elif inst.opname == "BUILD_SET":
+            elif inst.opname in ["BUILD_SET"]:
                 if inst.argval == 0:
                     stack.append("set()")
                 else:
                     args = [stack.pop() for _ in range(inst.argval)]
                     args = args[::-1]
                     stack.append(f"{{{', '.join(args)}}}")
-            elif inst.opname == "BUILD_MAP":
+            elif inst.opname in ["BUILD_MAP"]:
                 args = [stack.pop() for _ in range(inst.argval * 2)]
                 args = args[::-1]
                 keys = args[::2]
                 values = args[1::2]
                 stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
-            elif inst.opname == "BUILD_CONST_KEY_MAP":
+            elif inst.opname in ["BUILD_CONST_KEY_MAP"]:
                 keys = eval(stack.pop())
                 args = [stack.pop() for _ in range(inst.argval)]
                 values = args[::-1]
                 stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
-            elif inst.opname == "BUILD_STRING":
+            elif inst.opname in ["BUILD_STRING"]:
                 args = [stack.pop() for _ in range(inst.argval)]
                 args = args[::-1]
                 values = " + ".join(args)
                 stack.append(values)
-            elif inst.opname == "LIST_TO_TUPLE":
+            elif inst.opname in ["LIST_TO_TUPLE"]:
                 item = stack.pop()
                 stack.append(f"tuple({item})")
-            elif inst.opname == "LIST_EXTEND":
+            elif inst.opname in ["LIST_EXTEND"]:
                 assert inst.argval == 1, "Only tested for argval==1"
                 values = stack.pop()
                 temp = self.get_temp_name()
@@ -464,7 +458,7 @@ class Decompiler:
                 source_code += f"{temp} = {x}\n"
                 source_code += f"{temp}.extend({values})\n"
                 stack.append(temp)
-            elif inst.opname == "SET_UPDATE" or inst.opname == "DICT_UPDATE" or inst.opname == "DICT_MERGE":
+            elif inst.opname in ["SET_UPDATE", "DICT_UPDATE", "DICT_MERGE"]:
                 assert inst.argval == 1, "Only tested for argval==1"
                 values = stack.pop()
                 temp = self.get_temp_name()
@@ -472,7 +466,21 @@ class Decompiler:
                 source_code += f"{temp} = {x}\n"
                 source_code += f"{temp}.update({values})\n"
                 stack.append(temp)
-            elif inst.opname == "FORMAT_VALUE":
+            # ==================== Misc Instructions =============================
+            elif inst.opname in ["RAISE_VARARGS"]:
+                if inst.argval == 0:
+                    source_code += "raise\n"
+                elif inst.argval == 1:
+                    source_code += f"raise {stack.pop()}\n"
+                elif inst.argval == 2:
+                    tos = stack.pop()
+                    tos1 = stack.pop()
+                    source_code += f"raise {tos1} from {tos}\n"
+            elif inst.opname in ["GET_ITER"]:
+                raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
+                # "GET_YIELD_FROM_ITER" is not supported
+                stack.append(f"iter({stack.pop()})")
+            elif inst.opname in ["FORMAT_VALUE"]:
                 func, spec = inst.argval
                 if spec:
                     form_spec = stack.pop()
@@ -482,7 +490,7 @@ class Decompiler:
                     value = stack.pop()
                     func = str if func is None else func
                     stack.append(f"{func.__name__}({value})")
-            elif inst.opname == "ROT_N" or inst.opname == "ROT_TWO" or inst.opname == "ROT_THREE" or inst.opname == "ROT_FOUR":
+            elif inst.opname in ["ROT_N", "ROT_TWO", "ROT_THREE", "ROT_FOUR"]:
                 if inst.opname == "ROT_N":
                     n = inst.argval
                 else:
@@ -494,12 +502,14 @@ class Decompiler:
                 values = stack[-n:]
                 values = [values[-1]] + values[:-1]
                 stack[-n:] = values
-            elif inst.opname == "NOP":
+            elif inst.opname in ["NOP"]:
                 continue
-            elif inst.opname == "DUP_TOP":
+            elif inst.opname in ["POP_TOP"]:
+                stack.pop()
+            elif inst.opname in ["DUP_TOP"]:
                 # not tested
                 stack.append(stack[-1])
-            elif inst.opname == "DUP_TOP_TWO":
+            elif inst.opname in ["DUP_TOP_TWO"]:
                 # not tested
                 tos = stack[-1]
                 tos1 = stack[-2]
