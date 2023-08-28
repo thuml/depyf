@@ -9,17 +9,31 @@ filepath = inspect.getfile(Decompiler)
 
 codecontent = open(filepath, "r").read()
 
-unsupported_opnames = []
+considered_opnames = []
 
 for k in dis.opmap:
-    if k not in codecontent:
-        unsupported_opnames.append(k)
+    if k in codecontent:
+        considered_opnames.append(k)
+
+all_opnames = set(dis.opmap)
+
+considered_opnames = set(considered_opnames)
+
+supported_opnames = set(Decompiler.supported_opnames())
 
 print("Python version:", sys.version)
-if len(unsupported_opnames) == 0:
+unconsidered = all_opnames - considered_opnames
+unsupported = considered_opnames - supported_opnames
+if len(unconsidered) == 0:
     print("All opnames are considered!")
 else:
-    print(f"Total {len(unsupported_opnames)} unconsidered opnames:")
-    for k in unsupported_opnames:
+    print(f"Total {len(unconsidered)} unconsidered opnames:")
+    for k in unconsidered:
         print(k)
-print('Note: some opnames are not supported, such as async, await, etc.')
+
+if len(unsupported) == 0:
+    print("All considered opnames are supported!")
+else:
+    print(f"Total {len(unsupported)} unsupported opnames:")
+    for k in unsupported:
+        print(k)
