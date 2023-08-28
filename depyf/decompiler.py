@@ -109,6 +109,7 @@ class LoopBody:
             return None
         return self.blocks[0].code_start()
 
+    @property
     def loop_end(self) -> Optional[int]:
         if not self.blocks:
             return None
@@ -189,19 +190,19 @@ class Decompiler:
             block: BasicBlock,
             stack: List[str],
             indentation=4,
-            loop_start: Optional[int]=None,
-            loop_end: Optional[int]=None,
+            loop: Optional[LoopBody]=None,
         ) -> str:
         loopbody = self.get_loop_body(block)
         if loopbody:
-            if loop_start == loopbody.loop_start:
-                return " " * indentation + "pass\n"
+            if loop.loop_start == loopbody.loop_start:
+                # this codeblock has been decompiled
+                return ""
             source_code = " " * indentation + "while True:\n"
-            body_code = self.decompile_block(loopbody.blocks[0], stack, indentation, loop_start=loopbody.loop_start, loop_end=loopbody.loop_end)
+            body_code = self.decompile_block(loopbody.blocks[0], stack, indentation, loopbody)
             source_code += "".join(" " * (indentation * 2) + line + "\n" for line in body_code.splitlines())
             return source_code
         else:
-            return self.decompile_block(block, stack, indentation)
+            return self.decompile_block(block, stack, indentation, loop)
 
     def decompile_block(
             self,
@@ -340,39 +341,41 @@ class Decompiler:
             # "POP_BLOCK"/"POP_EXCEPT"/"RERAISE"/"WITH_EXCEPT_START"/"JUMP_IF_NOT_EXC_MATCH"/"SETUP_FINALLY" is unsupported, this means we don't support try-except/try-finally
             # "FOR_ITER"/"GET_ITER" is unsupported, this means we don't support for loop
             # "GET_AWAITABLE"/"GET_AITER"/"GET_ANEXT"/"END_ASYNC_FOR"/"BEFORE_ASYNC_WITH"/"SETUP_ASYNC_WITH" are unsupported, this means we don't support async/await
-            elif inst.opname == "POP_JUMP_IF_FALSE" or inst.opname == "POP_JUMP_IF_TRUE":
-                cond = stack.pop()
+            elif inst.opname in ["POP_JUMP_IF_FALSE", "POP_JUMP_IF_TRUE", "JUMP_IF_TRUE_OR_POP", "JUMP_IF_FALSE_OR_POP"]:
                 jump_offset = inst.get_jump_target()
                 fallthrough_offset = inst.offset + 2
-                if inst.opname == "POP_JUMP_IF_FALSE":
-                    source_code += f"if {cond}:\n"
-                elif inst.opname == "POP_JUMP_IF_TRUE":
-                    source_code += f"if not {cond}:\n"
-                source_code += self.decompile_possible_loop(block.jump_to_block(fallthrough_offset), stack.copy(), indentation, loop_start, loop_end)
-                source_code += "else:\n"
-                source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation, loop_start, loop_end)
-            elif inst.opname == "JUMP_IF_TRUE_OR_POP" or inst.opname == "JUMP_IF_FALSE_OR_POP":
-                # not tested, don't know how to force the compiler to generate this
+                jump_block = block.jump_to_block(jump_offset)
+                fallthrough_block = block.jump_to_block(fallthrough_offset)
                 cond = stack[-1]
-                jump_offset = inst.get_jump_target()
-                fallthrough_offset = inst.offset + 2
-                if inst.opname == "JUMP_IF_TRUE_OR_POP":
-                    source_code += f"if not {cond}:\n"
-                elif inst.opname == "JUMP_IF_FALSE_OR_POP":
+                fallthrough_stack = stack.copy()[:-1]
+
+                # POP_AND_JUMP / JUMP_OR_POP
+                if inst.opname in ["POP_JUMP_IF_FALSE", "POP_JUMP_IF_TRUE"]:
+                    jump_stack = stack.copy()[:-1]
+                elif inst.opname in ["JUMP_IF_FALSE_OR_POP", "JUMP_IF_TRUE_OR_POP"]:
+                    jump_stack = stack.copy()
+
+                # JUMP_IF_X, so fallthrough if not X
+                if inst.opname in ["POP_JUMP_IF_FALSE", "JUMP_IF_FALSE_OR_POP"]:
                     source_code += f"if {cond}:\n"
-                # The fallthrough block should pop one value from the stack
-                source_code += self.decompile_possible_loop(block.jump_to_block(fallthrough_offset), stack.copy()[:-1], indentation, loop_start, loop_end)
+                elif inst.opname in ["POP_JUMP_IF_TRUE", "JUMP_IF_TRUE_OR_POP"]:
+                    source_code += f"if not {cond}:\n"
+                
+                source_code += self.decompile_possible_loop(fallthrough_block, fallthrough_stack, indentation, loop)
+
                 source_code += "else:\n"
-                source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation, loop_start, loop_end)
-            elif inst.opname == "JUMP_FORWARD" or inst.opname == "JUMP_ABSOLUTE":
+
+                source_code += self.decompile_possible_loop(jump_block, jump_stack, indentation, loop)
+
+            elif inst.opname in ["JUMP_FORWARD", "JUMP_ABSOLUTE"]:
                 jump_offset = inst.get_jump_target()
-                if jump_offset == loop_start:
+                if loop.loop_start is not None and jump_offset == loop.loop_start:
                     source_code += "continue\n"
-                elif jump_offset == loop_end:
+                elif loop.loop_end is not None and jump_offset >= loop.loop_end:
                     source_code += "break\n"
                 else:
-                    if jump_offset > block.instructions[0].offset:
-                        source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation, loop_start, loop_end)
+                    if jump_offset > block.code_start():
+                        source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation, loop)
                     else:
                         raise NotImplementedError(f"Unsupported jump backward")
             elif inst.opname in ["RETURN_VALUE"]:
