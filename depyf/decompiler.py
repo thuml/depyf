@@ -14,7 +14,7 @@ from .patch import *
 
 @dataclasses.dataclass
 class BasicBlock:
-    """A basic block without control flow"""
+    """A basic block without internal control flow"""
     instructions: List[dis.Instruction]
     to_blocks: List['BasicBlock']
     from_blocks: List['BasicBlock']
@@ -37,20 +37,6 @@ class BasicBlock:
     def jump_to_block(self, offset: int) -> 'BasicBlock':
         return [b for b in self.to_blocks if b.instructions[0].offset == offset][0]
     
-    # def find_longest_circle(self, grah: ) -> List['BasicBlock']:
-
-
-    def get_loop_body(self) -> 'LoopBody':
-        # a pure loop
-        if self in self.to_blocks:
-            return LoopBody([self], self.code_start(), self.code_end())
-        # a loop with a single break/continue
-        if self in sum([b.to_blocks for b in self.to_blocks], []):
-            block = [b for b in self.to_blocks if self in b.to_blocks][0]
-            loop_blocks = [x for x in blocks if x.code_start() >= self.code_start() and x.code_end() <= block.code_end()]
-            return LoopBody(loop_blocks, self.code_start(), block.code_end())
-        return LoopBody([], None, None)
-
 @dataclasses.dataclass
 class LoopBody:
     """A loop body"""
@@ -68,14 +54,16 @@ class Decompiler:
     code: CodeType
     temp_count: int = 0
     blocks: List[BasicBlock] = dataclasses.field(default_factory=list)
+    blocks_map: Dict[str, BasicBlock] = dataclasses.field(default_factory=dict)
     cfg: nx.DiGraph = dataclasses.field(default_factory=nx.DiGraph)
-    all_cycles: List[List[BasicBlock]] = dataclasses.field(default_factory=list)
+    all_cycles: List[List[str]] = dataclasses.field(default_factory=list)
 
     def __init__(self, code: Union[CodeType, Callable]):
         if callable(code):
             code = code.__code__
         self.code = code
         self.blocks = Decompiler.decompose_basic_blocks(code)
+        self.blocks_map = {str(block): block for block in self.blocks}
         self.cfg = nx.DiGraph()
         for block in self.blocks:
             self.cfg.add_node(str(block))
@@ -107,6 +95,17 @@ class Decompiler:
         args_str = ', '.join(arg_names)
         header = f"def {code_obj.co_name}({args_str}):\n"
         return header
+
+    def get_loop_body(self, starting_block: BasicBlock) -> LoopBody:
+        cycles_from_node = [cycle for cycle in self.all_cycles if str(starting_block) in cycle]
+        longest_cycle = max(cycles_from_node, key=len, default=[])
+        nodes = sorted(longest_cycle)
+        blocks = [self.blocks_map[node] for node in nodes]
+        if len(blocks):
+            return LoopBody([], None, None)
+        else:
+            assert starting_block is blocks[0]
+            return LoopBody(blocks=blocks, loop_start=blocks[0].code_start(), loop_end=blocks[-1].code_end())
 
     @staticmethod
     def decompose_basic_blocks(code: CodeType) -> List[BasicBlock]:
