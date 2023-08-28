@@ -12,6 +12,19 @@ import functools
 from .patch import *
 
 
+@functools.lru_cache(maxsize=None)
+def get_supported_opnames(code: CodeType):
+    args = code.co_consts
+    opnames = []
+    for arg in args:
+        if isinstance(arg, str):
+            opnames.append(arg)
+        elif isinstance(arg, tuple):
+            opnames += list(arg)
+    opnames = set(opnames) & set(dis.opmap.keys())
+    return list(opnames)
+
+
 @dataclasses.dataclass
 class BasicBlock:
     """A basic block without internal control flow. The bytecode in this block is executed sequentially.
@@ -47,7 +60,7 @@ class BasicBlock:
         return [b for b in self.to_blocks if b.code_start() == offset][0]
 
     @staticmethod
-    def decompose_basic_blocks(insts: List[dis.Instruction]) -> List[BasicBlock]:
+    def decompose_basic_blocks(insts: List[dis.Instruction]) -> List['BasicBlock']:
         """Decompose a list of instructions into basic blocks without internal control flow."""
         block_starts = {0, insts[-1].offset + 2}
         jumps = set(dis.hasjabs) | set(dis.hasjrel)
@@ -159,6 +172,10 @@ class Decompiler:
     def get_temp_name(self):
         self.temp_count += 1
         return f"__temp_{self.temp_count}"
+
+    @staticmethod
+    def supported_opnames():
+        return get_supported_opnames(Decompiler.decompile_block.__code__)
 
     def decompile(self):
         self.temp_count = 0
@@ -399,6 +416,7 @@ class Decompiler:
                     source_code += f"{temp} = {func}(*{args}, **{kw_args})\n"
                     stack.append(temp)
             # ==================== Container Related Instructions (tuple, list, set, dict) =============================
+            # "SET_ADD"/"MAP_ADD"/"LIST_APPEND" are unsupported, this means we cannot use list/set/map comprehension
             elif inst.opname in ["UNPACK_SEQUENCE"]:
                 varname = stack.pop()
                 for i in range(inst.argval):
@@ -522,7 +540,6 @@ class Decompiler:
             # "EXTENDED_ARG" is unsupported
             # "MAKE_FUNCTION" is unsupported
             # "PRINT_EXPR"/"COPY_DICT_WITHOUT_KEYS" is I don't know
-            # "SET_ADD"/"MAP_ADD"/"LIST_APPEND" are unsupported, no list/set/map comprehension
             # "YIELD_FROM"/"SETUP_ANNOTATIONS" is unsupported
             # "IMPORT_STAR" is unsupported, because we only support bytecode for functions
             # "LOAD_BUILD_CLASS"/"SETUP_WITH" is unsupported
