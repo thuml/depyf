@@ -7,17 +7,23 @@ from types import CodeType
 from typing import List, Tuple, Dict, Union, Callable, Optional
 import dataclasses
 import inspect
-import networkx as nx
+import functools
 
 from .patch import *
 
 
 @dataclasses.dataclass
 class BasicBlock:
-    """A basic block without internal control flow"""
+    """A basic block without internal control flow. The bytecode in this block is executed sequentially.
+    The block ends with a jump instruction or a return instruction."""
     instructions: List[dis.Instruction]
-    to_blocks: List['BasicBlock']
-    from_blocks: List['BasicBlock']
+    to_blocks: List['BasicBlock'] = dataclasses.field(default_factory=list)
+    from_blocks: List['BasicBlock'] = dataclasses.field(default_factory=list)
+
+    def __init__(self, instructions: List[dis.Instruction]):
+        self.instructions = instructions
+        self.to_blocks = []
+        self.from_blocks = []
 
     def code_range(self):
         return (self.code_start(), self.code_end())
@@ -38,19 +44,62 @@ class BasicBlock:
         return self.code_range() == other.code_range()
 
     def jump_to_block(self, offset: int) -> 'BasicBlock':
-        return [b for b in self.to_blocks if b.instructions[0].offset == offset][0]
+        return [b for b in self.to_blocks if b.code_start() == offset][0]
+
+    @staticmethod
+    def decompose_basic_blocks(insts: List[dis.Instruction]) -> List[BasicBlock]:
+        """Decompose a list of instructions into basic blocks without internal control flow."""
+        block_starts = {0, insts[-1].offset + 2}
+        jumps = set(dis.hasjabs) | set(dis.hasjrel)
+        for i, inst in enumerate(insts):
+            if inst.opcode in jumps:
+                # both jump target and the instruction after the jump are block starts
+                block_starts.add(inst.get_jump_target())
+                block_starts.add(inst.offset + 2)
+            elif inst.opname == "RETURN_VALUE":
+                # the instruction after the return is a block start
+                block_starts.add(inst.offset + 2)
+            # the instruction is the target of a jump
+            if inst.is_jump_target:
+                block_starts.add(inst.offset)
+        block_starts = sorted(block_starts)
+        # split into basic blocks
+        blocks = []
+        for start, end in zip(block_starts[:-1], block_starts[1:]):
+            block_insts = [inst for inst in insts if start <= inst.offset and inst.offset < end]
+            blocks.append(BasicBlock(block_insts))
+        # connect basic blocks
+        for block in blocks:
+            last_inst = block.instructions[-1]
+            if last_inst.opcode in jumps:
+                jump_offset = last_inst.get_jump_target()
+                fallthrough_offset = last_inst.offset + 2
+                to_block = [b for b in blocks if b.code_start() == jump_offset][0]
+                fallthrough_block = [b for b in blocks if b.code_start() == fallthrough_offset][0]
+                block.to_blocks += [to_block, fallthrough_block]
+                to_block.from_blocks.append(block)
+                fallthrough_block.from_blocks.append(block)
+        return blocks
 
 
 @dataclasses.dataclass
 class LoopBody:
-    """A loop body"""
+    """A loop body, the final block will jump back to the first block, with conditions."""
     blocks: List[BasicBlock]
-    loop_start: int
-    loop_end: int
 
     def __bool__(self):
         return bool(self.blocks)
 
+    @property
+    def loop_start(self) -> Optional[int]:
+        if not self.blocks:
+            return None
+        return self.blocks[0].code_start()
+
+    def loop_end(self) -> Optional[int]:
+        if not self.blocks:
+            return None
+        return self.blocks[-1].code_end()
 
 @dataclasses.dataclass
 class Decompiler:
@@ -59,30 +108,32 @@ class Decompiler:
     temp_count: int = 0
     blocks: List[BasicBlock] = dataclasses.field(default_factory=list)
     blocks_map: Dict[str, BasicBlock] = dataclasses.field(default_factory=dict)
-    cfg: nx.DiGraph = dataclasses.field(default_factory=nx.DiGraph)
-    all_cycles: List[List[str]] = dataclasses.field(default_factory=list)
 
     def __init__(self, code: Union[CodeType, Callable]):
         if callable(code):
             code = code.__code__
         self.code = code
-        self.blocks = Decompiler.decompose_basic_blocks(code)
+        self.instructions = list(dis.get_instructions(code))
+        self.blocks = BasicBlock.decompose_basic_blocks(self.instructions)
         self.blocks_map = {str(block): block for block in self.blocks}
-        self.cfg = nx.DiGraph()
-        for block in self.blocks:
-            self.cfg.add_node(str(block))
-        for block in self.blocks:
-            for to_block in block.to_blocks:
-                self.cfg.add_edge(str(block), str(to_block))
-            for from_block in block.from_blocks:
-                self.cfg.add_edge(str(from_block), str(block))
-        self.all_cycles = list(nx.simple_cycles(self.cfg))
 
     def visualize_cfg(self):
-        pos = nx.spring_layout(self.cfg)
-        nx.draw_networkx_nodes(self.cfg, pos, node_size=1000)
-        nx.draw_networkx_edges(self.cfg, pos, node_size=1000)
-        nx.draw_networkx_labels(self.cfg, pos)
+        import networkx as nx
+
+        cfg = nx.DiGraph()
+
+        for block in self.blocks:
+            cfg.add_node(str(block))
+        for block in self.blocks:
+            for to_block in block.to_blocks:
+                cfg.add_edge(str(block), str(to_block))
+            for from_block in block.from_blocks:
+                cfg.add_edge(str(from_block), str(block))
+
+        pos = nx.spring_layout(cfg)
+        nx.draw_networkx_nodes(cfg, pos, node_size=1000)
+        nx.draw_networkx_edges(cfg, pos, node_size=1000)
+        nx.draw_networkx_labels(cfg, pos)
         from matplotlib import pyplot as plt
         plt.show()
 
@@ -104,44 +155,6 @@ class Decompiler:
         loop_body_blocks = [block for block in self.blocks if starting_block.code_start() <= block.code_start() and block.code_end() <= loop_end_block.code_end()]
         return LoopBody(blocks=blocks, loop_start=blocks[0].code_start(), loop_end=blocks[-1].code_end())
 
-    @staticmethod
-    def decompose_basic_blocks(code: CodeType) -> List[BasicBlock]:
-        """Decompose a code object into basic blocks."""
-        insts = list(dis.get_instructions(code))
-        block_starts = set()
-        block_starts.add(0)
-        jumps = set(dis.hasjabs) | set(dis.hasjrel)
-        for i, inst in enumerate(insts):
-            # the instruction below jump starts a new block
-            if inst.opcode in jumps or inst.opname == "RETURN_VALUE":
-                block_starts.add(inst.offset + 2)
-            # the instruction is the target of a jump
-            if inst.is_jump_target:
-                block_starts.add(inst.offset)
-            if inst.opcode in dis.hasjabs:
-                block_starts.add(inst.argval)
-            if inst.opcode in dis.hasjrel:
-                block_starts.add(inst.offset + inst.argval)
-        block_starts.add(insts[-1].offset + 2)
-        block_starts = sorted(block_starts)
-        # split into basic blocks
-        blocks = []
-        for start, end in zip(block_starts[:-1], block_starts[1:]):
-            block_insts = [inst for inst in insts if start <= inst.offset < end]
-            blocks.append(BasicBlock(block_insts, [], []))
-        # connect basic blocks
-        for block in blocks:
-            last_inst = block.instructions[-1]
-            if last_inst.opcode in jumps:
-                jump_offset = last_inst.get_jump_target()
-                fallthrough_offset = last_inst.offset + 2
-                to_block = [b for b in blocks if b.instructions[0].offset == jump_offset][0]
-                fallthrough_block = [b for b in blocks if b.instructions[0].offset == fallthrough_offset][0]
-                block.to_blocks.append(to_block)
-                block.to_blocks.append(fallthrough_block)
-                to_block.from_blocks.append(block)
-                fallthrough_block.from_blocks.append(block)
-        return blocks
 
     def get_temp_name(self):
         self.temp_count += 1
