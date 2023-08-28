@@ -419,4 +419,6 @@ def decompile(code: Union[CodeType, Callable]):
     header = f"def {code.co_name}({get_function_signature_from_codeobject(code)}):\n"
     source_code = decompile_block(blocks[0], [])
     source_code = header + source_code
+    temp_count = 0
+    blocks = []
     return source_code
