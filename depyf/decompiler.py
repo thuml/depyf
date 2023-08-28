@@ -8,17 +8,9 @@ from typing import List, Tuple, Dict, Union, Callable, Optional
 import dataclasses
 import inspect
 import networkx as nx
-from collections import defaultdict
 
-def get_jump_target(self: dis.Instruction):
-    if self.opcode in dis.hasjabs:
-        return self.argval
-    elif self.opcode in dis.hasjrel:
-        return self.offset + self.argval
-    else:
-        raise ValueError(f"Instruction {self.opname} does not have jump target")
+from .patch import *
 
-dis.Instruction.get_jump_target = get_jump_target
 
 @dataclasses.dataclass
 class BasicBlock:
@@ -99,6 +91,14 @@ class Decompiler:
         source_code = self.decompile_block(self.blocks[0], [])
         source_code = header + source_code
         return source_code
+
+    def visualize_cfg(self):
+        pos = nx.spring_layout(self.cfg)
+        nx.draw_networkx_nodes(self.cfg, pos, node_size=1000)
+        nx.draw_networkx_edges(self.cfg, pos, node_size=1000)
+        nx.draw_networkx_labels(self.cfg, pos)
+        from matplotlib import pyplot as plt
+        plt.show()
 
     def get_function_signature(self) -> str:
         code_obj: CodeType = self.code
@@ -486,7 +486,3 @@ class Decompiler:
 
         source_code = "".join([" " * indentation + line + "\n" for line in source_code.splitlines()])
         return source_code
-
-def decompile(code: Union[CodeType, Callable]):
-    """Decompile a code object or a function."""
-    return Decompiler(code).decompile()
