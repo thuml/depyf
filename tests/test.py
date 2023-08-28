@@ -867,6 +867,7 @@ def f():
     a = 1
     while a < 5:
         a += 1
+        continue
     return a
 
 print(decompile(f))
