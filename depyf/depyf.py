@@ -266,6 +266,20 @@ def decompile_block(block: BasicBlock, stack: List[str], indentation=4) -> str:
             temp = get_temp_name()
             source_code += f"{temp} = {func}({', '.join(pos_args + kwcalls)})\n"
             stack.append(temp)
+        elif inst.opname == "CALL_FUNCTION_EX":
+            if inst.argval == 0:
+                args = stack.pop()
+                func = stack.pop()
+                temp = get_temp_name()
+                source_code += f"{temp} = {func}(*{args})\n"
+                stack.append(temp)
+            elif inst.argval == 1:
+                kw_args = stack.pop()
+                args = stack.pop()
+                func = stack.pop()
+                temp = get_temp_name()
+                source_code += f"{temp} = {func}(*{args}, **{kw_args})\n"
+                stack.append(temp)
         elif inst.opname == "POP_TOP":
             stack.pop()
         elif inst.opname == "UNPACK_SEQUENCE":
@@ -331,7 +345,6 @@ def decompile_block(block: BasicBlock, stack: List[str], indentation=4) -> str:
             source_code += f"{temp}.extend({values})\n"
             stack.append(temp)
         elif inst.opname == "SET_UPDATE" or inst.opname == "DICT_UPDATE" or inst.opname == "DICT_MERGE":
-            # "DICT_UPDATE"/"DICT_MERGE" is not tested
             assert inst.argval == 1, "Only tested for argval==1"
             values = stack.pop()
             temp = get_temp_name()

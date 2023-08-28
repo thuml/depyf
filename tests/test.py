@@ -727,6 +727,21 @@ def test_DICT_UPDATE():
     exec(decompile(f.__code__), scope)
     assert scope['f']() == ans
 
+unittest.skipIf(
+    "DICT_MERGE" not in dis.opname,
+    "DICT_MERGE not supported in this version of Python: {}".format(sys.version),
+)
+def test_DICT_MERGE():
+    def f():
+        a = {1: 2}
+        b = {'a': 4}
+        a.update(**b)
+        return a
+    ans = f()
+    scope = {}
+    exec(decompile(f.__code__), scope)
+    assert scope['f']() == ans
+
 
 unittest.skipIf(
     "LOAD_ATTR" not in dis.opname,
