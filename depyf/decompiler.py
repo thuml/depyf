@@ -375,11 +375,11 @@ class Decompiler:
                         source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation, loop_start, loop_end)
                     else:
                         raise NotImplementedError(f"Unsupported jump backward")
-            elif inst.opname == "RETURN_VALUE":
+            elif inst.opname in ["RETURN_VALUE"]:
                 source_code += f"return {stack[-1]}\n"
-            elif inst.opname == "YIELD_VALUE":
+            elif inst.opname in ["YIELD_VALUE"]:
                 source_code += f"yield {stack[-1]}\n"
-            elif inst.opname == "GEN_START":
+            elif inst.opname in ["GEN_START"]:
                 # stack.pop()
                 assert inst.argval == 0, "Only generator expression is supported"
             # ==================== Function Call Instructions =============================
