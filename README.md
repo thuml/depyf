@@ -73,6 +73,57 @@ print("compiled code:")
 print(decompile(code))
 ```
 
+Output on my computer:
+
+```text
+guard code:
+def guard(L):
+    if not getattr(___guarded_code, 'valid'):
+        return False
+    else:
+        _var0 = L['a']
+        __temp_1 = hasattr(_var0, '_dynamo_dynamic_indices')
+        if not (__temp_1 == False):
+            return False
+        else:
+            _var1 = L['b']
+            __temp_2 = hasattr(_var1, '_dynamo_dynamic_indices')
+            if not (__temp_2 == False):
+                return False
+            else:
+                __temp_3 = ___is_grad_enabled()
+                if not __temp_3:
+                    return False
+                else:
+                    __temp_4 = ___are_deterministic_algorithms_enabled()
+                    if __temp_4:
+                        return False
+                    else:
+                        __temp_5 = ___is_torch_function_enabled()
+                        if not __temp_5:
+                            return False
+                        else:
+                            if not (getattr(utils_device, 'CURRENT_DEVICE') == None):
+                                return False
+                            else:
+                                __temp_6 = ___check_tensors(_var0, _var1, tensor_check_names=tensor_check_names)
+                                if not __temp_6:
+                                    return False
+                                else:
+                                    return True
+
+compiled code:
+def toy_example(a, b):
+    __temp_1 = __compiled_fn_0(a, b)
+    x = __temp_1[0]
+    if __temp_1[1]:
+        __temp_2 = __resume_at_30_1(b, x)
+        return __temp_2
+    else:
+        __temp_3 = __resume_at_38_2(b, x)
+        return __temp_3
+```
+
 Hopefully, by using this package, you can understand python bytecode now!
 
 :warning: The above example should be run using pytorch nightly. Some debug functions like `_debug_get_cache_entry_list` might not exist in stable releases yet.
