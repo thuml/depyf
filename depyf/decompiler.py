@@ -34,6 +34,9 @@ class BasicBlock:
     def __repr__(self):
         return str(self)
 
+    def __eq__(self, other):
+        return self.code_range() == other.code_range()
+
     def jump_to_block(self, offset: int) -> 'BasicBlock':
         return [b for b in self.to_blocks if b.instructions[0].offset == offset][0]
 
@@ -92,14 +95,14 @@ class Decompiler:
         return header
 
     def get_loop_body(self, starting_block: BasicBlock) -> LoopBody:
-        cycles_from_node = [cycle for cycle in self.all_cycles if str(starting_block) in cycle]
-        longest_cycle = max(cycles_from_node, key=len, default=[])
-        nodes = sorted(longest_cycle)
-        blocks = [self.blocks_map[node] for node in nodes]
-        if not blocks or starting_block is not blocks[0]:
+        end_blocks = [block for block in self.blocks if starting_block in block.to_blocks]
+        if not end_blocks:
+            # not a loop back edge
             return LoopBody([], None, None)
-        else:
-            return LoopBody(blocks=blocks, loop_start=blocks[0].code_start(), loop_end=blocks[-1].code_end())
+        # loop end block is the largest block looping back to the starting block
+        loop_end_block = max(end_blocks, key=BasicBlock.code_end)
+        loop_body_blocks = [block for block in self.blocks if starting_block.code_start() <= block.code_start() and block.code_end() <= loop_end_block.code_end()]
+        return LoopBody(blocks=blocks, loop_start=blocks[0].code_start(), loop_end=blocks[-1].code_end())
 
     @staticmethod
     def decompose_basic_blocks(code: CodeType) -> List[BasicBlock]:
