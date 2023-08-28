@@ -410,7 +410,7 @@ def get_function_signature_from_codeobject(code_obj):
 
 def decompile(code: Union[CodeType, Callable]):
     """Decompile a code object or a function."""
-    if isinstance(code, Callable):
+    if callable(code):
         code = code.__code__
     global temp_count
     temp_count = 0
