@@ -4,7 +4,7 @@ import sys
 import os
 import dis
 from types import CodeType
-from typing import List, Tuple, Dict, Union
+from typing import List, Tuple, Dict, Union, Callable
 import dataclasses
 import inspect
 
@@ -408,7 +408,10 @@ def get_function_signature_from_codeobject(code_obj):
     arg_names = code_obj.co_varnames[:code_obj.co_argcount]
     return ', '.join(arg_names)
 
-def decompile(code: CodeType):
+def decompile(code: Union[CodeType, Callable]):
+    """Decompile a code object or a function."""
+    if isinstance(code, Callable):
+        code = code.__code__
     global temp_count
     temp_count = 0
     blocks = decompose_basic_blocks(code)
