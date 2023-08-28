@@ -4,7 +4,7 @@ This is used primarily to understand the bytecode produced by PyTorch 2.0 Dynamo
 
 # Installation
 
-`pip install depyf` or `pip install git+https://github.com/youkaichao/depyf.git`
+`pip install git+https://github.com/youkaichao/depyf.git`
 
 # Usage
 
@@ -88,6 +88,8 @@ You can see the coverage report by simply running `python python_coverage.py`.
 # Full Python Syntax Is Not Supported
 
 This package is intended to understand the generated pytorch bytecode, and does not aim to fully cover all the syntax of python. For example, async operations like `async/await` is not supported.
+
+Support for very complicated control flow (while-loop/for-loop) is limited.
 
 # Contributions are welcome!
 
