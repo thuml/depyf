@@ -152,6 +152,18 @@ class Decompiler:
         source_code = header + source_code
         return source_code
 
+    def decompile_possible_loop(
+            self,
+            block: BasicBlock,
+            stack: List[str],
+            indentation=4,
+        ) -> str:
+        loopbody = self.get_loop_body(block)
+        if loopbody:
+            return self.decompile_block(loopbody.blocks[0], stack, indentation, loop_start=loopbody.loop_start, loop_end=loopbody.loop_end)
+        else:
+            return self.decompile_block(block, stack, indentation)
+
     def decompile_block(
             self,
             block: BasicBlock,
@@ -298,9 +310,9 @@ class Decompiler:
                     source_code += f"if {cond}:\n"
                 elif inst.opname == "POP_JUMP_IF_TRUE":
                     source_code += f"if not {cond}:\n"
-                source_code += self.decompile_block(block.jump_to_block(fallthrough_offset), stack.copy())
+                source_code += self.decompile_possible_loop(block.jump_to_block(fallthrough_offset), stack.copy(), indentation)
                 source_code += "else:\n"
-                source_code += self.decompile_block(block.jump_to_block(jump_offset), stack.copy())
+                source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation)
             elif inst.opname == "JUMP_IF_TRUE_OR_POP" or inst.opname == "JUMP_IF_FALSE_OR_POP":
                 # not tested, don't know how to force the compiler to generate this
                 cond = stack[-1]
@@ -311,9 +323,9 @@ class Decompiler:
                 elif inst.opname == "JUMP_IF_FALSE_OR_POP":
                     source_code += f"if {cond}:\n"
                 # The fallthrough block should pop one value from the stack
-                source_code += self.decompile_block(block.jump_to_block(fallthrough_offset), stack.copy()[:-1])
+                source_code += self.decompile_possible_loop(block.jump_to_block(fallthrough_offset), stack.copy()[:-1], indentation)
                 source_code += "else:\n"
-                source_code += self.decompile_block(block.jump_to_block(jump_offset), stack.copy())
+                source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation)
             elif inst.opname == "JUMP_FORWARD" or inst.opname == "JUMP_ABSOLUTE":
                 jump_offset = inst.get_jump_target()
                 if jump_offset == loop_start:
@@ -322,7 +334,7 @@ class Decompiler:
                     source_code += "break\n"
                 else:
                     if jump_offset > block.instructions[0].offset:
-                        source_code += self.decompile_block(block.jump_to_block(jump_offset), stack.copy())
+                        source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation)
                     else:
                         raise NotImplementedError(f"Unsupported jump backward")
             elif inst.opname == "RETURN_VALUE":
