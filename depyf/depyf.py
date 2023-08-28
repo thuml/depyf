@@ -71,7 +71,8 @@ def decompose_basic_blocks(code: CodeType) -> List[BasicBlock]:
     return blocks
 
 
-temp_count = 0
+temp_count: int = 0
+blocks: List[BasicBlock] = None
 
 
 def get_temp_name():
@@ -412,7 +413,7 @@ def decompile(code: Union[CodeType, Callable]):
     """Decompile a code object or a function."""
     if callable(code):
         code = code.__code__
-    global temp_count
+    global temp_count, blocks
     temp_count = 0
     blocks = decompose_basic_blocks(code)
     header = f"def {code.co_name}({get_function_signature_from_codeobject(code)}):\n"
