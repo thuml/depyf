@@ -870,4 +870,6 @@ def f():
         continue
     return a
 
+import dis
+dis.dis(f)
 print(decompile(f))

@@ -178,31 +178,13 @@ class Decompiler:
     def supported_opnames():
         return get_supported_opnames(Decompiler.decompile_block.__code__)
 
-    def decompile(self):
+    def decompile(self, indentation=4):
         self.temp_count = 0
         header = self.get_function_signature()
-        source_code = self.decompile_block(self.blocks[0], [])
+        block = self.blocks[0]
+        source_code = self.decompile_block(block, [], indentation, self.get_loop_body(block))
         source_code = header + source_code
         return source_code
-
-    def decompile_possible_loop(
-            self,
-            block: BasicBlock,
-            stack: List[str],
-            indentation=4,
-            loop: Optional[LoopBody]=None,
-        ) -> str:
-        loopbody = self.get_loop_body(block)
-        if loopbody:
-            if loop.loop_start == loopbody.loop_start:
-                # this codeblock has been decompiled
-                return ""
-            source_code = " " * indentation + "while True:\n"
-            body_code = self.decompile_block(loopbody.blocks[0], stack, indentation, loopbody)
-            source_code += "".join(" " * (indentation * 2) + line + "\n" for line in body_code.splitlines())
-            return source_code
-        else:
-            return self.decompile_block(block, stack, indentation, loop)
 
     def decompile_block(
             self,
@@ -216,6 +198,8 @@ class Decompiler:
         The `loop` indicates which loop structure the block is in, so that it can decompile jump instructions.
         This function returns the source code of the block, which is already indented..
         """
+        loopbody = self.get_loop_body(block)
+
         source_code = ""
         for inst in block.instructions:
             # ==================== Load Instructions =============================
@@ -361,11 +345,11 @@ class Decompiler:
                 elif inst.opname in ["POP_JUMP_IF_TRUE", "JUMP_IF_TRUE_OR_POP"]:
                     source_code += f"if not {cond}:\n"
                 
-                source_code += self.decompile_possible_loop(fallthrough_block, fallthrough_stack, indentation, loop)
+                source_code += self.decompile_block(fallthrough_block, fallthrough_stack, indentation, loopbody if loopbody else loop)
 
+                assert jump_block.code_start() > block.code_start(), "Jump backward is not supported here"
                 source_code += "else:\n"
-
-                source_code += self.decompile_possible_loop(jump_block, jump_stack, indentation, loop)
+                source_code += self.decompile_block(jump_block, jump_stack, indentation, loopbody if loopbody else loop)
 
             elif inst.opname in ["JUMP_FORWARD", "JUMP_ABSOLUTE"]:
                 jump_offset = inst.get_jump_target()
@@ -374,8 +358,12 @@ class Decompiler:
                 elif loop.loop_end is not None and jump_offset >= loop.loop_end:
                     source_code += "break\n"
                 else:
+                    if loopbody and jump_offset == loopbody.loop_start:
+                        source_code = "".join([" " * indentation + line + "\n" for line in source_code.splitlines()])
+                        source_code = "while True:\n" + source_code
+                        return source_code
                     if jump_offset > block.code_start():
-                        source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation, loop)
+                        source_code += self.decompile_block(block.jump_to_block(jump_offset), stack.copy(), indentation, loopbody if loopbody else loop)
                     else:
                         raise NotImplementedError(f"Unsupported jump backward")
             elif inst.opname in ["RETURN_VALUE"]:
