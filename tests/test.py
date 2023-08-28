@@ -862,3 +862,11 @@ def test_ROT_TWO():
     scope = {}
     exec(decompile(f), scope)
     assert scope['f']() == ans
+
+def f():
+    a = 1
+    while a < 5:
+        a += 1
+    return a
+
+print(decompile(f))

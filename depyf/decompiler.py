@@ -96,10 +96,9 @@ class Decompiler:
         longest_cycle = max(cycles_from_node, key=len, default=[])
         nodes = sorted(longest_cycle)
         blocks = [self.blocks_map[node] for node in nodes]
-        if len(blocks):
+        if not blocks or starting_block is not blocks[0]:
             return LoopBody([], None, None)
         else:
-            assert starting_block is blocks[0]
             return LoopBody(blocks=blocks, loop_start=blocks[0].code_start(), loop_end=blocks[-1].code_end())
 
     @staticmethod
@@ -157,10 +156,17 @@ class Decompiler:
             block: BasicBlock,
             stack: List[str],
             indentation=4,
+            loop_start: Optional[int]=None,
+            loop_end: Optional[int]=None,
         ) -> str:
         loopbody = self.get_loop_body(block)
         if loopbody:
-            return self.decompile_block(loopbody.blocks[0], stack, indentation, loop_start=loopbody.loop_start, loop_end=loopbody.loop_end)
+            if loop_start == loopbody.loop_start:
+                return " " * indentation + "pass\n"
+            source_code = " " * indentation + "while True:\n"
+            body_code = self.decompile_block(loopbody.blocks[0], stack, indentation, loop_start=loopbody.loop_start, loop_end=loopbody.loop_end)
+            source_code += "".join(" " * (indentation * 2) + line + "\n" for line in body_code.splitlines())
+            return source_code
         else:
             return self.decompile_block(block, stack, indentation)
 
@@ -310,9 +316,9 @@ class Decompiler:
                     source_code += f"if {cond}:\n"
                 elif inst.opname == "POP_JUMP_IF_TRUE":
                     source_code += f"if not {cond}:\n"
-                source_code += self.decompile_possible_loop(block.jump_to_block(fallthrough_offset), stack.copy(), indentation)
+                source_code += self.decompile_possible_loop(block.jump_to_block(fallthrough_offset), stack.copy(), indentation, loop_start, loop_end)
                 source_code += "else:\n"
-                source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation)
+                source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation, loop_start, loop_end)
             elif inst.opname == "JUMP_IF_TRUE_OR_POP" or inst.opname == "JUMP_IF_FALSE_OR_POP":
                 # not tested, don't know how to force the compiler to generate this
                 cond = stack[-1]
@@ -323,9 +329,9 @@ class Decompiler:
                 elif inst.opname == "JUMP_IF_FALSE_OR_POP":
                     source_code += f"if {cond}:\n"
                 # The fallthrough block should pop one value from the stack
-                source_code += self.decompile_possible_loop(block.jump_to_block(fallthrough_offset), stack.copy()[:-1], indentation)
+                source_code += self.decompile_possible_loop(block.jump_to_block(fallthrough_offset), stack.copy()[:-1], indentation, loop_start, loop_end)
                 source_code += "else:\n"
-                source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation)
+                source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation, loop_start, loop_end)
             elif inst.opname == "JUMP_FORWARD" or inst.opname == "JUMP_ABSOLUTE":
                 jump_offset = inst.get_jump_target()
                 if jump_offset == loop_start:
@@ -334,7 +340,7 @@ class Decompiler:
                     source_code += "break\n"
                 else:
                     if jump_offset > block.instructions[0].offset:
-                        source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation)
+                        source_code += self.decompile_possible_loop(block.jump_to_block(jump_offset), stack.copy(), indentation, loop_start, loop_end)
                     else:
                         raise NotImplementedError(f"Unsupported jump backward")
             elif inst.opname == "RETURN_VALUE":
