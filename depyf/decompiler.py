@@ -129,6 +129,10 @@ class Decompiler:
             code = code.__code__
         self.code = code
         self.instructions = list(dis.get_instructions(code))
+        supported_opnames = self.supported_opnames()
+        for inst in self.instructions:
+            if inst.opname not in supported_opnames:
+                raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
         self.blocks = BasicBlock.decompose_basic_blocks(self.instructions)
         self.blocks_map = {str(block): block for block in self.blocks}
         self.blocks_decompiled = {str(block): False for block in self.blocks}
