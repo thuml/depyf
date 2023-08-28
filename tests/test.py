@@ -39,7 +39,7 @@ def test_UNARY_POSITIVE():
         return +x
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -52,7 +52,7 @@ def test_UNARY_NEGATIVE():
         return -x
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -65,7 +65,7 @@ def test_UNARY_NOT():
         return not x
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -78,23 +78,8 @@ def test_UNARY_INVERT():
         return ~x
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
-
-# unittest.skipIf(
-#     "GET_ITER" not in dis.opname,
-#     "GET_ITER not supported in this version of Python: {}".format(sys.version),
-# )
-# def test_GET_ITER():
-#     def f():
-#         sum = 0
-#         for x in (1, 2, 3):
-#             sum += x
-#         return sum
-#     ans = f()
-#     scope = {}
-#     exec(decompile(f.__code__), scope)
-#     assert list(scope['f']()) == list(ans)
 
 unittest.skipIf(
     "BINARY_POWER" not in dis.opname,
@@ -107,7 +92,7 @@ def test_BINARY_POWER():
         return (a ** b) ** a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -121,7 +106,7 @@ def test_BINARY_MULTIPLY():
         return (a ** b) ** a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -133,7 +118,7 @@ def test_BINARY_MATRIX_MULTIPLY():
         return point @ point
     ans = f()
     scope = {'point': point}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -147,7 +132,7 @@ def test_BINARY_FLOOR_DIVIDE():
         return (a // b) // a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -161,7 +146,7 @@ def test_BINARY_TRUE_DIVIDE():
         return (a / b) / a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -175,7 +160,7 @@ def test_BINARY_MODULO():
         return (a % b) % a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -189,7 +174,7 @@ def test_BINARY_ADD():
         return (a + b) + a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -203,7 +188,7 @@ def test_BINARY_SUBTRACT():
         return (a - b) - a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -216,7 +201,7 @@ def test_BINARY_SUBSCR():
         return a[0]
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -230,7 +215,7 @@ def test_BINARY_LSHIFT():
         return (a << b) << a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -244,7 +229,7 @@ def test_BINARY_RSHIFT():
         return (a >> b) >> a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -258,7 +243,7 @@ def test_BINARY_AND():
         return (a & b) & a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -272,7 +257,7 @@ def test_BINARY_XOR():
         return (a ^ b) ^ a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -286,7 +271,7 @@ def test_BINARY_OR():
         return (a | b) | a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -300,7 +285,7 @@ def test_INPLACE_POWER():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -314,7 +299,7 @@ def test_INPLACE_MULTIPLY():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -328,7 +313,7 @@ def test_INPLACE_MATRIX_MULTIPLY():
         return point
     ans = f()
     scope = {'Point': Point}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -342,7 +327,7 @@ def test_INPLACE_FLOOR_DIVIDE():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -356,7 +341,7 @@ def test_INPLACE_TRUE_DIVIDE():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -370,7 +355,7 @@ def test_INPLACE_MODULO():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -384,7 +369,7 @@ def test_INPLACE_ADD():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -398,7 +383,7 @@ def test_INPLACE_SUBTRACT():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -412,7 +397,7 @@ def test_INPLACE_LSHIFT():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -426,7 +411,7 @@ def test_INPLACE_RSHIFT():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -440,7 +425,7 @@ def test_INPLACE_AND():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -454,7 +439,7 @@ def test_INPLACE_XOR():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -468,7 +453,7 @@ def test_INPLACE_OR():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -482,7 +467,7 @@ def test_STORE_SUBSCR():
         return point
     ans = f()
     scope = {'Point': Point}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -496,7 +481,7 @@ def test_DELETE_SUBSCR():
         return a
     ans = f()
     scope = {'data_map': data_map, 'deepcopy': deepcopy}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -509,7 +494,7 @@ def test_YIELD_VALUE():
         yield 2
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert list(scope['f']()) == list(ans)
 
 unittest.skipIf(
@@ -521,7 +506,7 @@ def test_GET_LEN():
         return len((1, 2, 3))
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -535,7 +520,7 @@ def test_STORE_GLOBAL():
         return len
     ans = f()
     scope = {'len': len}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -550,7 +535,7 @@ def test_DELETE_NAME():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -563,7 +548,7 @@ def test_UNPACK_SEQUENCE():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -576,7 +561,7 @@ def test_UNPACK_EX():
         return b
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -590,7 +575,7 @@ def test_STORE_ATTR():
         return point
     ans = f()
     scope = {'Point': Point}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -605,7 +590,7 @@ def test_DELETE_ATTR():
         return point
     ans = f()
     scope = {'Point': Point}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -619,7 +604,7 @@ def test_BUILD_TUPLE():
         return (a, b), (a,)
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -633,7 +618,7 @@ def test_BUILD_LIST():
         return [a, b], [a]
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -647,7 +632,7 @@ def test_BUILD_SET():
         return {a, b}, {a}
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -661,7 +646,7 @@ def test_BUILD_MAP():
         return {a: 1, 2: 3}, {b: a}
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -673,7 +658,7 @@ def test_BUILD_CONST_KEY_MAP():
         return {5: 1, 2: 3}
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -686,7 +671,7 @@ def test_LIST_TO_TUPLE():
         return
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -698,7 +683,7 @@ def test_LIST_EXTEND():
         return [1, 2, 3]
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -710,7 +695,7 @@ def test_SET_UPDATE():
         return {1, 2, 3}
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -724,7 +709,7 @@ def test_DICT_UPDATE():
         return {**a, **b}
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -739,7 +724,7 @@ def test_DICT_MERGE():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -762,7 +747,7 @@ def test_CALL_FUNCTION_EX():
         return ans1, ans2, ans3, ans4, ans5, ans6, ans7
     ans = f()
     scope = {'func': func}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 
@@ -776,7 +761,7 @@ def test_LOAD_ATTR():
         return point.x
     ans = f()
     scope = {'Point': Point}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -788,7 +773,7 @@ def test_COMPARE_OP():
         return (3 == 3) + (1 < 2) + (2 > 1) + (2 >= 2) + (1 <= 2) + (1 != 2)
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -800,7 +785,7 @@ def test_IS_OP():
         return (int is int), (int is not float)
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -812,7 +797,7 @@ def test_CONTAINS_OP():
         return (1 in [1, 2, 3]), (5 not in (6, 7, 4))
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -826,7 +811,7 @@ def test_IMPORT_NAME():
         return functools.partial(sqrt, 0.3)()
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -839,7 +824,7 @@ def test_BUILD_SLICE():
         return a[:] + a[1:] + a[:2] + a[1:2] + a[::-1]
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -854,7 +839,7 @@ def test_FORMAT_VALUE():
         return f"{a} {b!r} {b!s} {b!a} {c:.2f}"
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
 
 unittest.skipIf(
@@ -875,5 +860,5 @@ def test_ROT_TWO():
         return a
     ans = f()
     scope = {}
-    exec(decompile(f.__code__), scope)
+    exec(decompile(f), scope)
     assert scope['f']() == ans
