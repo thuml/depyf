@@ -851,7 +851,7 @@ def test_FORMAT_VALUE():
         a = 1
         b = 2
         c = 3
-        return f"{a} {b!r} {c:.2f}"
+        return f"{a} {b!r} {b!s} {b!a} {c:.2f}"
     ans = f()
     scope = {}
     exec(decompile(f.__code__), scope)
