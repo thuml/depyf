@@ -92,3 +92,7 @@ This package is intended to understand the generated pytorch bytecode, and does 
 # Contributions are welcome!
 
 If you find any error in the decompilation, feel free to open issues or pull requests to fix it!
+
+# How it works
+
+The code first analyzes the bytecode to discover basic code blocks (blocks that do not have control flow). Then it builds a control flow graph, and decompile bytecode into source code by traversing the graph.
