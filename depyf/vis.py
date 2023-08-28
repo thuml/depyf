@@ -1,7 +1,11 @@
+from types import CodeType
+from typing import List, Tuple, Dict, Union, Callable
 from depyf.depyf import decompose_basic_blocks
 
-def visualize_cfg(code: CodeType):
+def visualize_cfg(code: Union[CodeType, Callable]):
     """Visualize the control flow graph of a code object."""
+    if callable(code):
+        code = code.__code__
     blocks = decompose_basic_blocks(code)
     import networkx as nx
     import matplotlib.pyplot as plt
