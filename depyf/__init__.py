@@ -1,0 +1,1 @@
+from .depyf import decompile
