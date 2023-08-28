@@ -122,6 +122,7 @@ class Decompiler:
     temp_count: int = 0
     blocks: List[BasicBlock] = dataclasses.field(default_factory=list)
     blocks_map: Dict[str, BasicBlock] = dataclasses.field(default_factory=dict)
+    blocks_decompiled: Dict[str, bool] = dataclasses.field(default_factory=dict)
 
     def __init__(self, code: Union[CodeType, Callable]):
         if callable(code):
@@ -130,6 +131,7 @@ class Decompiler:
         self.instructions = list(dis.get_instructions(code))
         self.blocks = BasicBlock.decompose_basic_blocks(self.instructions)
         self.blocks_map = {str(block): block for block in self.blocks}
+        self.blocks_decompiled = {str(block): False for block in self.blocks}
 
     def visualize_cfg(self):
         import networkx as nx
@@ -167,7 +169,7 @@ class Decompiler:
         # loop end block is the largest block looping back to the starting block
         loop_end_block = max(end_blocks, key=BasicBlock.code_end)
         loop_body_blocks = [block for block in self.blocks if starting_block.code_start() <= block.code_start() and block.code_end() <= loop_end_block.code_end()]
-        return LoopBody(blocks=blocks)
+        return LoopBody(blocks=loop_body_blocks)
 
 
     def get_temp_name(self):
@@ -178,13 +180,20 @@ class Decompiler:
     def supported_opnames():
         return get_supported_opnames(Decompiler.decompile_block.__code__)
 
+    @functools.lru_cache(maxsize=None)
     def decompile(self, indentation=4):
-        self.temp_count = 0
         header = self.get_function_signature()
-        block = self.blocks[0]
-        source_code = self.decompile_block(block, [], indentation, self.get_loop_body(block))
+        source_code = ""
+        for block in self.blocks:
+            if self.blocks_decompiled[str(block)]:
+                continue
+            self.blocks_decompiled[str(block)] = True
+            source_code += self.decompile_block(block, [], indentation, self.get_loop_body(block))
         source_code = header + source_code
         return source_code
+
+    def __hash__(self):
+        return hash(self.code)
 
     def decompile_block(
             self,
@@ -339,6 +348,8 @@ class Decompiler:
                 elif inst.opname in ["JUMP_IF_FALSE_OR_POP", "JUMP_IF_TRUE_OR_POP"]:
                     jump_stack = stack.copy()
 
+                assert not self.blocks_decompiled[str(jump_block)] and not self.blocks_decompiled[str(fallthrough_block)], "Blocks are already decompiled"
+
                 # JUMP_IF_X, so fallthrough if not X
                 if inst.opname in ["POP_JUMP_IF_FALSE", "JUMP_IF_FALSE_OR_POP"]:
                     source_code += f"if {cond}:\n"
@@ -346,10 +357,18 @@ class Decompiler:
                     source_code += f"if not {cond}:\n"
                 
                 source_code += self.decompile_block(fallthrough_block, fallthrough_stack, indentation, loopbody if loopbody else loop)
+                self.blocks_decompiled[str(fallthrough_block)] = True
 
-                assert jump_block.code_start() > block.code_start(), "Jump backward is not supported here"
                 source_code += "else:\n"
-                source_code += self.decompile_block(jump_block, jump_stack, indentation, loopbody if loopbody else loop)
+
+                if not loopbody or jump_block.code_end()  <= loopbody.loop_end:
+                    source_code += self.decompile_block(jump_block, jump_stack, indentation, loopbody if loopbody else loop)
+                    self.blocks_decompiled[str(jump_block)] = True
+                else:
+                    source_code += " " * indentation + "break\n"
+
+                if loopbody and loopbody.loop_start == block.code_start():
+                    source_code = "while True:\n" + "".join([" " * indentation + line + "\n" for line in source_code.splitlines()])
 
             elif inst.opname in ["JUMP_FORWARD", "JUMP_ABSOLUTE"]:
                 jump_offset = inst.get_jump_target()
@@ -359,13 +378,16 @@ class Decompiler:
                     source_code += "break\n"
                 else:
                     if loopbody and jump_offset == loopbody.loop_start:
-                        source_code = "".join([" " * indentation + line + "\n" for line in source_code.splitlines()])
-                        source_code = "while True:\n" + source_code
+                        source_code = "while True:\n" + "".join([" " * indentation + line + "\n" for line in source_code.splitlines()])
                         return source_code
                     if jump_offset > block.code_start():
-                        source_code += self.decompile_block(block.jump_to_block(jump_offset), stack.copy(), indentation, loopbody if loopbody else loop)
+                        jump_block = block.jump_to_block(jump_offset)
+                        source_code += self.decompile_block(jump_block, stack.copy(), indentation, loopbody if loopbody else loop)
+                        self.blocks_decompiled[str(jump_block)] = True
                     else:
-                        raise NotImplementedError(f"Unsupported jump backward")
+                        # this code should be decompiled elsewhere?
+                        pass
+                        # raise NotImplementedError(f"Unsupported jump backward")
             elif inst.opname in ["RETURN_VALUE"]:
                 source_code += f"return {stack[-1]}\n"
             elif inst.opname in ["YIELD_VALUE"]:
