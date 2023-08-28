@@ -320,6 +320,9 @@ class Decompiler:
                 op = "in" if inst.argval == 0 else "not in"
                 stack.append(f"({lhs} {op} {rhs})")
             # ==================== Control Flow Instructions =============================
+            # "POP_BLOCK"/"POP_EXCEPT"/"RERAISE"/"WITH_EXCEPT_START"/"JUMP_IF_NOT_EXC_MATCH"/"SETUP_FINALLY" is unsupported, this means we don't support try-except/try-finally
+            # "FOR_ITER"/"GET_ITER" is unsupported, this means we don't support for loop
+            # "GET_AWAITABLE"/"GET_AITER"/"GET_ANEXT"/"END_ASYNC_FOR"/"BEFORE_ASYNC_WITH"/"SETUP_ASYNC_WITH" are unsupported, this means we don't support async/await
             elif inst.opname == "POP_JUMP_IF_FALSE" or inst.opname == "POP_JUMP_IF_TRUE":
                 cond = stack.pop()
                 jump_offset = inst.get_jump_target()
@@ -515,18 +518,16 @@ class Decompiler:
                 tos1 = stack[-2]
                 stack.append(tos1)
                 stack.append(tos)
+            # ==================== Unsupported Misc Instructions =============================
+            # "EXTENDED_ARG" is unsupported
+            # "MAKE_FUNCTION" is unsupported
+            # "PRINT_EXPR"/"COPY_DICT_WITHOUT_KEYS" is I don't know
+            # "SET_ADD"/"MAP_ADD"/"LIST_APPEND" are unsupported, no list/set/map comprehension
+            # "YIELD_FROM"/"SETUP_ANNOTATIONS" is unsupported
+            # "IMPORT_STAR" is unsupported, because we only support bytecode for functions
+            # "LOAD_BUILD_CLASS"/"SETUP_WITH" is unsupported
+            # "MATCH_MAPPING"/"MATCH_SEQUENCE"/"MATCH_KEYS"/"MATCH_CLASS" is unsupported
             else:
-                # "EXTENDED_ARG" is unsupported
-                # "MAKE_FUNCTION" is unsupported
-                # Coroutine opcodes like "GET_AWAITABLE"/"GET_AITER"/"GET_ANEXT"/"END_ASYNC_FOR"/"BEFORE_ASYNC_WITH"/"SETUP_ASYNC_WITH" are unsupported
-                # "PRINT_EXPR"/"COPY_DICT_WITHOUT_KEYS" is I don't know
-                # "SET_ADD"/"MAP_ADD"/"LIST_APPEND" are unsupported, no list/set/map comprehension
-                # "YIELD_FROM"/"SETUP_ANNOTATIONS" is unsupported
-                # "IMPORT_STAR" is unsupported, because we only support bytecode for functions
-                # "POP_BLOCK"/"POP_EXCEPT"/"RERAISE"/"WITH_EXCEPT_START"/"JUMP_IF_NOT_EXC_MATCH"/"SETUP_FINALLY" is unsupported, this means we don't support try-except/try-finally
-                # "LOAD_BUILD_CLASS"/"SETUP_WITH" is unsupported
-                # "MATCH_MAPPING"/"MATCH_SEQUENCE"/"MATCH_KEYS"/"MATCH_CLASS" is unsupported
-                # "FOR_ITER"/"GET_ITER" is unsupported
                 raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
 
         source_code = "".join([" " * indentation + line + "\n" for line in source_code.splitlines()])
