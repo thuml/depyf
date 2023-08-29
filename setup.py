@@ -13,7 +13,7 @@ setup(
     install_requires=[
         "astor",
     ],
-    extra_require={
+    extras_require={
         "dev": [
             "pytest",
             "networkx",
