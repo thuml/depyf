@@ -509,31 +509,37 @@ class Decompiler:
                 elif inst.argval == 3:
                     tos2 = stack.pop()
                     stack.append(f"slice({tos2}, {tos1}, {tos})")
-            elif inst.opname in ["BUILD_TUPLE"]:
+            elif inst.opname in ["BUILD_TUPLE", "BUILD_TUPLE_UNPACK"]:
                 args = [stack.pop() for _ in range(inst.argval)]
                 args = args[::-1]
+                if "UNPACK" in inst.opname:
+                    args = [f"*{arg}" for arg in args]
                 if inst.argval == 1:
                     stack.append(f"({args[0]},)")
                 else:
                     stack.append(f"({', '.join(args)})")
-            elif inst.opname in ["BUILD_TUPLE_UNPACK"]:
+            elif inst.opname in ["BUILD_LIST", "BUILD_LIST_UNPACK"]:
                 args = [stack.pop() for _ in range(inst.argval)]
                 args = args[::-1]
-                args = [f"*{arg}" for arg in args]
-                if inst.argval == 1:
-                    stack.append(f"({args[0]},)")
-                else:
-                    stack.append(f"({', '.join(args)})")
-            elif inst.opname in ["BUILD_LIST"]:
-                args = [stack.pop() for _ in range(inst.argval)]
-                args = args[::-1]
+                if "UNPACK" in inst.opname:
+                    args = [f"*{arg}" for arg in args]
                 stack.append(f"[{', '.join(args)}]")
-            elif inst.opname in ["BUILD_SET"]:
+            elif inst.opname in ["BUILD_SET", "BUILD_SET_UNPACK"]:
                 if inst.argval == 0:
                     stack.append("set()")
                 else:
                     args = [stack.pop() for _ in range(inst.argval)]
                     args = args[::-1]
+                    if "UNPACK" in inst.opname:
+                        args = [f"*{arg}" for arg in args]
+                    stack.append(f"{{{', '.join(args)}}}")
+            elif inst.opname in ["BUILD_MAP_UNPACK"]:
+                if inst.argval == 0:
+                    stack.append("dict()")
+                else:
+                    args = [stack.pop() for _ in range(inst.argval)]
+                    args = args[::-1]
+                    args = [f"**{arg}" for arg in args]
                     stack.append(f"{{{', '.join(args)}}}")
             elif inst.opname in ["BUILD_MAP"]:
                 args = [stack.pop() for _ in range(inst.argval * 2)]
