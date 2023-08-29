@@ -505,7 +505,7 @@ class Decompiler:
                 for name, value in zip(kwargs, kw_names):
                     kwcalls.append(f"{name}={value}")
                 func = stack.pop()
-                if stack[-1] is None:
+                if stack and stack[-1] is None:
                     stack.pop()
                 temp = self.get_temp_name()
                 source_code += f"{temp} = {func}({', '.join(pos_args + kwcalls)})\n"
