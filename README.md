@@ -4,7 +4,9 @@ This is used primarily to understand the bytecode produced by PyTorch 2.0 Dynamo
 
 # Installation
 
-`pip install git+https://github.com/youkaichao/depyf.git`
+Stable release on pypi: `pip install depyf`
+
+Nightly code: `pip install git+https://github.com/youkaichao/depyf.git`
 
 # Usage
 
