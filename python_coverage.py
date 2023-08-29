@@ -31,6 +31,8 @@ else:
     for k in unconsidered:
         print(k)
 
+print("=" * 80)
+
 if len(unsupported) == 0:
     print("All considered opnames are supported!")
 else:
