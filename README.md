@@ -1,4 +1,4 @@
-# :snake: depyf: decompile python functions, from bytecode to source code!
+# 🐍 depyf: decompile python functions, from bytecode to source code!
 
 This is used primarily to understand the bytecode produced by PyTorch 2.0 Dynamo (PT 2.0 compiler stack).
 
