@@ -921,13 +921,12 @@ def test_ROT_TWO():
     assert scope['f']() == ans
 
 def test_WHILE():
-    def f():
-        a = 1
+    def f(a):
         while a < 5:
             a += 1
-            continue
+            break
         return a
-    ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    for a in range(10):
+        assert scope['f'](a) == f(a)
