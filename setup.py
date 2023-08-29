@@ -4,6 +4,7 @@ setup(
     name='depyf',
     version='0.1.0',
     description='Decompile python functions, from bytecode to source code!',
+    long_description=open("README.md", "r").read(),
     url='https://github.com/youkaichao/depyf',
     author='Kaichao You',
     author_email="youkaichao@gmail.com",
