@@ -120,14 +120,16 @@ class Decompiler:
     """A decompiler for a code object."""
     code: CodeType
     temp_count: int = 0
+    temp_prefix: str = "__temp_"
     blocks: List[BasicBlock] = dataclasses.field(default_factory=list)
     blocks_map: Dict[str, BasicBlock] = dataclasses.field(default_factory=dict)
     blocks_decompiled: Dict[str, bool] = dataclasses.field(default_factory=dict)
 
-    def __init__(self, code: Union[CodeType, Callable]):
+    def __init__(self, code: Union[CodeType, Callable], temp_prefix: str="__temp_"):
         if callable(code):
             code = code.__code__
         self.code = code
+        self.temp_prefix = temp_prefix
         self.instructions = list(dis.get_instructions(code))
         supported_opnames = self.supported_opnames()
         for inst in self.instructions:
@@ -178,7 +180,7 @@ class Decompiler:
 
     def get_temp_name(self):
         self.temp_count += 1
-        return f"__temp_{self.temp_count}"
+        return f"{self.temp_prefix}{self.temp_count}"
 
     @staticmethod
     def supported_opnames():
@@ -197,7 +199,7 @@ class Decompiler:
         return source_code
 
     def __hash__(self):
-        return hash(self.code)
+        return hash(self.code) + hash(self.temp_prefix)
 
     def decompile_block(
             self,
