@@ -271,6 +271,9 @@ class Decompiler:
                 stack.append(repr(inst.argval))
             elif inst.opname in ["LOAD_FAST", "LOAD_GLOBAL", "LOAD_DEREF", "LOAD_CLOSURE", "LOAD_NAME", "LOAD_CLASSDEREF"]:
                 # `inst.argval` is the variable name, in string
+                if "NULL + " in inst.argrepr:
+                    # Python 3.11 support
+                    stack.append(None)
                 stack.append(inst.argval)
             elif inst.opname in ["LOAD_ATTR"]:
                 stack.append(f"getattr({stack.pop()}, {repr(inst.argval)})")
@@ -278,6 +281,9 @@ class Decompiler:
                 stack.append(f"{stack.pop()}.{inst.argval}")
             elif inst.opname in ["LOAD_ASSERTION_ERROR"]:
                 stack.append("AssertionError")
+            elif inst.opname in ["PUSH_NULL"]:
+                # the `None` object is used to represent `NULL` in python bytecode
+                stack.append(None)
             # ==================== Store Instructions =============================
             elif inst.opname in ["STORE_FAST", "STORE_GLOBAL", "STORE_DEREF", "STORE_NAME"]:
                 source_code += f"{inst.argval} = {stack.pop()}\n"
@@ -475,6 +481,26 @@ class Decompiler:
                 # stack.pop()
                 assert inst.argval == 0, "Only generator expression is supported"
             # ==================== Function Call Instructions =============================
+            elif inst.opname in ["KW_NAMES"]:
+                names = self.code.co_consts[inst.argval]
+                stack.append(repr(names))
+            elif inst.opname in ["CALL"]:
+                tos = stack[-1]
+                kw_names = eval(tos)
+                kw_names = kw_names if isinstance(kw_names, tuple) else tuple()
+                args = [(stack.pop()) for _ in range(inst.argval)]
+                args = args[::-1]
+                pos_args = args[:len(args) - len(kw_names)]
+                kwargs = args[len(args) - len(kw_names):]
+                kwcalls = []
+                for name, value in zip(kwargs, kw_names):
+                    kwcalls.append(f"{name}={value}")
+                func = stack.pop()
+                if stack[-1] is None:
+                    stack.pop()
+                temp = self.get_temp_name()
+                source_code += f"{temp} = {func}({', '.join(pos_args + kwcalls)})\n"
+                stack.append(temp)
             elif inst.opname in ["CALL_FUNCTION", "CALL_METHOD"]:
                 args = [(stack.pop()) for _ in range(inst.argval)]
                 args = args[::-1]
@@ -629,7 +655,20 @@ class Decompiler:
                 values = stack[-n:]
                 values = [values[-1]] + values[:-1]
                 stack[-n:] = values
-            elif inst.opname in ["NOP", "RESUME", "SETUP_LOOP", "POP_BLOCK"]:
+            elif inst.opname in ["SWAP"]:
+                # not tested, don't know how to generate this instruction
+                n = inst.argval
+                tos = stack[-1]
+                value = stack[-1 - n]
+                tos, value = value, tos
+                stack[-1] = tos
+                stack[-1 - n] = value
+            elif inst.opname in ["COPY"]:
+                # not tested, don't know how to generate this instruction
+                n = inst.argval
+                value = stack[-1 - n]
+                stack.append(value)
+            elif inst.opname in ["NOP", "RESUME", "SETUP_LOOP", "POP_BLOCK", "PRECALL"]:
                 continue
             elif inst.opname in ["POP_TOP"]:
                 stack.pop()
