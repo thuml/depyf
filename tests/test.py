@@ -621,6 +621,48 @@ def test_BUILD_TUPLE_UNPACK():
     exec(decompile(f), scope)
     assert scope['f']() == ans
 
+unittest.skipIf(
+    "BUILD_LIST_UNPACK" not in dis.opname,
+    "BUILD_LIST_UNPACK not supported in this version of Python: {}".format(sys.version),
+)
+def test_BUILD_LIST_UNPACK():
+    def f():
+        a = [1, 2, 3]
+        b = {4, 5, 6}
+        return [*a, *b], [*a,]
+    ans = f()
+    scope = {}
+    exec(decompile(f), scope)
+    assert scope['f']() == ans
+
+unittest.skipIf(
+    "BUILD_SET_UNPACK" not in dis.opname,
+    "BUILD_SET_UNPACK not supported in this version of Python: {}".format(sys.version),
+)
+def test_BUILD_SET_UNPACK():
+    def f():
+        a = [1, 2, 3]
+        b = {4, 5, 6}
+        return {*a, *b}, {*a,}
+    ans = f()
+    scope = {}
+    exec(decompile(f), scope)
+    assert scope['f']() == ans
+
+unittest.skipIf(
+    "BUILD_MAP_UNPACK" not in dis.opname,
+    "BUILD_MAP_UNPACK not supported in this version of Python: {}".format(sys.version),
+)
+def test_BUILD_MAP_UNPACK():
+    def f():
+        a = {1: 2}
+        b = {3: 4}
+        return {**a, **b}, {**a,}
+    ans = f()
+    scope = {}
+    exec(decompile(f), scope)
+    assert scope['f']() == ans
+
 
 unittest.skipIf(
     "BUILD_LIST" not in dis.opname,
