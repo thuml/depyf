@@ -1,5 +1,6 @@
 """A simple program to transform bytecode into more readable source code."""
 
+import ast
 import sys
 import os
 import dis
@@ -8,6 +9,9 @@ from typing import List, Tuple, Dict, Union, Callable, Optional
 import dataclasses
 import inspect
 import functools
+from collections import defaultdict
+
+import astor
 
 from .patch import *
 
@@ -185,6 +189,30 @@ class Decompiler:
     def supported_opnames():
         return get_supported_opnames(Decompiler.decompile_block.__code__)
 
+    def simplify_code(self, source_code: str, indentation: int=4) -> str:
+        tree = ast.parse(source_code)
+
+        temp_occurrences = defaultdict(list)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Name) and node.id.startswith(self.temp_prefix):
+                temp_occurrences[node.id].append(node)
+        
+        class RemoveAssignmentTransformer(ast.NodeTransformer):
+            def visit_Assign(self, node):
+                # Ensure there's only one target
+                if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+                    name = node.targets[0].id
+                    if name in temp_occurrences and len(temp_occurrences[name]) == 1:
+                        del temp_occurrences[name]
+                        # Return the right-hand side value as an expression
+                        return ast.Expr(value=node.value)
+                return node
+
+        tree = RemoveAssignmentTransformer().visit(tree)
+
+        reconstructed_code = astor.to_source(tree, indent_with=" " * indentation)
+        return reconstructed_code
+
     @functools.lru_cache(maxsize=None)
     def decompile(self, indentation=4, temp_prefix: str="__temp_"):
         self.temp_prefix = temp_prefix
@@ -196,6 +224,7 @@ class Decompiler:
             self.blocks_decompiled[str(block)] = True
             source_code += self.decompile_block(block, [], indentation, self.get_loop_body(block))
         source_code = header + source_code
+        source_code = self.simplify_code(source_code, indentation)
         return source_code
 
     def __hash__(self):

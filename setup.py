@@ -10,6 +10,9 @@ setup(
     license="MIT",
     packages=find_packages(include=["depyf"]),
     python_requires=">=3.7",
+    requires=[
+        "astor",
+    ],
     extra_require={
         "dev": [
             "pytest",
