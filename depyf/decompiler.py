@@ -199,13 +199,28 @@ class Decompiler:
         
         class RemoveAssignmentTransformer(ast.NodeTransformer):
             def visit_Assign(self, node):
-                # Ensure there's only one target
+                # single assimngment like `a = xxx`
                 if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
                     name = node.targets[0].id
-                    if name in temp_occurrences and len(temp_occurrences[name]) == 1:
-                        del temp_occurrences[name]
-                        # Return the right-hand side value as an expression
-                        return ast.Expr(value=node.value)
+                    if name in temp_occurrences:
+                        # the assignment is like `temp = xxx`
+                        if len(temp_occurrences[name]) == 1:
+                            # the temp variable is only used once, we can remove the assignment
+                            del temp_occurrences[name]
+                            return ast.Expr(value=node.value)
+                        elif len(temp_occurrences[name]) == 2:
+                            # the temp variable is used twice, we can replace the second usage with the value
+                            # record the value here, and replace the second usage later in `visit_Name`
+                            temp_occurrences[name][0] = node.value
+                            return None
+                return node
+
+            def visit_Name(self, node):
+                name = node.id
+                if name in temp_occurrences and len(temp_occurrences[name]) == 2:
+                    # the assignment is like `xxx = temp`
+                    # we replace the assignment `temp` with the value obtained before
+                    return temp_occurrences[name][0]
                 return node
 
         tree = RemoveAssignmentTransformer().visit(tree)
