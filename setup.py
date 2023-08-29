@@ -10,7 +10,7 @@ setup(
     license="MIT",
     packages=find_packages(include=["depyf"]),
     python_requires=">=3.7",
-    requires=[
+    install_requires=[
         "astor",
     ],
     extra_require={
