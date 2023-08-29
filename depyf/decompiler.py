@@ -393,7 +393,7 @@ class Decompiler:
                 op = "in" if inst.argval == 0 else "not in"
                 stack.append(f"({lhs} {op} {rhs})")
             # ==================== Control Flow Instructions =============================
-            # "POP_BLOCK"/"POP_EXCEPT"/"RERAISE"/"WITH_EXCEPT_START"/"JUMP_IF_NOT_EXC_MATCH"/"SETUP_FINALLY"/"CHECK_EG_MATCH"/"PUSH_EXC_INFO"/"PREP_RERAISE_STAR" is unsupported, this means we don't support try-except/try-finally
+            # "POP_BLOCK"/"POP_EXCEPT"/"RERAISE"/"WITH_EXCEPT_START"/"JUMP_IF_NOT_EXC_MATCH"/"SETUP_FINALLY"/"CHECK_EG_MATCH"/"PUSH_EXC_INFO"/"PREP_RERAISE_STAR"/"BEGIN_FINALLY"/"END_FINALLY"/"WITH_CLEANUP_FINISH"/"CALL_FINALLY"/"POP_FINALLY"/"WITH_CLEANUP_START" is unsupported, this means we don't support try-except/try-finally
             # "FOR_ITER"/"GET_ITER" is unsupported, this means we don't support for loop
             # "GET_AWAITABLE"/"GET_AITER"/"GET_ANEXT"/"END_ASYNC_FOR"/"BEFORE_ASYNC_WITH"/"SETUP_ASYNC_WITH"/"SEND"/"ASYNC_GEN_WRAP"/"RETURN_GENERATOR" are unsupported, this means we don't support async/await
             elif inst.opname in ["POP_JUMP_IF_FALSE", "POP_JUMP_IF_TRUE", "JUMP_IF_TRUE_OR_POP", "JUMP_IF_FALSE_OR_POP"]:
@@ -512,6 +512,14 @@ class Decompiler:
             elif inst.opname in ["BUILD_TUPLE"]:
                 args = [stack.pop() for _ in range(inst.argval)]
                 args = args[::-1]
+                if inst.argval == 1:
+                    stack.append(f"({args[0]},)")
+                else:
+                    stack.append(f"({', '.join(args)})")
+            elif inst.opname in ["BUILD_TUPLE_UNPACK"]:
+                args = [stack.pop() for _ in range(inst.argval)]
+                args = args[::-1]
+                args = [f"*{arg}" for arg in args]
                 if inst.argval == 1:
                     stack.append(f"({args[0]},)")
                 else:

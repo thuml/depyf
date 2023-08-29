@@ -608,6 +608,21 @@ def test_BUILD_TUPLE():
     assert scope['f']() == ans
 
 unittest.skipIf(
+    "BUILD_TUPLE_UNPACK" not in dis.opname,
+    "BUILD_TUPLE_UNPACK not supported in this version of Python: {}".format(sys.version),
+)
+def test_BUILD_TUPLE_UNPACK():
+    def f():
+        a = [1, 2, 3]
+        b = {4, 5, 6}
+        return (*a, *b), (*a,)
+    ans = f()
+    scope = {}
+    exec(decompile(f), scope)
+    assert scope['f']() == ans
+
+
+unittest.skipIf(
     "BUILD_LIST" not in dis.opname,
     "BUILD_LIST not supported in this version of Python: {}".format(sys.version),
 )
