@@ -393,7 +393,7 @@ class Decompiler:
                 op = "in" if inst.argval == 0 else "not in"
                 stack.append(f"({lhs} {op} {rhs})")
             # ==================== Control Flow Instructions =============================
-            # "POP_BLOCK"/"POP_EXCEPT"/"RERAISE"/"WITH_EXCEPT_START"/"JUMP_IF_NOT_EXC_MATCH"/"SETUP_FINALLY"/"CHECK_EG_MATCH"/"PUSH_EXC_INFO"/"PREP_RERAISE_STAR"/"BEGIN_FINALLY"/"END_FINALLY"/"WITH_CLEANUP_FINISH"/"CALL_FINALLY"/"POP_FINALLY"/"WITH_CLEANUP_START"/"SETUP_EXCEPT" is unsupported, this means we don't support try-except/try-finally
+            # "POP_EXCEPT"/"RERAISE"/"WITH_EXCEPT_START"/"JUMP_IF_NOT_EXC_MATCH"/"SETUP_FINALLY"/"CHECK_EG_MATCH"/"PUSH_EXC_INFO"/"PREP_RERAISE_STAR"/"BEGIN_FINALLY"/"END_FINALLY"/"WITH_CLEANUP_FINISH"/"CALL_FINALLY"/"POP_FINALLY"/"WITH_CLEANUP_START"/"SETUP_EXCEPT" is unsupported, this means we don't support try-except/try-finally
             # "FOR_ITER"/"GET_ITER"/"CONTINUE_LOOP"/ is unsupported, this means we don't support for loop
             # "GET_AWAITABLE"/"GET_AITER"/"GET_ANEXT"/"END_ASYNC_FOR"/"BEFORE_ASYNC_WITH"/"SETUP_ASYNC_WITH"/"SEND"/"ASYNC_GEN_WRAP"/"RETURN_GENERATOR" are unsupported, this means we don't support async/await
             elif inst.opname in ["POP_JUMP_IF_FALSE", "POP_JUMP_IF_TRUE", "JUMP_IF_TRUE_OR_POP", "JUMP_IF_FALSE_OR_POP"]:
@@ -434,8 +434,7 @@ class Decompiler:
                 if loopbody and loopbody.loop_start == block.code_start():
                     source_code = "while True:\n" + "".join([" " * indentation + line + "\n" for line in source_code.splitlines()])
             elif inst.opname in ["BREAK_LOOP"]:
-                    source_code += "break\n"
-                    continue
+                source_code += "break\n"
             elif inst.opname in ["JUMP_FORWARD", "JUMP_ABSOLUTE"]:
                 jump_offset = inst.get_jump_target()
                 if loop.loop_start is not None and jump_offset == loop.loop_start:
@@ -616,7 +615,7 @@ class Decompiler:
                 values = stack[-n:]
                 values = [values[-1]] + values[:-1]
                 stack[-n:] = values
-            elif inst.opname in ["NOP", "RESUME", "SETUP_LOOP"]:
+            elif inst.opname in ["NOP", "RESUME", "SETUP_LOOP", "POP_BLOCK"]:
                 continue
             elif inst.opname in ["POP_TOP"]:
                 stack.pop()
