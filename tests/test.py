@@ -728,6 +728,33 @@ def test_ROT_TWO():
     exec(decompile(f), scope)
     assert scope['f']() == ans
 
+
+def test_IF():
+    def f(a):
+        if a == 0:
+            return 0
+        elif a == 1:
+            return 1
+        else:
+            return 2
+    scope = {}
+    exec(decompile(f), scope)
+    for a in range(10):
+        assert scope['f'](a) == f(a)
+
+
+def test_IF_NONE():
+    def f(a):
+        if a is None:
+            return 0
+        elif a is not None:
+            return 1
+    scope = {}
+    exec(decompile(f), scope)
+    for a in range(10):
+        assert scope['f'](a) == f(a)
+
+
 def test_WHILE():
     def f(a):
         while a < 5:
