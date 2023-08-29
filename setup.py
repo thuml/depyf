@@ -2,9 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name='depyf',
-    version='0.1.0',
+    version='0.1.1',
     description='Decompile python functions, from bytecode to source code!',
     long_description=open("README.md", "r").read(),
+    long_description_content_type="text/markdown",
     url='https://github.com/youkaichao/depyf',
     author='Kaichao You',
     author_email="youkaichao@gmail.com",
