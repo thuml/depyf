@@ -509,7 +509,7 @@ class Decompiler:
                 elif inst.argval == 3:
                     tos2 = stack.pop()
                     stack.append(f"slice({tos2}, {tos1}, {tos})")
-            elif inst.opname in ["BUILD_TUPLE", "BUILD_TUPLE_UNPACK"]:
+            elif inst.opname in ["BUILD_TUPLE", "BUILD_TUPLE_UNPACK", "BUILD_TUPLE_UNPACK_WITH_CALL"]:
                 args = [stack.pop() for _ in range(inst.argval)]
                 args = args[::-1]
                 if "UNPACK" in inst.opname:
@@ -533,7 +533,7 @@ class Decompiler:
                     if "UNPACK" in inst.opname:
                         args = [f"*{arg}" for arg in args]
                     stack.append(f"{{{', '.join(args)}}}")
-            elif inst.opname in ["BUILD_MAP_UNPACK"]:
+            elif inst.opname in ["BUILD_MAP_UNPACK", "BUILD_MAP_UNPACK_WITH_CALL"]:
                 if inst.argval == 0:
                     stack.append("dict()")
                 else:
