@@ -493,9 +493,10 @@ class Decompiler:
                 stack.append(repr(names))
             elif inst.opname in ["CALL"]:
                 last_inst = [x for x in block.instructions if x.offset < inst.offset][-1]
-                tos = stack[-1]
-                kw_names = eval(tos)
-                kw_names = kw_names if last_inst.opname == "KW_NAMES" else tuple()
+                has_kw_names = last_inst.opname == "KW_NAMES"
+                kw_names = tuple()
+                if has_kw_names:
+                    kw_names = eval(stack.pop())
                 args = [(stack.pop()) for _ in range(inst.argval)]
                 args = args[::-1]
                 pos_args = args[:len(args) - len(kw_names)]
