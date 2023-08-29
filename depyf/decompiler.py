@@ -275,6 +275,10 @@ class Decompiler:
                     # Python 3.11 support
                     stack.append(None)
                 stack.append(inst.argval)
+            elif inst.opname in ["COPY_FREE_VARS"]:
+                # this opcode is used to copy free variables from the outer scope to the closure
+                # it affects the frame, but not the stack or the source code
+                pass
             elif inst.opname in ["LOAD_ATTR"]:
                 stack.append(f"getattr({stack.pop()}, {repr(inst.argval)})")
             elif inst.opname in ["LOAD_METHOD"]:
@@ -482,12 +486,13 @@ class Decompiler:
                 assert inst.argval == 0, "Only generator expression is supported"
             # ==================== Function Call Instructions =============================
             elif inst.opname in ["KW_NAMES"]:
-                names = self.code.co_consts[inst.argval]
+                names = self.code.co_consts[inst.arg]
                 stack.append(repr(names))
             elif inst.opname in ["CALL"]:
+                last_inst = [x for x in block.instructions if x.offset < inst.offset][-1]
                 tos = stack[-1]
                 kw_names = eval(tos)
-                kw_names = kw_names if isinstance(kw_names, tuple) else tuple()
+                kw_names = kw_names if last_inst.opname == "KW_NAMES" else tuple()
                 args = [(stack.pop()) for _ in range(inst.argval)]
                 args = args[::-1]
                 pos_args = args[:len(args) - len(kw_names)]
