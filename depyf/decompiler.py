@@ -125,11 +125,10 @@ class Decompiler:
     blocks_map: Dict[str, BasicBlock] = dataclasses.field(default_factory=dict)
     blocks_decompiled: Dict[str, bool] = dataclasses.field(default_factory=dict)
 
-    def __init__(self, code: Union[CodeType, Callable], temp_prefix: str="__temp_"):
+    def __init__(self, code: Union[CodeType, Callable]):
         if callable(code):
             code = code.__code__
         self.code = code
-        self.temp_prefix = temp_prefix
         self.instructions = list(dis.get_instructions(code))
         supported_opnames = self.supported_opnames()
         for inst in self.instructions:
@@ -187,7 +186,8 @@ class Decompiler:
         return get_supported_opnames(Decompiler.decompile_block.__code__)
 
     @functools.lru_cache(maxsize=None)
-    def decompile(self, indentation=4):
+    def decompile(self, indentation=4, temp_prefix: str="__temp_"):
+        self.temp_prefix = temp_prefix
         header = self.get_function_signature()
         source_code = ""
         for block in self.blocks:
@@ -199,7 +199,7 @@ class Decompiler:
         return source_code
 
     def __hash__(self):
-        return hash(self.code) + hash(self.temp_prefix)
+        return hash(self.code)
 
     def decompile_block(
             self,
