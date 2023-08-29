@@ -481,6 +481,9 @@ class Decompiler:
                 source_code += f"return {stack[-1]}\n"
             elif inst.opname in ["YIELD_VALUE"]:
                 source_code += f"yield {stack[-1]}\n"
+            elif inst.opname in ["RETURN_GENERATOR"]:
+                # we don't handle generator/coroutine, add this to support simple yield
+                stack.append(None)
             elif inst.opname in ["GEN_START"]:
                 # stack.pop()
                 assert inst.argval == 0, "Only generator expression is supported"
