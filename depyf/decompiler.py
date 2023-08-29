@@ -198,32 +198,36 @@ class Decompiler:
                 temp_occurrences[node.id].append(node)
         
         class RemoveAssignmentTransformer(ast.NodeTransformer):
+            def __init__(self, temp_name: str):
+                # optimize one temp_name at a time
+                self.temp_name = temp_name
             def visit_Assign(self, node):
-                # single assimngment like `a = xxx`
+                # single assimngment like `temp = xxx`
                 if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
                     name = node.targets[0].id
-                    if name in temp_occurrences:
-                        # the assignment is like `temp = xxx`
+                    # the assignment is like `temp = xxx`
+                    if name == self.temp_name:
                         if len(temp_occurrences[name]) == 1:
-                            # the temp variable is only used once, we can remove the assignment
-                            del temp_occurrences[name]
                             return ast.Expr(value=node.value)
                         elif len(temp_occurrences[name]) == 2:
-                            # the temp variable is used twice, we can replace the second usage with the value
-                            # record the value here, and replace the second usage later in `visit_Name`
+                            # we save the `xxx` here
                             temp_occurrences[name][0] = node.value
                             return None
                 return node
 
+        class RemoveAssignment2Transformer(ast.NodeTransformer):
+            def __init__(self, temp_name: str):
+                # optimize one temp_name at a time
+                self.temp_name = temp_name
             def visit_Name(self, node):
                 name = node.id
-                if name in temp_occurrences and len(temp_occurrences[name]) == 2:
-                    # the assignment is like `xxx = temp`
-                    # we replace the assignment `temp` with the value obtained before
+                if name == self.temp_name and len(temp_occurrences[name]) == 2:
                     return temp_occurrences[name][0]
                 return node
 
-        tree = RemoveAssignmentTransformer().visit(tree)
+        for key in temp_occurrences:
+            tree = RemoveAssignmentTransformer(key).visit(tree)
+            tree = RemoveAssignment2Transformer(key).visit(tree)
 
         reconstructed_code = astor.to_source(tree, indent_with=" " * indentation)
         return reconstructed_code
