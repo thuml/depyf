@@ -389,9 +389,9 @@ class Decompiler:
                 op = "in" if inst.argval == 0 else "not in"
                 stack.append(f"({lhs} {op} {rhs})")
             # ==================== Control Flow Instructions =============================
-            # "POP_BLOCK"/"POP_EXCEPT"/"RERAISE"/"WITH_EXCEPT_START"/"JUMP_IF_NOT_EXC_MATCH"/"SETUP_FINALLY" is unsupported, this means we don't support try-except/try-finally
+            # "POP_BLOCK"/"POP_EXCEPT"/"RERAISE"/"WITH_EXCEPT_START"/"JUMP_IF_NOT_EXC_MATCH"/"SETUP_FINALLY"/"CHECK_EG_MATCH"/"PUSH_EXC_INFO"/"PREP_RERAISE_STAR" is unsupported, this means we don't support try-except/try-finally
             # "FOR_ITER"/"GET_ITER" is unsupported, this means we don't support for loop
-            # "GET_AWAITABLE"/"GET_AITER"/"GET_ANEXT"/"END_ASYNC_FOR"/"BEFORE_ASYNC_WITH"/"SETUP_ASYNC_WITH"/"SEND" are unsupported, this means we don't support async/await
+            # "GET_AWAITABLE"/"GET_AITER"/"GET_ANEXT"/"END_ASYNC_FOR"/"BEFORE_ASYNC_WITH"/"SETUP_ASYNC_WITH"/"SEND"/"ASYNC_GEN_WRAP"/"RETURN_GENERATOR" are unsupported, this means we don't support async/await
             elif inst.opname in ["POP_JUMP_IF_FALSE", "POP_JUMP_IF_TRUE", "JUMP_IF_TRUE_OR_POP", "JUMP_IF_FALSE_OR_POP"]:
                 jump_offset = inst.get_jump_target()
                 fallthrough_offset = inst.offset + 2
@@ -609,11 +609,13 @@ class Decompiler:
                 stack.append(tos)
             # ==================== Unsupported Misc Instructions =============================
             # "EXTENDED_ARG" is unsupported
+            # "CACHE" is unsupported
+            # "MAKE_CELL" is unsupported
             # "MAKE_FUNCTION" is unsupported
             # "PRINT_EXPR"/"COPY_DICT_WITHOUT_KEYS" is I don't know
             # "YIELD_FROM"/"SETUP_ANNOTATIONS" is unsupported
             # "IMPORT_STAR" is unsupported, because we only support bytecode for functions
-            # "LOAD_BUILD_CLASS"/"SETUP_WITH" is unsupported
+            # "LOAD_BUILD_CLASS"/"SETUP_WITH"/"BEFORE_WITH" is unsupported
             # "MATCH_MAPPING"/"MATCH_SEQUENCE"/"MATCH_KEYS"/"MATCH_CLASS" is unsupported
             else:
                 raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
