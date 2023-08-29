@@ -123,6 +123,7 @@ The following python major versions are tested:
 - Python 3.10
 - Python 3.9
 - Python 3.8
+- Python 3.7
 
 You can see the coverage report by simply running `python python_coverage.py`.
 
