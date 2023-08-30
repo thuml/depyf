@@ -114,6 +114,50 @@ def toy_example(a, b):
         return __resume_at_38_2(b, x)
 ```
 
+Furthermore, we can see how the compiled subgraph works. In this case, we pass a simple ``my_compiler`` function as the backend compiler, therefore the subgraph code ``__resume_at_38_2``, ``__resume_at_30_1``, and ``__compiled_fn_0`` remain python code. We can dig into more details by decompiling them:
+
+```python
+print("source code of __compiled_fn_0:")
+print(decompile(__compiled_fn_0._torchdynamo_orig_callable))
+print("=" * 60)
+print("source code of __resume_at_30_1:")
+print(decompile(__resume_at_30_1))
+print("=" * 60)
+print("source code of __resume_at_38_2:")
+print(decompile(__resume_at_38_2))
+```
+
+Output on my computer:
+
+```text
+source code of __compiled_fn_0:
+def forward(self, L_a_, L_b_):
+    l_a_ = L_a_
+    l_b_ = L_b_
+    abs_1 = torch.abs(l_a_)
+    add = abs_1 + 1
+    abs_1 = None
+    truediv = l_a_ / add
+    l_a_ = None
+    add = None
+    sum_1 = l_b_.sum()
+    l_b_ = None
+    lt = sum_1 < 0
+    sum_1 = None
+    return truediv, lt
+
+============================================================
+source code of __resume_at_30_1:
+def <resume in toy_example>(b, x):
+    b = b * -1
+    return x * b
+
+============================================================
+source code of __resume_at_38_2:
+def <resume in toy_example>(b, x):
+    return x * b
+```
+
 Hopefully, by using this package, you can understand python bytecode now!
 
 :warning: The above example should be run using pytorch nightly. Some debug functions like `_debug_get_cache_entry_list` might not exist in stable releases yet.
