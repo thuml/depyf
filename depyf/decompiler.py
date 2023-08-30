@@ -14,6 +14,7 @@ from collections import defaultdict
 import astor
 
 from .patch import *
+from .utils import nop_unreachable_bytecode, add_indentation, remove_indentation
 
 
 @functools.lru_cache(maxsize=None)
@@ -118,60 +119,6 @@ class LoopBody:
         if not self.blocks:
             return None
         return self.blocks[-1].code_end()
-
-
-def nop_unreachable_bytecode(instructions: List[dis.Instruction]) -> List[dis.Instruction]:
-    """Mark unreachable bytecode as NOP."""
-    jumps = set(dis.hasjabs) | set(dis.hasjrel)
-
-    reachable = [False for x in instructions]
-    reachable[0] = True
-    # each instruction marks the instruction after it
-    for i, inst in enumerate(instructions):
-        # the last instruction does not need to mark any following instructions
-        if i == len(instructions) - 1:
-            break
-        if inst.is_jump_target:
-            # the instruction is the target of a jump
-            reachable[i] = True
-        # this instruction is not reachable, nothing to do
-        if not reachable[i]:
-            continue
-        # this instruction is reachable
-        # the following instruction is reachable if it is sequential op or conditional jump
-        if inst.opname in ["RETURN_VALUE", "BREAK_LOOP"]:
-            # the instruction after the return is unreachable
-            pass
-        elif inst.opcode in jumps:
-            if "IF" in inst.opname:
-                # the fallback block is always reachable for conditional jumps
-                reachable[i + 1] = True
-            else:
-                # this is a direct jump, the target is reachable
-                # we further check if any other in-between instructions are jump targets
-                # if not, we can mark this instruction as unreachable, too
-                # later, in-between instructions will be marked as unreachable (NOP)
-                # and the interpreter will slide through all the NOP directly to the target
-                jump_forwards = [j for j, instruct in enumerate(instructions) if instruct.offset >= inst.get_jump_target()]
-                if len(jump_forwards):
-                    j = jump_forwards[0]
-                    if j > i and all(not instruct.is_jump_target for instruct in instructions[i + 1:j]):
-                        reachable[i] = False
-        else:
-            reachable[i + 1] = True
-    
-    # mark unreachable instructions as NOP
-    new_instructions = [inst if flag else dis.Instruction(
-                    opname="NOP",
-                    opcode=dis.opmap["NOP"],
-                    arg=0,
-                    argval=0,
-                    argrepr="",
-                    offset=inst.offset,
-                    starts_line=inst.starts_line,
-                    is_jump_target=False,
-                ) for inst, flag in zip(instructions, reachable)]
-    return new_instructions
 
 
 @dataclasses.dataclass
@@ -298,8 +245,10 @@ class Decompiler:
                 continue
             self.blocks_decompiled[str(block)] = True
             source_code += self.decompile_block(block, [], indentation, self.get_loop_body(block))
-        source_code = header + source_code
+        source_code = remove_indentation(source_code, indentation)
         source_code = self.simplify_code(source_code, indentation)
+        # the header might have invalid function name in torchdynamo. only optimize the function body.
+        source_code = header + add_indentation(source_code, indentation)
         return source_code
 
     def __hash__(self):
@@ -505,14 +454,14 @@ class Decompiler:
                         source_code += self.decompile_block(jump_block, jump_stack, indentation, loopbody if loopbody else loop)
                         self.blocks_decompiled[str(jump_block)] = True
                     else:
-                        source_code += " " * indentation + "break\n"
+                        source_code += add_indentation("break\n", indentation)
                 else:
                         code = self.decompile_block(jump_block, jump_stack, indentation, loopbody if loopbody else loop)
                         self.blocks_decompiled[str(jump_block)] = True
-                        source_code += "".join([line[indentation:] + "\n" for line in code.splitlines()])
+                        source_code += remove_indentation(code, indentation)
 
                 if loopbody and loopbody.loop_start == block.code_start():
-                    source_code = "while True:\n" + "".join([" " * indentation + line + "\n" for line in source_code.splitlines()])
+                    source_code = "while True:\n" + add_indentation(source_code, indentation)
             elif inst.opname in ["BREAK_LOOP"]:
                 source_code += "break\n"
             elif inst.opname in ["JUMP_FORWARD", "JUMP_ABSOLUTE", "JUMP_BACKWARD", "JUMP_BACKWARD_NO_INTERRUPT"]:
@@ -523,7 +472,7 @@ class Decompiler:
                     source_code += "break\n"
                 else:
                     if loopbody and jump_offset == loopbody.loop_start:
-                        source_code = "while True:\n" + "".join([" " * indentation + line + "\n" for line in source_code.splitlines()])
+                        source_code = "while True:\n" + add_indentation(source_code, indentation)
                         return source_code
                     if jump_offset > block.code_start():
                         jump_block = block.jump_to_block(jump_offset)
@@ -759,5 +708,5 @@ class Decompiler:
             else:
                 raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
 
-        source_code = "".join([" " * indentation + line + "\n" for line in source_code.splitlines()])
+        source_code = add_indentation(source_code, indentation)
         return source_code
