@@ -152,9 +152,11 @@ def nop_unreachable_bytecode(instructions: List[dis.Instruction]) -> List[dis.In
                 # if not, we can mark this instruction as unreachable, too
                 # later, in-between instructions will be marked as unreachable (NOP)
                 # and the interpreter will slide through all the NOP directly to the target
-                j = next(j for j, instruct in enumerate(instructions) if instruct.offset >= inst.get_jump_target())
-                if j > i and all(not instruct.is_jump_target for instruct in instructions[i + 1:j]):
-                    reachable[i] = False
+                jump_forwards = [j for j, instruct in enumerate(instructions) if instruct.offset >= inst.get_jump_target()]
+                if len(jump_forwards):
+                    j = jump_forwards[0]
+                    if j > i and all(not instruct.is_jump_target for instruct in instructions[i + 1:j]):
+                        reachable[i] = False
         else:
             reachable[i + 1] = True
     
