@@ -13,7 +13,7 @@ from collections import defaultdict
 
 import astor
 
-from .basicblock import BasicBlock
+from .block import BasicBlock, IndentationBlock
 from .patch import *
 from .utils import (
     nop_unreachable_bytecode,
@@ -33,30 +33,6 @@ def get_supported_opnames(code: CodeType):
             opnames += list(arg)
     opnames = set(opnames) & set(dis.opmap.keys())
     return list(opnames)
-
-
-
-
-@dataclasses.dataclass(frozen=True)
-class IndentationBlock:
-    """An indentation block consists several basic blocks. It represents any block that is indented,
-     e.g. if-else, while, for, etc."""
-    blocks: List[BasicBlock]
-
-    def __bool__(self):
-        return bool(self.blocks)
-
-    @property
-    def start(self) -> Optional[int]:
-        if not self.blocks:
-            return None
-        return self.blocks[0].code_start
-
-    @property
-    def end(self) -> Optional[int]:
-        if not self.blocks:
-            return None
-        return self.blocks[-1].code_end
 
 
 @dataclasses.dataclass
