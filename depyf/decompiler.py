@@ -132,21 +132,22 @@ class BasicBlock:
 
 
 @dataclasses.dataclass(frozen=True)
-class LoopBody:
-    """A loop body, the final block will jump back to the first block, with conditions."""
+class IndentationBlock:
+    """An indentation block consists several basic blocks. It represents any block that is indented,
+     e.g. if-else, while, for, etc."""
     blocks: List[BasicBlock]
 
     def __bool__(self):
         return bool(self.blocks)
 
     @property
-    def loop_start(self) -> Optional[int]:
+    def start(self) -> Optional[int]:
         if not self.blocks:
             return None
         return self.blocks[0].code_start()
 
     @property
-    def loop_end(self) -> Optional[int]:
+    def end(self) -> Optional[int]:
         if not self.blocks:
             return None
         return self.blocks[-1].code_end()
@@ -209,15 +210,15 @@ class Decompiler:
         header = f"def {code_obj.co_name}({args_str}):\n"
         return header
 
-    def get_loop_body(self, starting_block: BasicBlock) -> LoopBody:
+    def get_loop_body(self, starting_block: BasicBlock) -> IndentationBlock:
         end_blocks = [block for block in starting_block.from_blocks if block.code_end() >= starting_block.code_end()]
         if not end_blocks:
             # not a loop back edge
-            return LoopBody([])
+            return IndentationBlock([])
         # loop end block is the largest block looping back to the starting block
-        loop_end_block = max(end_blocks, key=BasicBlock.code_end)
-        loop_body_blocks = [block for block in self.blocks if starting_block.code_start() <= block.code_start() and block.code_end() <= loop_end_block.code_end()]
-        return LoopBody(blocks=loop_body_blocks)
+        end_block = max(end_blocks, key=BasicBlock.code_end)
+        loop_body_blocks = [block for block in self.blocks if starting_block.code_start() <= block.code_start() and block.code_end() <= end_block.code_end()]
+        return IndentationBlock(blocks=loop_body_blocks)
 
 
     def get_temp_name(self):
@@ -295,7 +296,7 @@ class Decompiler:
             block: BasicBlock,
             stack: List[str],
             indentation: int=4,
-            loop: Optional[LoopBody]=None,
+            loop: Optional[IndentationBlock]=None,
         ) -> str:
         """Decompile a basic block into source code.
         The `stack` holds expressions in string, like "3 + 4".
@@ -486,7 +487,7 @@ class Decompiler:
 
                 if fallthrough_block.instructions[-1].opcode in (dis.hasjabs + dis.hasjabs):
                     source_code += "else:\n"
-                    if not loopbody or jump_block.code_end()  <= loopbody.loop_end:
+                    if not loopbody or jump_block.code_end()  <= loopbody.end:
                         source_code += self.decompile_block(jump_block, jump_stack, indentation, loopbody if loopbody else loop)
                         self.blocks_decompiled[str(jump_block)] = True
                     else:
@@ -496,18 +497,18 @@ class Decompiler:
                         self.blocks_decompiled[str(jump_block)] = True
                         source_code += remove_indentation(code, indentation)
 
-                if loopbody and loopbody.loop_start == block.code_start():
+                if loopbody and loopbody.start == block.code_start():
                     source_code = "while True:\n" + add_indentation(source_code, indentation)
             elif inst.opname in ["BREAK_LOOP"]:
                 source_code += "break\n"
             elif inst.opname in ["JUMP_FORWARD", "JUMP_ABSOLUTE", "JUMP_BACKWARD", "JUMP_BACKWARD_NO_INTERRUPT"]:
                 jump_offset = inst.get_jump_target()
-                if loop.loop_start is not None and jump_offset == loop.loop_start:
+                if loop.start is not None and jump_offset == loop.start:
                     source_code += "continue\n"
-                elif loop.loop_end is not None and jump_offset >= loop.loop_end:
+                elif loop.end is not None and jump_offset >= loop.end:
                     source_code += "break\n"
                 else:
-                    if loopbody and jump_offset == loopbody.loop_start:
+                    if loopbody and jump_offset == loopbody.start:
                         source_code = "while True:\n" + add_indentation(source_code, indentation)
                         return source_code
                     if jump_offset > block.code_start():
