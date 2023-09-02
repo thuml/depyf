@@ -35,7 +35,7 @@ def nop_unreachable_bytecode(instructions: List[dis.Instruction]) -> List[dis.In
                 reachable[i] = False
                 reachable[i + 1] = True
                 continue
-            if "IF" in inst.opname:
+            if "IF" in inst.opname or "FOR_ITER" in inst.opname:
                 # the fallback block is always reachable for conditional jumps
                 reachable[i + 1] = True
             else:

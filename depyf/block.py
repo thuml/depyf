@@ -44,7 +44,7 @@ class BasicBlock:
         self.end_with_return = self.instructions[-1].opname == "RETURN_VALUE"
         end_with_jmp = self.instructions[-1].opcode in all_jump_opcode_set
         self.end_with_direct_jmp = end_with_jmp and "IF" not in self.instructions[-1].opname
-        self.end_with_if_jmp = end_with_jmp and "IF" in self.instructions[-1].opname
+        self.end_with_if_jmp = end_with_jmp and ("IF" in self.instructions[-1].opname or "FOR" in self.instructions[-1].opname)
         # This is a special case where the last instruction is neither a jump nor a return
         # This happens when the next block is jumped to, breaking basic blocks
         self.end_misc = not self.end_with_return and not self.end_with_direct_jmp and not self.end_with_if_jmp
