@@ -24,6 +24,12 @@ def nop_unreachable_bytecode(instructions: List[dis.Instruction]) -> List[dis.In
             # the instruction after the return is unreachable
             pass
         elif inst.opcode in jumps:
+            if inst.opcode in dis.hasjrel and inst.get_jump_target() == inst.offset:
+                # this is a jump to itself, it is regarded as a NOP, per the documentation at
+                # https://devguide.python.org/internals/interpreter/#jumps
+                reachable[i] = False
+                reachable[i + 1] = True
+                continue
             if "IF" in inst.opname:
                 # the fallback block is always reachable for conditional jumps
                 reachable[i + 1] = True
