@@ -13,12 +13,12 @@ from collections import defaultdict
 
 import astor
 
+from .basicblock import BasicBlock
 from .patch import *
 from .utils import (
     nop_unreachable_bytecode,
     add_indentation,
     remove_indentation,
-    generate_dot_table,
 )
 
 
@@ -35,104 +35,6 @@ def get_supported_opnames(code: CodeType):
     return list(opnames)
 
 
-@dataclasses.dataclass
-class BasicBlock:
-    """A basic block without internal control flow. The bytecode in this block is executed sequentially.
-    The block ends with a jump instruction or a return instruction."""
-    instructions: List[dis.Instruction]
-    to_blocks: List['BasicBlock'] = dataclasses.field(default_factory=list)
-    from_blocks: List['BasicBlock'] = dataclasses.field(default_factory=list)
-    code_start: int = dataclasses.field(init=False)
-    code_end: int = dataclasses.field(init=False)
-    code_range: Tuple[int, int] = dataclasses.field(init=False)
-    simple_repr: str = dataclasses.field(init=False)
-    full_repr: str = dataclasses.field(init=False)
-
-    def __init__(self, instructions: List[dis.Instruction]):
-        self.instructions = instructions
-        self.to_blocks = []
-        self.from_blocks = []
-        self.code_start = self.instructions[0].offset
-        self.code_end = self.instructions[-1].offset + 2
-        self.code_range = (self.code_start, self.code_end)
-        self.simple_repr = f"{self.code_range}"
-        lines = []
-        for inst in self.instructions:
-            line = [">>" if inst.is_jump_target else "  ", str(inst.offset), inst.opname, str(inst.argval), f"({inst.argrepr})"]
-            lines.append(line)
-        self.full_repr = generate_dot_table(self.simple_repr, lines)
-
-    def __str__(self):
-        return self.simple_repr
-
-    def __repr__(self):
-        return self.simple_repr
-
-    def __eq__(self, other):
-        return self.simple_repr == other.simple_repr
-
-    def jump_to_block(self, offset: int) -> 'BasicBlock':
-        blocks = [b for b in self.to_blocks if b.code_start >= offset]
-        if not blocks:
-            raise ValueError(f"Cannot find block that starts at {offset}")
-        return blocks[0]
-
-    @staticmethod
-    def find_the_first_block(blocks: List['BasicBlock'], offset: int) -> Optional['BasicBlock']:
-        candidates = [b for b in blocks if b.code_start >= offset]
-        if not candidates:
-            return None
-        return min(candidates, key=lambda x: x.code_start)
-
-    @staticmethod
-    def decompose_basic_blocks(insts: List[dis.Instruction]) -> List['BasicBlock']:
-        """Decompose a list of instructions into basic blocks without internal control flow."""
-        block_starts = {0, insts[-1].offset + 2}
-        jumps = set(dis.hasjabs) | set(dis.hasjrel)
-        for i, inst in enumerate(insts):
-            if inst.opcode in jumps:
-                # both jump target and the instruction after the jump are block starts
-                block_starts.add(inst.get_jump_target())
-                block_starts.add(inst.offset + 2)
-            elif inst.opname == "RETURN_VALUE":
-                # the instruction after the return is a block start
-                block_starts.add(inst.offset + 2)
-            # the instruction is the target of a jump
-            if inst.is_jump_target:
-                block_starts.add(inst.offset)
-        block_starts = sorted(block_starts)
-        # split into basic blocks
-        blocks = []
-        for start, end in zip(block_starts[:-1], block_starts[1:]):
-            block_insts = [inst for inst in insts if start <= inst.offset and inst.offset < end]
-            blocks.append(BasicBlock(block_insts))
-        # connect basic blocks
-        for block in blocks:
-            last_inst = block.instructions[-1]
-            if last_inst.opcode in jumps:
-                to_block = BasicBlock.find_the_first_block(blocks, last_inst.get_jump_target())
-                if to_block:
-                    block.to_blocks.append(to_block)
-                    to_block.from_blocks.append(block)
-                # this is a conditional jump, the fallthrough block is also reachable
-                if "IF" in last_inst.opname:
-                    fallthrough_block = BasicBlock.find_the_first_block(blocks, last_inst.offset + 2)
-                    if not fallthrough_block:
-                        # this is a jump to the end of the function, we don't need to connect it
-                        continue
-                    block.to_blocks.append(fallthrough_block)
-                    fallthrough_block.from_blocks.append(block)
-            elif last_inst.opname != "RETURN_VALUE":
-                fallthrough_block = BasicBlock.find_the_first_block(blocks, last_inst.offset + 2)
-                if not fallthrough_block:
-                    # this is a jump to the end of the function, we don't need to connect it
-                    continue
-                block.to_blocks.append(fallthrough_block)
-                fallthrough_block.from_blocks.append(block)
-        for block in blocks:
-            block.to_blocks.sort(key=lambda x: x.code_start)
-            block.from_blocks.sort(key=lambda x: x.code_start)
-        return blocks
 
 
 @dataclasses.dataclass(frozen=True)
@@ -187,7 +89,7 @@ class Decompiler:
         cfg = nx.DiGraph()
 
         for block in self.blocks:
-            cfg.add_node(str(block), label=repr(block), shape="none")
+            cfg.add_node(str(block), label=block.full_repr, shape="none")
         for blocka, blockb in zip(self.blocks[:-1], self.blocks[1:]):
             if blockb not in blocka.to_blocks:
                 cfg.add_edge(str(blocka), str(blockb), weight=100, style="invis")
