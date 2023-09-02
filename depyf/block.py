@@ -63,7 +63,7 @@ class BasicBlock:
         return blocks[0]
 
     @property
-    def jump_to_block(self, offset: int) -> 'BasicBlock':
+    def jump_to_block(self) -> 'BasicBlock':
         offset = self.instructions[-1].get_jump_target()
         blocks = [b for b in self.to_blocks if b.code_start >= offset]
         if not blocks:
