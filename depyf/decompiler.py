@@ -15,10 +15,12 @@ import astor
 
 from .block import BasicBlock, IndentationBlock
 from .patch import *
-from .utils import (
+from .code_transform import (
     nop_unreachable_bytecode,
     add_indentation,
     remove_indentation,
+)
+from .utils import (
     get_function_signature,
 )
 
