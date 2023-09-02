@@ -36,6 +36,16 @@ def get_supported_opnames(code: CodeType):
     opnames = set(opnames) & set(dis.opmap.keys())
     return list(opnames)
 
+@dataclasses.dataclass
+class BlockResult:
+    """The result of a decompiled block.
+    The fallthrough stack is the stack after the block is executed.
+    The jump stack is the stack before the jump instruction is executed.
+    """
+    source_code: str
+    fallthrough_stack: List[str]
+    jump_stack: List[str] = dataclasses.field(default_factory=list)
+
 
 @dataclasses.dataclass
 class Decompiler:
@@ -94,6 +104,16 @@ class Decompiler:
             running_index = next_index
         return IndentationBlock(blocks=self.blocks[start_index: running_index])
 
+    def decompose_indentation_blocks(self, blocks: List[BasicBlock]) -> List[IndentationBlock]:
+        start_index = self.blocks_index_map[str(blocks[0])]
+        end_index = self.blocks_index_map[str(blocks[-1])] + 1
+        indentation_blocks = []
+        while start_index < end_index:
+            indentation_block = self.get_indentation_block(self.blocks[start_index])
+            indentation_blocks.append(indentation_block)
+            start_index = self.blocks_index_map[str(indentation_block.blocks[-1])] + 1
+        return indentation_blocks
+
     def get_temp_name(self):
         self.temp_count += 1
         return f"{self.temp_prefix}{self.temp_count}"
@@ -105,11 +125,11 @@ class Decompiler:
     @functools.lru_cache(maxsize=None)
     def decompile(self, indentation=4, temp_prefix: str="__temp_"):
         self.temp_prefix = temp_prefix
-        header = get_function_signature(self.code)
         source_code, stack = self.decompile_blocks(self.blocks, [], indentation)
         # source_code = remove_indentation(source_code, indentation)
-        source_code = remove_some_temp(source_code, self.temp_prefix, indentation)
         # the header might have invalid function name in torchdynamo. only optimize the function body.
+        source_code = remove_some_temp(source_code, self.temp_prefix, indentation)
+        header = get_function_signature(self.code)
         source_code = header + add_indentation(source_code, indentation)
         return source_code
 
@@ -118,15 +138,9 @@ class Decompiler:
             blocks: List[BasicBlock],
             stack: List[str],
             indentation: int=4,
-        ) -> str:
-        indentation_blocks = []
-        start_index = self.blocks_index_map[str(blocks[0])]
-        end_index = self.blocks_index_map[str(blocks[-1])] + 1
-        while start_index < end_index:
-            indentation_block = self.get_indentation_block(self.blocks[start_index])
-            indentation_blocks.append(indentation_block)
-            start_index = self.blocks_index_map[str(indentation_block.blocks[-1])] + 1
-
+        ) -> Tuple[str, List[str]]:
+        indentation_blocks = self.decompose_indentation_blocks(blocks)
+        # indentation blocks are decompiled in order
         source_code = ""
         for indentation_block in indentation_blocks:
             block_code, stack = self.decompile_indentation_block(indentation_block, stack.copy(), indentation)
@@ -141,7 +155,8 @@ class Decompiler:
         ) -> Tuple[str, List[str]]:
         """Decompile an indentation block into source code.
         This function is responsible to handle if-else, while, for, etc."""
-        source_code, stack = self.decompile_block(indentation_block.blocks[0], stack.copy(), indentation, indentation_block)
+        blockresult = self.decompile_block(indentation_block.blocks[0], stack.copy(), indentation, indentation_block)
+        source_code, stack = blockresult.source_code, blockresult.fallthrough_stack
         has_loop = False
         for block in indentation_block.blocks[0].from_blocks:
             block_index = self.blocks_index_map[str(block)]
@@ -178,7 +193,7 @@ class Decompiler:
             stack: List[str],
             indentation: int=4,
             indentation_block: Optional[IndentationBlock] = None,
-        ) -> str:
+        ) -> BlockResult:
         """Decompile a basic block into source code.
         The `stack` holds expressions in string, like "3 + 4".
         """
@@ -359,7 +374,7 @@ class Decompiler:
                 elif "IF_NONE" in inst.opname:
                     source_code += f"if {cond} is not None:\n"
                 
-                stack = jump_stack
+                return BlockResult(source_code, fallthrough_stack, jump_stack)
             elif inst.opname in ["BREAK_LOOP"]:
                 source_code += "break\n"
             elif inst.opname in ["JUMP_FORWARD", "JUMP_ABSOLUTE", "JUMP_BACKWARD", "JUMP_BACKWARD_NO_INTERRUPT"]:
@@ -370,6 +385,7 @@ class Decompiler:
                     source_code += "continue\n"
             elif inst.opname in ["RETURN_VALUE"]:
                 source_code += f"return {stack[-1]}\n"
+                return BlockResult(source_code, stack)
             elif inst.opname in ["YIELD_VALUE"]:
                 source_code += f"yield {stack[-1]}\n"
             elif inst.opname in ["RETURN_GENERATOR"]:
@@ -594,5 +610,4 @@ class Decompiler:
             # "MATCH_MAPPING"/"MATCH_SEQUENCE"/"MATCH_KEYS"/"MATCH_CLASS" is unsupported
             else:
                 raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
-
-        return source_code, stack
+        raise NotImplementedError("Should not reach here")
