@@ -160,7 +160,7 @@ class Decompiler:
     temp_count: int = 0
     temp_prefix: str = "__temp_"
     blocks: List[BasicBlock] = dataclasses.field(default_factory=list)
-    blocks_map: Dict[str, BasicBlock] = dataclasses.field(default_factory=dict)
+    blocks_index_map: Dict[str, int] = dataclasses.field(default_factory=dict)
     blocks_decompiled: Dict[str, bool] = dataclasses.field(default_factory=dict)
 
     def __init__(self, code: Union[CodeType, Callable]):
@@ -169,12 +169,12 @@ class Decompiler:
         self.code = code
         instructions = list(dis.get_instructions(code))
         self.instructions = nop_unreachable_bytecode(instructions)
-        supported_opnames = self.supported_opnames()
-        for inst in self.instructions:
-            if inst.opname not in supported_opnames:
-                raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
+        # supported_opnames = self.supported_opnames()
+        # for inst in self.instructions:
+        #     if inst.opname not in supported_opnames:
+        #         raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
         self.blocks = BasicBlock.decompose_basic_blocks(self.instructions)
-        self.blocks_map = {str(block): block for block in self.blocks}
+        self.blocks_index_map = {str(block): idx for idx, block in enumerate(self.blocks)}
         self.blocks_decompiled = {str(block): False for block in self.blocks}
 
     def visualize_cfg(self):
@@ -210,16 +210,31 @@ class Decompiler:
         header = f"def {code_obj.co_name}({args_str}):\n"
         return header
 
-    def get_loop_body(self, starting_block: BasicBlock) -> IndentationBlock:
-        end_blocks = [block for block in starting_block.from_blocks if block.code_end() >= starting_block.code_end()]
-        if not end_blocks:
-            # not a loop back edge
-            return IndentationBlock([])
-        # loop end block is the largest block looping back to the starting block
-        end_block = max(end_blocks, key=BasicBlock.code_end)
-        loop_body_blocks = [block for block in self.blocks if starting_block.code_start() <= block.code_start() and block.code_end() <= end_block.code_end()]
-        return IndentationBlock(blocks=loop_body_blocks)
-
+    def get_indentation_block(self, starting_block: BasicBlock) -> IndentationBlock:
+        """Get the indentation block that contains the starting block.
+        An indentation block is a block that is indented, e.g. if-else, while, for, etc.
+        Basic blocks in this indentation block are never targeted from outside blocks, and they can only jump to internal blocks or the next basic block only.
+        """
+        start_index = self.blocks_index_map[str(starting_block)]
+        running_index = start_index + 1
+        while running_index < len(self.blocks):
+            left_blocks = self.blocks[start_index: running_index]
+            to_blocks = sum([block.to_blocks for block in left_blocks], [])
+            from_blocks = sum([block.from_blocks for block in left_blocks], [])
+            next_index = running_index
+            for block in to_blocks:
+                block_index = self.blocks_index_map[str(block)]
+                if block in self.blocks[block_index - 1].to_blocks:
+                    # this is a fallthrough to the next block
+                    next_index = max(next_index, block_index)
+                else:
+                    next_index = max(next_index, block_index + 1)
+            for block in from_blocks:
+                next_index = max(next_index, self.blocks_index_map[str(block)] + 1)
+            if next_index == running_index:
+                break
+            running_index = next_index
+        return IndentationBlock(blocks=self.blocks[start_index: running_index])
 
     def get_temp_name(self):
         self.temp_count += 1
@@ -276,17 +291,68 @@ class Decompiler:
     def decompile(self, indentation=4, temp_prefix: str="__temp_"):
         self.temp_prefix = temp_prefix
         header = self.get_function_signature()
-        source_code = ""
-        for block in self.blocks:
-            if self.blocks_decompiled[str(block)]:
-                continue
-            self.blocks_decompiled[str(block)] = True
-            source_code += self.decompile_block(block, [], indentation, self.get_loop_body(block))
-        source_code = remove_indentation(source_code, indentation)
-        source_code = self.simplify_code(source_code, indentation)
+        source_code, stack = self.decompile_blocks(self.blocks, [], indentation)
+        # source_code = remove_indentation(source_code, indentation)
+        # source_code = self.simplify_code(source_code, indentation)
         # the header might have invalid function name in torchdynamo. only optimize the function body.
         source_code = header + add_indentation(source_code, indentation)
         return source_code
+
+    def decompile_blocks(
+            self,
+            blocks: List[BasicBlock],
+            stack: List[str],
+            indentation: int=4,
+        ) -> str:
+        indentation_blocks = []
+        start_index = self.blocks_index_map[str(blocks[0])]
+        end_index = self.blocks_index_map[str(blocks[-1])] + 1
+        while start_index < end_index:
+            indentation_block = self.get_indentation_block(self.blocks[start_index])
+            indentation_blocks.append(indentation_block)
+            start_index = self.blocks_index_map[str(indentation_block.blocks[-1])] + 1
+
+        source_code = ""
+        for indentation_block in indentation_blocks:
+            block_code, stack = self.decompile_indentation_block(indentation_block, stack.copy(), indentation)
+            source_code += block_code
+        return source_code, stack
+
+    def decompile_indentation_block(
+            self,
+            indentation_block: IndentationBlock,
+            stack: List[str],
+            indentation: int=4,
+        ) -> Tuple[str, List[str]]:
+        """Decompile an indentation block into source code.
+        This function is responsible to handle if-else, while, for, etc."""
+        source_code, stack = self.decompile_block(indentation_block.blocks[0], stack.copy(), indentation, indentation_block)
+        has_loop = False
+        for block in indentation_block.blocks[0].from_blocks:
+            block_index = self.blocks_index_map[str(block)]
+            if block_index >= self.blocks_index_map[str(indentation_block.blocks[0])] and block_index <= self.blocks_index_map[str(indentation_block.blocks[-1])]:
+                # this is a loop
+                has_loop = True
+                break
+
+        # split blocks into if-else
+        has_if = "IF" in indentation_block.blocks[0].instructions[-1].opname
+        new_stack = stack.copy()
+        if has_if:
+            jump_to_block = max(indentation_block.blocks[0].to_blocks, key=BasicBlock.code_start)
+            if_blocks = [block for block in indentation_block.blocks[1:] if block.code_start() < jump_to_block.code_start()]
+            else_blocks = [block for block in indentation_block.blocks[1:] if block.code_start() >= jump_to_block.code_start()]
+            block_code, new_stack = self.decompile_blocks(if_blocks, stack.copy(), indentation)
+            source_code += add_indentation(block_code, indentation)
+            if else_blocks:
+                block_code, _ = self.decompile_blocks(else_blocks, stack.copy(), indentation)
+                source_code += f"else:\n" + add_indentation(block_code, indentation)
+            else:
+                source_code += f"else:\n" + add_indentation("pass\n" if not has_loop else "break\n", indentation)
+        if has_loop:
+            source_code = "while True:\n" + add_indentation(source_code, indentation)
+
+        return source_code, new_stack
 
     def __hash__(self):
         return hash(self.code)
@@ -296,16 +362,18 @@ class Decompiler:
             block: BasicBlock,
             stack: List[str],
             indentation: int=4,
-            loop: Optional[IndentationBlock]=None,
+            indentation_block: Optional[IndentationBlock] = None,
         ) -> str:
         """Decompile a basic block into source code.
         The `stack` holds expressions in string, like "3 + 4".
-        The `loop` indicates which loop structure the block is in, so that it can decompile jump instructions.
-        This function returns the source code of the block, which is already indented..
         """
-        loopbody = self.get_loop_body(block)
-
         source_code = ""
+        # source_code += "=" * 40 + "Basic Block Start" + "=" * 40 + "\n"
+        # for inst in block.instructions:
+        #     source_code += f"{inst.offset} {inst.opname} {inst.argval} ({inst.argrepr})\n"
+        # source_code += "=" * 40 + "Basic Block End" + "=" * 40 + "\n"
+        # return source_code, stack
+
         for inst in block.instructions:
             # ==================== Load Instructions =============================
             if inst.opname in ["LOAD_CONST"]:
@@ -468,10 +536,6 @@ class Decompiler:
                 elif "OR_POP" in inst.opname:
                     jump_stack = stack.copy()
 
-                if self.blocks_decompiled[str(jump_block)] and self.blocks_decompiled[str(fallthrough_block)]:
-                    # both blocks are already decompiled
-                    continue
-
                 # JUMP_IF_X, so fallthrough if not X
                 if "IF_FALSE" in inst.opname:
                     source_code += f"if {cond}:\n"
@@ -482,43 +546,15 @@ class Decompiler:
                 elif "IF_NONE" in inst.opname:
                     source_code += f"if {cond} is not None:\n"
                 
-                source_code += self.decompile_block(fallthrough_block, fallthrough_stack, indentation, loopbody if loopbody else loop)
-                self.blocks_decompiled[str(fallthrough_block)] = True
-
-                if fallthrough_block.instructions[-1].opcode in (dis.hasjabs + dis.hasjabs):
-                    source_code += "else:\n"
-                    if not loopbody or jump_block.code_end()  <= loopbody.end:
-                        source_code += self.decompile_block(jump_block, jump_stack, indentation, loopbody if loopbody else loop)
-                        self.blocks_decompiled[str(jump_block)] = True
-                    else:
-                        source_code += add_indentation("break\n", indentation)
-                else:
-                        code = self.decompile_block(jump_block, jump_stack, indentation, loopbody if loopbody else loop)
-                        self.blocks_decompiled[str(jump_block)] = True
-                        source_code += remove_indentation(code, indentation)
-
-                if loopbody and loopbody.start == block.code_start():
-                    source_code = "while True:\n" + add_indentation(source_code, indentation)
+                stack = jump_stack
             elif inst.opname in ["BREAK_LOOP"]:
                 source_code += "break\n"
             elif inst.opname in ["JUMP_FORWARD", "JUMP_ABSOLUTE", "JUMP_BACKWARD", "JUMP_BACKWARD_NO_INTERRUPT"]:
                 jump_offset = inst.get_jump_target()
-                if loop.start is not None and jump_offset == loop.start:
-                    source_code += "continue\n"
-                elif loop.end is not None and jump_offset >= loop.end:
+                if jump_offset > inst.offset:
                     source_code += "break\n"
                 else:
-                    if loopbody and jump_offset == loopbody.start:
-                        source_code = "while True:\n" + add_indentation(source_code, indentation)
-                        return source_code
-                    if jump_offset > block.code_start():
-                        jump_block = block.jump_to_block(jump_offset)
-                        source_code += self.decompile_block(jump_block, stack.copy(), indentation, loopbody if loopbody else loop)
-                        self.blocks_decompiled[str(jump_block)] = True
-                    else:
-                        # this code should be decompiled elsewhere?
-                        pass
-                        # raise NotImplementedError(f"Unsupported jump backward")
+                    source_code += "continue\n"
             elif inst.opname in ["RETURN_VALUE"]:
                 source_code += f"return {stack[-1]}\n"
             elif inst.opname in ["YIELD_VALUE"]:
@@ -746,5 +782,4 @@ class Decompiler:
             else:
                 raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
 
-        source_code = add_indentation(source_code, indentation)
-        return source_code
+        return source_code, stack
