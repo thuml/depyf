@@ -53,7 +53,7 @@ class BasicBlock:
         return self.instructions[-1].offset + 2
 
     def __str__(self):
-        return f"BasicBlock({self.code_range()})"
+        return f"{self.code_range()}"
 
     def __repr__(self):
         return str(self)
@@ -158,9 +158,9 @@ class Decompiler:
             for from_block in block.from_blocks:
                 cfg.add_edge(str(from_block), str(block))
 
-        pos = nx.spring_layout(cfg)
+        pos = {str(block): (0, -idx) for idx, block in enumerate(self.blocks)}
         nx.draw_networkx_nodes(cfg, pos, node_size=1000)
-        nx.draw_networkx_edges(cfg, pos, node_size=1000)
+        nx.draw_networkx_edges(cfg, pos, node_size=1000, connectionstyle='arc3, rad = 0.3')
         nx.draw_networkx_labels(cfg, pos)
         from matplotlib import pyplot as plt
         plt.show()
