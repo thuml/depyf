@@ -682,7 +682,9 @@ class Decompiler:
                 n = inst.argval
                 value = stack[-1 - n]
                 stack.append(value)
-            elif inst.opname in ["NOP", "RESUME", "SETUP_LOOP", "POP_BLOCK", "PRECALL"]:
+            elif inst.opname in ["NOP", "RESUME", "SETUP_LOOP", "POP_BLOCK", "PRECALL", "EXTENDED_ARG"]:
+                # "EXTENDED_ARG" is treated as NOP here, because it has been handled by `dis.get_instructions`.
+                # The extended args are already merged into the following instruction's `inst.argval`.
                 continue
             elif inst.opname in ["POP_TOP"]:
                 stack.pop()
@@ -696,7 +698,6 @@ class Decompiler:
                 stack.append(tos1)
                 stack.append(tos)
             # ==================== Unsupported Misc Instructions =============================
-            # "EXTENDED_ARG" is unsupported
             # "CACHE" is unsupported
             # "MAKE_CELL" is unsupported
             # "MAKE_FUNCTION" is unsupported
