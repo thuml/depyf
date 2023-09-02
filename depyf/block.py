@@ -21,6 +21,7 @@ class BasicBlock:
     end_with_return: bool = dataclasses.field(init=False, default=False)
     end_with_direct_jmp: bool = dataclasses.field(init=False, default=False)
     end_with_if_jmp: bool = dataclasses.field(init=False, default=False)
+    end_misc: bool = dataclasses.field(init=False, default=False)
 
     to_blocks: List['BasicBlock'] = dataclasses.field(default_factory=list)
     from_blocks: List['BasicBlock'] = dataclasses.field(default_factory=list)
@@ -44,6 +45,9 @@ class BasicBlock:
         end_with_jmp = self.instructions[-1].opcode in all_jump_opcode_set
         self.end_with_direct_jmp = end_with_jmp and "IF" not in self.instructions[-1].opname
         self.end_with_if_jmp = end_with_jmp and "IF" in self.instructions[-1].opname
+        # This is a special case where the last instruction is neither a jump nor a return
+        # This happens when the next block is jumped to, breaking basic blocks
+        self.end_misc = not self.end_with_return and not self.end_with_direct_jmp and not self.end_with_if_jmp
 
     def __str__(self):
         return self.simple_repr
@@ -103,17 +107,18 @@ class BasicBlock:
         for block in blocks:
             if block.end_with_return:
                 continue
-            else:
-                assert block.end_with_direct_jmp or block.end_with_if_jmp, f"Block {block} does not end with a jump or return"
-                # here we cannot use the `jump_to_block/fallthrough_block` property, because the blocks are not connected yet
+
+            # here we cannot use the `jump_to_block/fallthrough_block` property, because the blocks are not connected yet
+            if block.end_misc or block.end_with_if_jmp:
+                # the next block is the fallthrough block
+                fallthrough_block = BasicBlock.find_the_first_block(blocks, block.code_end)
+                block.to_blocks.append(fallthrough_block)
+                fallthrough_block.from_blocks.append(block)
+            
+            if block.end_with_direct_jmp or block.end_with_if_jmp:
                 to_block = BasicBlock.find_the_first_block(blocks, block.instructions[-1].get_jump_target())
                 block.to_blocks.append(to_block)
                 to_block.from_blocks.append(block)
-
-                if block.end_with_if_jmp:
-                    fallthrough_block = BasicBlock.find_the_first_block(blocks, block.code_end)
-                    block.to_blocks.append(fallthrough_block)
-                    fallthrough_block.from_blocks.append(block)
 
         for block in blocks:
             block.to_blocks.sort()
