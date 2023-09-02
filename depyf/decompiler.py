@@ -125,6 +125,9 @@ class BasicBlock:
                     continue
                 block.to_blocks.append(fallthrough_block)
                 fallthrough_block.from_blocks.append(block)
+        for block in blocks:
+            block.to_blocks.sort(key=BasicBlock.code_start)
+            block.from_blocks.sort(key=BasicBlock.code_start)
         return blocks
 
 
@@ -180,12 +183,12 @@ class Decompiler:
 
         for block in self.blocks:
             cfg.add_node(str(block), label=repr(block), shape="none")
+        for blocka, blockb in zip(self.blocks[:-1], self.blocks[1:]):
+            if blockb not in blocka.to_blocks:
+                cfg.add_edge(str(blocka), str(blockb), weight=100, style="invis")
         for block in self.blocks:
             for to_block in block.to_blocks:
                 cfg.add_edge(str(block), str(to_block))
-            for from_block in block.from_blocks:
-                cfg.add_edge(str(from_block), str(block))
-
         import pygraphviz as pgv
         cfg = nx.nx_agraph.to_agraph(cfg)
         cfg.node_attr['style'] = 'rounded'
