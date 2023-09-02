@@ -75,14 +75,9 @@ class Decompiler:
         import pygraphviz as pgv
         cfg = nx.nx_agraph.to_agraph(cfg)
         cfg.node_attr['style'] = 'rounded'
-        # cfg.node_attr['fillcolor'] = '#c0e4f0'
         cfg.node_attr['halign'] = 'left'
         cfg.layout(prog="dot")  # Use dot layout
         cfg.draw("output.png")  # Save to a file
-        from matplotlib import pyplot as plt
-        plt.imshow(plt.imread("output.png"))
-        plt.axis('off')
-        plt.show()
 
     def get_function_signature(self) -> str:
         code_obj: CodeType = self.code
