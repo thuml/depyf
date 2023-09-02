@@ -1,6 +1,5 @@
 """A simple program to transform bytecode into more readable source code."""
 
-import ast
 import sys
 import os
 import dis
@@ -11,7 +10,6 @@ import inspect
 import functools
 from collections import defaultdict
 
-import astor
 
 from .block import BasicBlock, IndentationBlock
 from .patch import *
@@ -19,6 +17,7 @@ from .code_transform import (
     nop_unreachable_bytecode,
     add_indentation,
     remove_indentation,
+    remove_some_temp,
 )
 from .utils import (
     get_function_signature,
@@ -103,56 +102,13 @@ class Decompiler:
     def supported_opnames():
         return get_supported_opnames(Decompiler.decompile_block.__code__)
 
-    def simplify_code(self, source_code: str, indentation: int=4) -> str:
-        tree = ast.parse(source_code)
-
-        temp_occurrences = defaultdict(list)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Name) and node.id.startswith(self.temp_prefix):
-                temp_occurrences[node.id].append(node)
-        
-        class RemoveAssignmentTransformer(ast.NodeTransformer):
-            def __init__(self, temp_name: str):
-                # optimize one temp_name at a time
-                self.temp_name = temp_name
-            def visit_Assign(self, node):
-                # single assimngment like `temp = xxx`
-                if len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
-                    name = node.targets[0].id
-                    # the assignment is like `temp = xxx`
-                    if name == self.temp_name:
-                        if len(temp_occurrences[name]) == 1:
-                            return ast.Expr(value=node.value)
-                        elif len(temp_occurrences[name]) == 2:
-                            # we save the `xxx` here
-                            temp_occurrences[name][0] = node.value
-                            return None
-                return node
-
-        class RemoveAssignment2Transformer(ast.NodeTransformer):
-            def __init__(self, temp_name: str):
-                # optimize one temp_name at a time
-                self.temp_name = temp_name
-            def visit_Name(self, node):
-                name = node.id
-                if name == self.temp_name and len(temp_occurrences[name]) == 2:
-                    return temp_occurrences[name][0]
-                return node
-
-        for key in temp_occurrences:
-            tree = RemoveAssignmentTransformer(key).visit(tree)
-            tree = RemoveAssignment2Transformer(key).visit(tree)
-
-        reconstructed_code = astor.to_source(tree, indent_with=" " * indentation)
-        return reconstructed_code
-
     @functools.lru_cache(maxsize=None)
     def decompile(self, indentation=4, temp_prefix: str="__temp_"):
         self.temp_prefix = temp_prefix
         header = get_function_signature(self.code)
         source_code, stack = self.decompile_blocks(self.blocks, [], indentation)
         # source_code = remove_indentation(source_code, indentation)
-        # source_code = self.simplify_code(source_code, indentation)
+        source_code = remove_some_temp(source_code, self.temp_prefix, indentation)
         # the header might have invalid function name in torchdynamo. only optimize the function body.
         source_code = header + add_indentation(source_code, indentation)
         return source_code
