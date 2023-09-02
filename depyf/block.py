@@ -120,6 +120,27 @@ class BasicBlock:
             block.from_blocks.sort()
         return blocks
 
+    @staticmethod
+    def to_graph(blocks: List['BasicBlock'], filepath: str = "output.png"):
+        import networkx as nx
+
+        cfg = nx.DiGraph()
+
+        for block in blocks:
+            cfg.add_node(str(block), label=block.full_repr, shape="none")
+        for blocka, blockb in zip(blocks[:-1], blocks[1:]):
+            if blockb not in blocka.to_blocks:
+                cfg.add_edge(str(blocka), str(blockb), weight=100, style="invis")
+        for block in blocks:
+            for to_block in block.to_blocks:
+                cfg.add_edge(str(block), str(to_block))
+        import pygraphviz as pgv
+        cfg = nx.nx_agraph.to_agraph(cfg)
+        cfg.node_attr['style'] = 'rounded'
+        cfg.node_attr['halign'] = 'left'
+        cfg.layout(prog="dot")  # Use dot layout
+        cfg.draw(filepath)  # Save to a file
+
 
 @dataclasses.dataclass()
 class IndentationBlock:

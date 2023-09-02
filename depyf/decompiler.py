@@ -19,6 +19,7 @@ from .utils import (
     nop_unreachable_bytecode,
     add_indentation,
     remove_indentation,
+    get_function_signature,
 )
 
 
@@ -59,33 +60,8 @@ class Decompiler:
         self.blocks_index_map = {str(block): idx for idx, block in enumerate(self.blocks)}
         self.blocks_decompiled = {str(block): False for block in self.blocks}
 
-    def visualize_cfg(self):
-        import networkx as nx
-
-        cfg = nx.DiGraph()
-
-        for block in self.blocks:
-            cfg.add_node(str(block), label=block.full_repr, shape="none")
-        for blocka, blockb in zip(self.blocks[:-1], self.blocks[1:]):
-            if blockb not in blocka.to_blocks:
-                cfg.add_edge(str(blocka), str(blockb), weight=100, style="invis")
-        for block in self.blocks:
-            for to_block in block.to_blocks:
-                cfg.add_edge(str(block), str(to_block))
-        import pygraphviz as pgv
-        cfg = nx.nx_agraph.to_agraph(cfg)
-        cfg.node_attr['style'] = 'rounded'
-        cfg.node_attr['halign'] = 'left'
-        cfg.layout(prog="dot")  # Use dot layout
-        cfg.draw("output.png")  # Save to a file
-
-    def get_function_signature(self) -> str:
-        code_obj: CodeType = self.code
-        # Extract all required details from the code object
-        arg_names = code_obj.co_varnames[:code_obj.co_argcount]
-        args_str = ', '.join(arg_names)
-        header = f"def {code_obj.co_name}({args_str}):\n"
-        return header
+    def visualize_cfg(self, filepath: str="cfg.png"):
+        BasicBlock.to_graph(self.blocks, filepath=filepath)
 
     def get_indentation_block(self, starting_block: BasicBlock) -> IndentationBlock:
         """Get the indentation block that contains the starting block.
@@ -167,7 +143,7 @@ class Decompiler:
     @functools.lru_cache(maxsize=None)
     def decompile(self, indentation=4, temp_prefix: str="__temp_"):
         self.temp_prefix = temp_prefix
-        header = self.get_function_signature()
+        header = get_function_signature(self.code)
         source_code, stack = self.decompile_blocks(self.blocks, [], indentation)
         # source_code = remove_indentation(source_code, indentation)
         # source_code = self.simplify_code(source_code, indentation)

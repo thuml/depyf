@@ -1,5 +1,6 @@
 import dis
 from typing import List, Tuple, Union, Optional, Callable, Any, Dict, Set
+from types import CodeType
 
 def nop_unreachable_bytecode(instructions: List[dis.Instruction]) -> List[dis.Instruction]:
     """Mark unreachable bytecode as NOP."""
@@ -107,3 +108,10 @@ def generate_dot_table(header: str, rows: List[List[str]]) -> str:
     html_str += '</TABLE>'
     
     return "<\n" + html_str + "\n>"
+
+def get_function_signature(code_obj: CodeType) -> str:
+    # Extract all required details from the code object
+    arg_names = code_obj.co_varnames[:code_obj.co_argcount]
+    args_str = ', '.join(arg_names)
+    header = f"def {code_obj.co_name}({args_str}):\n"
+    return header
