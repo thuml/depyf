@@ -74,6 +74,13 @@ class BasicBlock:
         return [b for b in self.to_blocks if b.code_start() == offset][0]
 
     @staticmethod
+    def find_the_first_block(blocks: List['BasicBlock'], offset: int) -> Optional['BasicBlock']:
+        candidates = [b for b in blocks if b.code_start() >= offset]
+        if not candidates:
+            return None
+        return min(candidates, key=BasicBlock.code_start)
+
+    @staticmethod
     def decompose_basic_blocks(insts: List[dis.Instruction]) -> List['BasicBlock']:
         """Decompose a list of instructions into basic blocks without internal control flow."""
         block_starts = {0, insts[-1].offset + 2}
@@ -99,12 +106,24 @@ class BasicBlock:
         for block in blocks:
             last_inst = block.instructions[-1]
             if last_inst.opcode in jumps:
-                jump_offset = last_inst.get_jump_target()
-                fallthrough_offset = last_inst.offset + 2
-                to_block = [b for b in blocks if b.code_start() == jump_offset][0]
-                fallthrough_block = [b for b in blocks if b.code_start() == fallthrough_offset][0]
-                block.to_blocks += [to_block, fallthrough_block]
-                to_block.from_blocks.append(block)
+                to_block = BasicBlock.find_the_first_block(blocks, last_inst.get_jump_target())
+                if to_block:
+                    block.to_blocks.append(to_block)
+                    to_block.from_blocks.append(block)
+                # this is a conditional jump, the fallthrough block is also reachable
+                if "IF" in last_inst.opname:
+                    fallthrough_block = BasicBlock.find_the_first_block(blocks, last_inst.offset + 2)
+                    if not fallthrough_block:
+                        # this is a jump to the end of the function, we don't need to connect it
+                        continue
+                    block.to_blocks.append(fallthrough_block)
+                    fallthrough_block.from_blocks.append(block)
+            elif last_inst.opname != "RETURN_VALUE":
+                fallthrough_block = BasicBlock.find_the_first_block(blocks, last_inst.offset + 2)
+                if not fallthrough_block:
+                    # this is a jump to the end of the function, we don't need to connect it
+                    continue
+                block.to_blocks.append(fallthrough_block)
                 fallthrough_block.from_blocks.append(block)
         return blocks
 
