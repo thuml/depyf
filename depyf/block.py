@@ -81,10 +81,10 @@ class BasicBlock:
     def decompose_basic_blocks(insts: List[dis.Instruction]) -> List['BasicBlock']:
         """Decompose a list of instructions into basic blocks without internal control flow."""
         block_starts = {0, insts[-1].offset + 2}
-        jumps = set(dis.hasjabs) | set(dis.hasjrel)
         for i, inst in enumerate(insts):
-            if inst.opcode in jumps:
+            if inst.opcode in all_jump_opcode_set:
                 # both jump target and the instruction after the jump are block starts
+                # even if this is a direct jump, the instruction after the jump is a block start
                 block_starts.add(inst.get_jump_target())
                 block_starts.add(inst.offset + 2)
             elif inst.opname == "RETURN_VALUE":
@@ -105,6 +105,7 @@ class BasicBlock:
                 continue
             else:
                 assert block.end_with_direct_jmp or block.end_with_if_jmp, f"Block {block} does not end with a jump or return"
+                # here we cannot use the `jump_to_block/fallthrough_block` property, because the blocks are not connected yet
                 to_block = BasicBlock.find_the_first_block(blocks, block.instructions[-1].get_jump_target())
                 block.to_blocks.append(to_block)
                 to_block.from_blocks.append(block)
