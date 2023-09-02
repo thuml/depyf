@@ -72,18 +72,22 @@ class Decompiler:
         running_index = start_index + 1
         while running_index < len(self.blocks):
             left_blocks = self.blocks[start_index: running_index]
-            to_blocks = sum([block.to_blocks for block in left_blocks], [])
-            from_blocks = sum([block.from_blocks for block in left_blocks], [])
             next_index = running_index
-            for block in to_blocks:
-                block_index = self.blocks_index_map[str(block)]
-                if block in self.blocks[block_index - 1].to_blocks:
-                    # this is a fallthrough to the next block
-                    next_index = max(next_index, block_index)
-                else:
+            for left_block in left_blocks:
+                if left_block.to_blocks:
+                    # this is jmp instruction
+                    to_block = left_block.jump_to_block
+                    block_index = self.blocks_index_map[str(to_block)]
                     next_index = max(next_index, block_index + 1)
-            for block in from_blocks:
-                next_index = max(next_index, self.blocks_index_map[str(block)] + 1)
+                    if left_block.end_with_if_jmp:
+                        # this is a conditional jmp, we also need to consider the fallthrough block
+                        fallthrough_block = left_block.fallthrough_block
+                        block_index = self.blocks_index_map[str(fallthrough_block)]
+                        next_index = max(next_index, block_index + 1)
+                if left_block.from_blocks:
+                    for from_block in left_block.from_blocks:
+                        block_index = self.blocks_index_map[str(from_block)]
+                        next_index = max(next_index, block_index + 1)
             if next_index == running_index:
                 break
             running_index = next_index
