@@ -405,10 +405,8 @@ class Decompiler:
                 "POP_JUMP_FORWARD_IF_NONE", "POP_JUMP_BACKWARD_IF_NONE",
                 "JUMP_IF_TRUE_OR_POP", "JUMP_IF_FALSE_OR_POP"
                 ]:
-                jump_offset = inst.get_jump_target()
-                fallthrough_offset = inst.offset + 2
-                jump_block = block.jump_to_block(jump_offset)
-                fallthrough_block = block.jump_to_block(fallthrough_offset)
+                jump_block = block.jump_to_block
+                fallthrough_block = block.fallthrough_block
                 cond = stack[-1]
                 fallthrough_stack = stack.copy()[:-1]
 

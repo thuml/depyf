@@ -54,11 +54,22 @@ class BasicBlock:
     def __eq__(self, other):
         return self.code_start == other.code_start
 
-    def jump_to_block(self, offset: int) -> 'BasicBlock':
+    @property
+    def fallthrough_block(self) -> Optional['BasicBlock']:
+        offset = self.code_end
         blocks = [b for b in self.to_blocks if b.code_start >= offset]
         if not blocks:
             raise ValueError(f"Cannot find block that starts at {offset}")
         return blocks[0]
+
+    @property
+    def jump_to_block(self, offset: int) -> 'BasicBlock':
+        offset = self.instructions[-1].get_jump_target()
+        blocks = [b for b in self.to_blocks if b.code_start >= offset]
+        if not blocks:
+            raise ValueError(f"Cannot find block that starts at {offset}")
+        return blocks[0]
+
 
     @staticmethod
     def find_the_first_block(blocks: List['BasicBlock'], offset: int) -> Optional['BasicBlock']:
