@@ -154,7 +154,25 @@ class Decompiler:
             indentation: int=4,
         ) -> Tuple[str, List[str]]:
         """Decompile an indentation block into source code.
-        This function is responsible to handle if-else, while, for, etc."""
+        This function is responsible to handle if-else, while, for, etc.
+        ============ Deal with While Loop ============
+while cond:
+    body1
+else:
+    body2
+
+is transformed into
+
+while True:
+    if cond:
+        body1
+    else:
+        body2
+        break
+
+We identify the while loop by checking if the first basic block is jumped to from internal blocks.
+        ============ Deal with For Loop ============
+        """
         blockresult = self.decompile_block(indentation_block.blocks[0], stack.copy(), indentation, indentation_block)
         source_code, stack = blockresult.source_code, blockresult.fallthrough_stack
         has_loop = False
