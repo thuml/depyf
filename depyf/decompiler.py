@@ -197,6 +197,18 @@ We identify the start of body2 by checking if the first basic block is jumping t
             else:
                 break
         
+        is_for_loop = indentation_block.blocks[i].instructions[-1].opname == "FOR_ITER"
+        if is_for_loop:
+            to_block = indentation_block.blocks[i].jump_to_block
+            assert to_block > indentation_block.blocks[i]
+            for_blocks = [block for block in indentation_block.blocks[i + 1:] if block < to_block]
+            block_code, fallthrough_stack = self.decompile_blocks(for_blocks, fallthrough_stack.copy(), indentation)
+            source_code += add_indentation(block_code, indentation)
+            rest_blocks = [block for block in indentation_block.blocks[i + 1:] if block >= to_block]
+            block_code, fallthrough_stack = self.decompile_blocks(rest_blocks, fallthrough_stack.copy(), indentation)
+            source_code += block_code
+            return source_code, fallthrough_stack
+
         has_loop = any(block in indentation_block.blocks[i:] for block in indentation_block.blocks[i].from_blocks)
 
         # split blocks into if-else
@@ -383,8 +395,13 @@ We identify the start of body2 by checking if the first basic block is jumping t
                 op = "in" if inst.argval == 0 else "not in"
                 stack.append(f"({lhs} {op} {rhs})")
             # ==================== Control Flow Instructions =============================
+            elif inst.opname in ["GET_ITER"]:
+                stack.append(f"iter({stack.pop()})")
+            elif inst.opname in ["FOR_ITER"]:
+                temp_name = self.get_temp_name()
+                source_code += f"for {temp_name} in {stack.pop()}:\n"
+                stack.append(temp_name)
             # "POP_EXCEPT"/"RERAISE"/"WITH_EXCEPT_START"/"JUMP_IF_NOT_EXC_MATCH"/"SETUP_FINALLY"/"CHECK_EG_MATCH"/"PUSH_EXC_INFO"/"PREP_RERAISE_STAR"/"BEGIN_FINALLY"/"END_FINALLY"/"WITH_CLEANUP_FINISH"/"CALL_FINALLY"/"POP_FINALLY"/"WITH_CLEANUP_START"/"SETUP_EXCEPT"/"CHECK_EXC_MATCH" is unsupported, this means we don't support try-except/try-finally
-            # "FOR_ITER"/"GET_ITER"/"CONTINUE_LOOP"/ is unsupported, this means we don't support for loop
             # "GET_AWAITABLE"/"GET_AITER"/"GET_ANEXT"/"END_ASYNC_FOR"/"BEFORE_ASYNC_WITH"/"SETUP_ASYNC_WITH"/"SEND"/"ASYNC_GEN_WRAP" are unsupported, this means we don't support async/await
             elif inst.opname in [
                 "POP_JUMP_IF_TRUE", "POP_JUMP_FORWARD_IF_TRUE", "POP_JUMP_BACKWARD_IF_TRUE",
