@@ -116,3 +116,20 @@ class BasicBlock:
             block.to_blocks.sort(key=lambda x: x.code_start)
             block.from_blocks.sort(key=lambda x: x.code_start)
         return blocks
+
+
+@dataclasses.dataclass()
+class IndentationBlock:
+    """An indentation block consists several basic blocks. It represents any block that is indented,
+     e.g. if-else, while, for, etc."""
+    blocks: List[BasicBlock]
+    start: int = dataclasses.field(init=False)
+    end: int = dataclasses.field(init=False)
+
+    def __init__(self, blocks: List[BasicBlock]):
+        self.blocks = blocks
+        self.start = self.blocks[0].code_start
+        self.end = self.blocks[-1].code_end
+
+    def __bool__(self):
+        return bool(self.blocks)
