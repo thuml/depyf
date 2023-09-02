@@ -70,7 +70,6 @@ class BasicBlock:
             raise ValueError(f"Cannot find block that starts at {offset}")
         return blocks[0]
 
-
     @staticmethod
     def find_the_first_block(blocks: List['BasicBlock'], offset: int) -> Optional['BasicBlock']:
         candidates = [b for b in blocks if b.code_start >= offset]
@@ -106,18 +105,18 @@ class BasicBlock:
                 continue
             else:
                 assert block.end_with_direct_jmp or block.end_with_if_jmp, f"Block {block} does not end with a jump or return"
-                to_block = block.jump_to_block
+                to_block = BasicBlock.find_the_first_block(blocks, block.instructions[-1].get_jump_target())
                 block.to_blocks.append(to_block)
                 to_block.from_blocks.append(block)
 
                 if block.end_with_if_jmp:
-                    fallthrough_block = block.fallthrough_block
+                    fallthrough_block = BasicBlock.find_the_first_block(blocks, block.code_end)
                     block.to_blocks.append(fallthrough_block)
                     fallthrough_block.from_blocks.append(block)
 
         for block in blocks:
-            block.to_blocks.sort(key=lambda x: x.code_start)
-            block.from_blocks.sort(key=lambda x: x.code_start)
+            block.to_blocks.sort()
+            block.from_blocks.sort()
         return blocks
 
 
