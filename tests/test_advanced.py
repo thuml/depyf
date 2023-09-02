@@ -16,3 +16,17 @@ def test_deadcode_removal():
         blabla = 5
         return blabla
     assert 'blabla' not in decompile(f)
+
+def test_shortcircuit():
+    def f(a, b):
+        if a > 0 and b > 0:
+            return a + b
+        elif a > 0 or b > 0:
+            return a - b
+        else:
+            return 2
+    scope = {}
+    exec(decompile(f), scope)
+    for a in [-1, 1]:
+        for b in [-2, 2]:
+            assert f(a, b) == scope['f'](a, b)
