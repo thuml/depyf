@@ -42,43 +42,47 @@ class BasicBlock:
     instructions: List[dis.Instruction]
     to_blocks: List['BasicBlock'] = dataclasses.field(default_factory=list)
     from_blocks: List['BasicBlock'] = dataclasses.field(default_factory=list)
+    code_start: int = dataclasses.field(init=False)
+    code_end: int = dataclasses.field(init=False)
+    code_range: Tuple[int, int] = dataclasses.field(init=False)
+    simple_repr: str = dataclasses.field(init=False)
+    full_repr: str = dataclasses.field(init=False)
 
     def __init__(self, instructions: List[dis.Instruction]):
         self.instructions = instructions
         self.to_blocks = []
         self.from_blocks = []
-
-    def code_range(self):
-        return (self.code_start(), self.code_end())
-
-    def code_start(self) -> int:
-        return self.instructions[0].offset
-
-    def code_end(self) -> int:
-        return self.instructions[-1].offset + 2
-
-    def __str__(self):
-        return f"{self.code_range()}"
-
-    def __repr__(self):
+        self.code_start = self.instructions[0].offset
+        self.code_end = self.instructions[-1].offset + 2
+        self.code_range = (self.code_start, self.code_end)
+        self.simple_repr = f"{self.code_range}"
         lines = []
         for inst in self.instructions:
             line = [">>" if inst.is_jump_target else "  ", str(inst.offset), inst.opname, str(inst.argval), f"({inst.argrepr})"]
             lines.append(line)
-        return generate_dot_table(f"{self.code_range()}", lines)
+        self.full_repr = generate_dot_table(self.simple_repr, lines)
+
+    def __str__(self):
+        return self.simple_repr
+
+    def __repr__(self):
+        return self.simple_repr
 
     def __eq__(self, other):
-        return self.code_range() == other.code_range()
+        return self.simple_repr == other.simple_repr
 
     def jump_to_block(self, offset: int) -> 'BasicBlock':
-        return [b for b in self.to_blocks if b.code_start() == offset][0]
+        blocks = [b for b in self.to_blocks if b.code_start >= offset]
+        if not blocks:
+            raise ValueError(f"Cannot find block that starts at {offset}")
+        return blocks[0]
 
     @staticmethod
     def find_the_first_block(blocks: List['BasicBlock'], offset: int) -> Optional['BasicBlock']:
-        candidates = [b for b in blocks if b.code_start() >= offset]
+        candidates = [b for b in blocks if b.code_start >= offset]
         if not candidates:
             return None
-        return min(candidates, key=BasicBlock.code_start)
+        return min(candidates, key=lambda x: x.code_start)
 
     @staticmethod
     def decompose_basic_blocks(insts: List[dis.Instruction]) -> List['BasicBlock']:
@@ -126,8 +130,8 @@ class BasicBlock:
                 block.to_blocks.append(fallthrough_block)
                 fallthrough_block.from_blocks.append(block)
         for block in blocks:
-            block.to_blocks.sort(key=BasicBlock.code_start)
-            block.from_blocks.sort(key=BasicBlock.code_start)
+            block.to_blocks.sort(key=lambda x: x.code_start)
+            block.from_blocks.sort(key=lambda x: x.code_start)
         return blocks
 
 
@@ -144,13 +148,13 @@ class IndentationBlock:
     def start(self) -> Optional[int]:
         if not self.blocks:
             return None
-        return self.blocks[0].code_start()
+        return self.blocks[0].code_start
 
     @property
     def end(self) -> Optional[int]:
         if not self.blocks:
             return None
-        return self.blocks[-1].code_end()
+        return self.blocks[-1].code_end
 
 
 @dataclasses.dataclass
@@ -339,9 +343,9 @@ class Decompiler:
         has_if = "IF" in indentation_block.blocks[0].instructions[-1].opname
         new_stack = stack.copy()
         if has_if:
-            jump_to_block = max(indentation_block.blocks[0].to_blocks, key=BasicBlock.code_start)
-            if_blocks = [block for block in indentation_block.blocks[1:] if block.code_start() < jump_to_block.code_start()]
-            else_blocks = [block for block in indentation_block.blocks[1:] if block.code_start() >= jump_to_block.code_start()]
+            jump_to_block = max(indentation_block.blocks[0].to_blocks, key=lambda x: x.code_start)
+            if_blocks = [block for block in indentation_block.blocks[1:] if block.code_start < jump_to_block.code_start]
+            else_blocks = [block for block in indentation_block.blocks[1:] if block.code_start >= jump_to_block.code_start]
             block_code, new_stack = self.decompile_blocks(if_blocks, stack.copy(), indentation)
             source_code += add_indentation(block_code, indentation)
             if else_blocks:
