@@ -85,6 +85,8 @@ class Decompiler:
             left_blocks = self.blocks[start_index: running_index]
             next_index = running_index
             for left_block in left_blocks:
+                if left_block.end_misc or left_block.end_with_return:
+                    continue
                 if left_block.to_blocks:
                     # this is jmp instruction
                     to_block = left_block.jump_to_block
@@ -181,17 +183,29 @@ else:
 
 We identify the start of body2 by checking if the first basic block is jumping to internal blocks.
         """
-        blockresult = self.decompile_block(indentation_block.blocks[0], stack.copy(), indentation, indentation_block)
-        source_code, fallthrough_stack, jump_stack = blockresult.source_code, blockresult.fallthrough_stack, blockresult.jump_stack
-        has_loop = any(block in indentation_block.blocks for block in indentation_block.blocks[0].from_blocks)
+        i = 0
+        source_code = ""
+        while True:
+            blockresult = self.decompile_block(indentation_block.blocks[i], stack.copy(), indentation, indentation_block)
+            source_code += blockresult.source_code
+            fallthrough_stack = blockresult.fallthrough_stack
+            jump_stack = blockresult.jump_stack
+            if i < len(indentation_block.blocks) - 1 and indentation_block.blocks[i].end_misc:
+                i += 1
+                stack = fallthrough_stack
+                continue
+            else:
+                break
+        
+        has_loop = any(block in indentation_block.blocks[i:] for block in indentation_block.blocks[i].from_blocks)
 
         # split blocks into if-else
-        has_if = indentation_block.blocks[0].end_with_if_jmp
+        has_if = indentation_block.blocks[i].end_with_if_jmp
         if has_if:
-            to_block = indentation_block.blocks[0].jump_to_block
-            assert to_block > indentation_block.blocks[0], "Only jump forward here?"
-            if_blocks = [block for block in indentation_block.blocks[1:] if block < to_block]
-            else_blocks = [block for block in indentation_block.blocks[1:] if block >= to_block]
+            to_block = indentation_block.blocks[i].jump_to_block
+            assert to_block > indentation_block.blocks[i], "Only jump forward here?"
+            if_blocks = [block for block in indentation_block.blocks[i + 1:] if block < to_block]
+            else_blocks = [block for block in indentation_block.blocks[i + 1:] if block >= to_block]
             block_code, fallthrough_stack = self.decompile_blocks(if_blocks, fallthrough_stack.copy(), indentation)
             source_code += add_indentation(block_code, indentation)
             if else_blocks:
@@ -634,4 +648,4 @@ We identify the start of body2 by checking if the first basic block is jumping t
             # "MATCH_MAPPING"/"MATCH_SEQUENCE"/"MATCH_KEYS"/"MATCH_CLASS" is unsupported
             else:
                 raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
-        raise NotImplementedError("Should not reach here")
+        return BlockResult(source_code, stack)

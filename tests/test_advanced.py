@@ -17,6 +17,20 @@ def test_deadcode_removal():
         return blabla
     assert 'blabla' not in decompile(f)
 
+def test_while2():
+    def f(a):
+        while a < 5:
+            a += 1
+            if a > 3:
+                continue
+            else:
+                break
+        return 2 * a
+    scope = {}
+    exec(decompile(f), scope)
+    for a in range(10):
+        assert f(a) == scope['f'](a)
+
 def test_shortcircuit():
     def f(a, b):
         if a > 0 and b > 0:
