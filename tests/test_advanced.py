@@ -31,6 +31,20 @@ def test_while2():
     for a in range(10):
         assert f(a) == scope['f'](a)
 
+def test_while_else():
+    def f(a, b):
+        while a < 5 and b < 0:
+            a += 1
+        else:
+            a = 1
+            b += 1
+        return a * b
+    scope = {}
+    exec(decompile(f), scope)
+    for a in [4, 6]:
+        for b in [-3, 4]:
+            assert f(a, b) == scope['f'](a, b)
+
 def test_shortcircuit():
     def f(a, b):
         if a > 0 and b > 0:

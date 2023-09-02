@@ -203,11 +203,13 @@ We identify the start of body2 by checking if the first basic block is jumping t
         has_if = indentation_block.blocks[i].end_with_if_jmp
         if has_if:
             to_block = indentation_block.blocks[i].jump_to_block
-            assert to_block > indentation_block.blocks[i], "Only jump forward here?"
-            if_blocks = [block for block in indentation_block.blocks[i + 1:] if block < to_block]
+            if to_block > indentation_block.blocks[i]:
+                if_blocks = [block for block in indentation_block.blocks[i + 1:] if block < to_block]
+                block_code, fallthrough_stack = self.decompile_blocks(if_blocks, fallthrough_stack.copy(), indentation)
+                source_code += add_indentation(block_code, indentation)
+            else:
+                source_code += add_indentation("continue\n", indentation)
             else_blocks = [block for block in indentation_block.blocks[i + 1:] if block >= to_block]
-            block_code, fallthrough_stack = self.decompile_blocks(if_blocks, fallthrough_stack.copy(), indentation)
-            source_code += add_indentation(block_code, indentation)
             if else_blocks:
                 block_code, jump_stack = self.decompile_blocks(else_blocks, jump_stack.copy(), indentation)
                 if has_loop:
