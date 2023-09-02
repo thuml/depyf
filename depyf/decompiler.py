@@ -172,35 +172,41 @@ while True:
 
 We identify the while loop by checking if the first basic block is jumped to from internal blocks.
         ============ Deal with For Loop ============
+
+        ============ Deal with If Structure ============
+if cond1:
+    body1
+else:
+    body2
+
+We identify the start of body2 by checking if the first basic block is jumping to internal blocks.
         """
         blockresult = self.decompile_block(indentation_block.blocks[0], stack.copy(), indentation, indentation_block)
-        source_code, stack = blockresult.source_code, blockresult.fallthrough_stack
-        has_loop = False
-        for block in indentation_block.blocks[0].from_blocks:
-            block_index = self.blocks_index_map[str(block)]
-            if block_index >= self.blocks_index_map[str(indentation_block.blocks[0])] and block_index <= self.blocks_index_map[str(indentation_block.blocks[-1])]:
-                # this is a loop
-                has_loop = True
-                break
+        source_code, fallthrough_stack, jump_stack = blockresult.source_code, blockresult.fallthrough_stack, blockresult.jump_stack
+        has_loop = any(block in indentation_block.blocks for block in indentation_block.blocks[0].from_blocks)
 
         # split blocks into if-else
-        has_if = "IF" in indentation_block.blocks[0].instructions[-1].opname
-        new_stack = stack.copy()
+        has_if = indentation_block.blocks[0].end_with_if_jmp
         if has_if:
-            jump_to_block = max(indentation_block.blocks[0].to_blocks, key=lambda x: x.code_start)
-            if_blocks = [block for block in indentation_block.blocks[1:] if block.code_start < jump_to_block.code_start]
-            else_blocks = [block for block in indentation_block.blocks[1:] if block.code_start >= jump_to_block.code_start]
-            block_code, new_stack = self.decompile_blocks(if_blocks, stack.copy(), indentation)
+            to_block = indentation_block.blocks[0].jump_to_block
+            assert to_block > indentation_block.blocks[0], "Only jump forward here?"
+            if_blocks = [block for block in indentation_block.blocks[1:] if block < to_block]
+            else_blocks = [block for block in indentation_block.blocks[1:] if block >= to_block]
+            block_code, fallthrough_stack = self.decompile_blocks(if_blocks, fallthrough_stack.copy(), indentation)
             source_code += add_indentation(block_code, indentation)
             if else_blocks:
-                block_code, _ = self.decompile_blocks(else_blocks, stack.copy(), indentation)
+                block_code, jump_stack = self.decompile_blocks(else_blocks, jump_stack.copy(), indentation)
+                if has_loop:
+                    block_code = block_code + "break\n"
                 source_code += f"else:\n" + add_indentation(block_code, indentation)
             else:
-                source_code += f"else:\n" + add_indentation("pass\n" if not has_loop else "break\n", indentation)
+                if has_loop:
+                    source_code += f"else:\n" + add_indentation("break\n", indentation)
         if has_loop:
             source_code = "while True:\n" + add_indentation(source_code, indentation)
 
-        return source_code, new_stack
+        # We actually have two stacks here, both should be valid to go to the next block
+        return source_code, fallthrough_stack
 
     def __hash__(self):
         return hash(self.code)
