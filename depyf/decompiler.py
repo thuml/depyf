@@ -14,7 +14,12 @@ from collections import defaultdict
 import astor
 
 from .patch import *
-from .utils import nop_unreachable_bytecode, add_indentation, remove_indentation
+from .utils import (
+    nop_unreachable_bytecode,
+    add_indentation,
+    remove_indentation,
+    generate_dot_table,
+)
 
 
 @functools.lru_cache(maxsize=None)
@@ -56,7 +61,11 @@ class BasicBlock:
         return f"{self.code_range()}"
 
     def __repr__(self):
-        return str(self)
+        lines = []
+        for inst in self.instructions:
+            line = [">>" if inst.is_jump_target else "  ", str(inst.offset), inst.opname, str(inst.argval), f"({inst.argrepr})"]
+            lines.append(line)
+        return generate_dot_table(f"{self.code_range()}", lines)
 
     def __eq__(self, other):
         return self.code_range() == other.code_range()
@@ -151,18 +160,23 @@ class Decompiler:
         cfg = nx.DiGraph()
 
         for block in self.blocks:
-            cfg.add_node(str(block))
+            cfg.add_node(str(block), label=repr(block), shape="none")
         for block in self.blocks:
             for to_block in block.to_blocks:
                 cfg.add_edge(str(block), str(to_block))
             for from_block in block.from_blocks:
                 cfg.add_edge(str(from_block), str(block))
 
-        pos = {str(block): (0, -idx) for idx, block in enumerate(self.blocks)}
-        nx.draw_networkx_nodes(cfg, pos, node_size=1000)
-        nx.draw_networkx_edges(cfg, pos, node_size=1000, connectionstyle='arc3, rad = 0.3')
-        nx.draw_networkx_labels(cfg, pos)
+        import pygraphviz as pgv
+        cfg = nx.nx_agraph.to_agraph(cfg)
+        cfg.node_attr['style'] = 'rounded'
+        # cfg.node_attr['fillcolor'] = '#c0e4f0'
+        cfg.node_attr['halign'] = 'left'
+        cfg.layout(prog="dot")  # Use dot layout
+        cfg.draw("output.png")  # Save to a file
         from matplotlib import pyplot as plt
+        plt.imshow(plt.imread("output.png"))
+        plt.axis('off')
         plt.show()
 
     def get_function_signature(self) -> str:
