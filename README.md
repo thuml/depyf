@@ -187,3 +187,23 @@ If you find any error in the decompilation, feel free to open issues or pull req
 # How it works
 
 The code first analyzes the bytecode to discover basic code blocks (blocks that do not have control flow). Then it builds a control flow graph, and decompile bytecode into source code by traversing the graph.
+
+The control flow graph can be visualized by:
+
+```python
+def f(a):
+    b = 1
+    if a > 2:
+        b += 1
+        return b * a
+    else:
+        print("here")
+        return a
+
+from depyf import Decompiler
+Decompiler(f).visualize_cfg(filepath="./cfg.png")
+```
+
+The graph is saved into `cfg.png` file, and the structure looks like the following:
+
+![](cfg.png)
