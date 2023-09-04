@@ -1,11 +1,9 @@
-from depyf import decompile
+from depyf import decompile, Decompiler
 import unittest
 import dis
 import sys
 from dataclasses import dataclass
 from copy import deepcopy
-
-from depyf import decompile
 
 def test_deadcode_removal():
     def f():
@@ -44,6 +42,19 @@ def test_while_else():
     for a in [4, 6]:
         for b in [-3, 4]:
             assert f(a, b) == scope['f'](a, b)
+
+def test_rename():
+    def f(a, b):
+        return a * b
+    scope = {}
+    exec(Decompiler(f).decompile(overwite_fn_name="g"), scope)
+    lambda_f = lambda a, b: a * b
+    exec(Decompiler(lambda_f).decompile(overwite_fn_name="lam"), scope)
+    a = 1
+    b = 2
+    assert f(a, b) == scope['g'](a, b)
+    assert f(a, b) == scope['lam'](a, b)
+
 
 def test_shortcircuit():
     def f(a, b):

@@ -125,13 +125,13 @@ class Decompiler:
         return get_supported_opnames(Decompiler.decompile_block.__code__)
 
     @functools.lru_cache(maxsize=None)
-    def decompile(self, indentation=4, temp_prefix: str="__temp_"):
+    def decompile(self, indentation=4, temp_prefix: str="__temp_", overwite_fn_name: Optional[str]=None) -> str:
         self.temp_prefix = temp_prefix
         source_code, stack = self.decompile_blocks(self.blocks, [], indentation)
         # source_code = remove_indentation(source_code, indentation)
         # the header might have invalid function name in torchdynamo. only optimize the function body.
         source_code = remove_some_temp(source_code, self.temp_prefix, indentation)
-        header = get_function_signature(self.code)
+        header = get_function_signature(self.code, overwite_fn_name)
         source_code = header + add_indentation(source_code, indentation)
         return source_code
 
