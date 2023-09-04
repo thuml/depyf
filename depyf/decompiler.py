@@ -282,7 +282,12 @@ We identify the start of body2 by checking if the first basic block is jumping t
                 stack.append(None)
             # ==================== Store Instructions =============================
             elif inst.opname in ["STORE_FAST", "STORE_GLOBAL", "STORE_DEREF", "STORE_NAME"]:
-                source_code += f"{inst.argval} = {stack.pop()}\n"
+                left = inst.argval
+                right = stack.pop()
+                if left != right:
+                    # Inplace operations like `+=` will pop the variable name from the stack, and push the result back to the stack
+                    # leading to a source code like `x = x`. We need to avoid this.
+                    source_code += f"{left} = {right}\n"
             elif inst.opname in ["STORE_SUBSCR"]:
                 index = stack.pop()
                 x = stack.pop()

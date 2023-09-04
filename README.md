@@ -178,7 +178,7 @@ You can see the coverage report by simply running `python python_coverage.py`.
 
 This package is intended to understand the generated pytorch bytecode, and does not aim to fully cover all the syntax of python. For example, async operations like `async/await` is not supported.
 
-Support for very complicated control flow (while-loop/for-loop) is limited.
+Support for very complicated control flow (while-loop/for-loop) is limited. List/set/tuple/dict comprehension is not supported.
 
 # Contributions are welcome!
 
