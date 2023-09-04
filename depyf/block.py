@@ -112,8 +112,10 @@ class BasicBlock:
             if block.end_misc or block.end_with_if_jmp:
                 # the next block is the fallthrough block
                 fallthrough_block = BasicBlock.find_the_first_block(blocks, block.code_end)
-                block.to_blocks.append(fallthrough_block)
-                fallthrough_block.from_blocks.append(block)
+                # fallthrough_block is None if there is a jump to the end of the function
+                if fallthrough_block is not None:
+                    block.to_blocks.append(fallthrough_block)
+                    fallthrough_block.from_blocks.append(block)
             
             if block.end_with_direct_jmp or block.end_with_if_jmp:
                 to_block = BasicBlock.find_the_first_block(blocks, block.instructions[-1].get_jump_target())
