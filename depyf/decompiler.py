@@ -55,7 +55,6 @@ class Decompiler:
     temp_prefix: str = "__temp_"
     blocks: List[BasicBlock] = dataclasses.field(default_factory=list)
     blocks_index_map: Dict[str, int] = dataclasses.field(default_factory=dict)
-    blocks_decompiled: Dict[str, bool] = dataclasses.field(default_factory=dict)
 
     def __init__(self, code: Union[CodeType, Callable]):
         if callable(code):
@@ -69,9 +68,9 @@ class Decompiler:
         #         raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
         self.blocks = BasicBlock.decompose_basic_blocks(self.instructions)
         self.blocks_index_map = {str(block): idx for idx, block in enumerate(self.blocks)}
-        self.blocks_decompiled = {str(block): False for block in self.blocks}
 
     def visualize_cfg(self, filepath: str="cfg.png"):
+        self.decompile()
         BasicBlock.to_graph(self.blocks, filepath=filepath)
 
     def get_indentation_block(self, starting_block: BasicBlock) -> IndentationBlock:
@@ -187,6 +186,7 @@ We identify the start of body2 by checking if the first basic block is jumping t
         source_code = ""
         while True:
             blockresult = self.decompile_block(indentation_block.blocks[i], stack.copy(), indentation, indentation_block)
+            indentation_block.blocks[i].decompiled_code = blockresult.source_code
             source_code += blockresult.source_code
             fallthrough_stack = blockresult.fallthrough_stack
             jump_stack = blockresult.jump_stack
