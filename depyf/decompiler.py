@@ -71,6 +71,16 @@ class Decompiler:
 
     def visualize_cfg(self, filepath: str="cfg.png"):
         self.decompile()
+        for block in self.blocks:
+            lines = [x for x in block.decompiled_code.splitlines()]
+            if ("if" in lines[-1] or "for" in lines[-1]) and lines[-1].endswith(":"):
+                valid_lines = lines[:-1]
+                valid_code = "".join([x + "\n" for x in valid_lines])
+                simplified_code = remove_some_temp(valid_code, self.temp_prefix)
+                block.decompiled_code = simplified_code + lines[-1] + "\n"
+            else:
+                block.decompiled_code = remove_some_temp(block.decompiled_code, self.temp_prefix)
+
         BasicBlock.to_graph(self.blocks, filepath=filepath)
 
     def get_indentation_block(self, starting_block: BasicBlock) -> IndentationBlock:
