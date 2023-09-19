@@ -17,11 +17,11 @@ class BasicBlock:
     code_end: int = dataclasses.field(init=False)
     code_range: Tuple[int, int] = dataclasses.field(init=False)
     simple_repr: str = dataclasses.field(init=False)
-    full_repr: str = dataclasses.field(init=False)
     end_with_return: bool = dataclasses.field(init=False, default=False)
     end_with_direct_jmp: bool = dataclasses.field(init=False, default=False)
     end_with_if_jmp: bool = dataclasses.field(init=False, default=False)
     end_misc: bool = dataclasses.field(init=False, default=False)
+    decompiled_code: str = ""
 
     to_blocks: List['BasicBlock'] = dataclasses.field(default_factory=list)
     from_blocks: List['BasicBlock'] = dataclasses.field(default_factory=list)
@@ -35,12 +35,11 @@ class BasicBlock:
         self.code_start = self.instructions[0].offset
         self.code_end = self.instructions[-1].offset + 2
         self.code_range = (self.code_start, self.code_end)
-        self.simple_repr = f"{self.code_range}"
+        self.simple_repr = f"Bytecode Range: [{self.code_start}, {self.code_end})"
         lines = []
         for inst in self.instructions:
             line = [">>" if inst.is_jump_target else "  ", str(inst.offset), inst.opname, str(inst.argval), f"({inst.argrepr})"]
             lines.append(line)
-        self.full_repr = generate_dot_table(self.simple_repr, lines)
         self.end_with_return = self.instructions[-1].opname == "RETURN_VALUE"
         end_with_jmp = self.instructions[-1].opcode in all_jump_opcode_set
         self.end_with_direct_jmp = end_with_jmp and "IF" not in self.instructions[-1].opname
@@ -54,6 +53,11 @@ class BasicBlock:
 
     def __repr__(self):
         return self.simple_repr
+
+    @property
+    def full_repr(self):
+        lines = [[x] for x in self.decompiled_code.splitlines()]
+        return generate_dot_table(self.simple_repr, lines)
 
     def __eq__(self, other):
         return self.code_start == other.code_start
@@ -140,7 +144,23 @@ class BasicBlock:
                 cfg.add_edge(str(blocka), str(blockb), weight=100, style="invis")
         for block in blocks:
             for to_block in block.to_blocks:
-                cfg.add_edge(str(block), str(to_block))
+                style = "solid"
+                if block.end_with_direct_jmp:
+                    style = "dotted"
+                elif block.end_with_if_jmp and to_block != block.fallthrough_block:
+                    style = "dashed"
+                if block == to_block:
+                    cfg.add_edge(str(block), str(to_block), style=style, labelangle='auto', tailport='s', headport='nw')
+                else:
+                    cfg.add_edge(str(block), str(to_block), style=style, labelangle='auto', tailport='s')
+        cfg.add_node("Legend1", label="Solid Line: if branch", shape="none")
+        cfg.add_node("Legend2", label="Dashed Line: else branch", shape="none")
+        cfg.add_node("Legend3", label="Dotted Line: unconditional jump", shape="none")
+        cfg.add_edge("Legend1", "Legend1", style="solid", tailport='n', headport='s')
+        cfg.add_edge("Legend2", "Legend2", style="dashed", tailport='n', headport='s')
+        cfg.add_edge("Legend3", "Legend3", style="dotted", tailport='n', headport='s')
+        cfg.add_edge("Legend1", "Legend2", weight=100, style="invis")
+        cfg.add_edge("Legend2", "Legend3", weight=100, style="invis")
         import pygraphviz as pgv
         cfg = nx.nx_agraph.to_agraph(cfg)
         cfg.node_attr['style'] = 'rounded'

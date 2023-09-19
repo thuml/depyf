@@ -28,13 +28,13 @@ def generate_dot_table(header: str, rows: List[List[str]]) -> str:
 
     n = len(rows[0])
     # Add the header spanning n columns
-    html_str += f'<TR><TD>{header}</TD>' + '<TD></TD>' * (n - 1) + '</TR>'
+    html_str += f'<TR><TD  ALIGN="LEFT">{header}</TD>' + '<TD  ALIGN="LEFT"></TD>' * (n - 1) + '</TR>'
 
     # Add each row
     for row in rows:
         if len(row) != n:
             raise ValueError("Inconsistent number of columns.")
-        html_str += '<TR>' + ''.join([f'<TD>{escape_html(cell)}</TD>' for cell in row]) + '</TR>'
+        html_str += '<TR>' + ''.join([f'<TD  ALIGN="LEFT">{escape_html(cell)}</TD>' for cell in row]) + '</TR>'
 
     # Close the table
     html_str += '</TABLE>'
