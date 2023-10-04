@@ -33,8 +33,11 @@ class Instruction:
     def short_inst_repr(self):
         return f"Instruction(opname={self.opname}, offset={self.offset})"
 
+    def is_jump(self):
+        return self.opcode in all_jump_opcode_set
+
     def get_jump_target(self: "Instruction"):
-        if self.opcode in all_jump_opcode_set:
+        if self.is_jump():
             return int(self.argrepr.replace("to ", "").strip())
         # seems like a bug, "FOR_ITER" is in `dis.hasjrel`, but its `argval` is an absolute offset
         # if self.opcode in dis.hasjabs:
