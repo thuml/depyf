@@ -69,7 +69,16 @@ class Decompiler:
         if can_repr:
             self.state.stack.append(repr(inst.argval))
         else:
-            self.state.stack.append(inst.argval)
+            if isinstance(inst.argval, type):
+                # Don't know why a class type get here, support this corner case anyway.
+                module = inst.argval.__module__
+                name = inst.argval.__name__
+                self.state.source_code += "import importlib\n"
+                temp_name = self.get_temp_name()
+                self.state.source_code += f'{temp_name} = importlib.import_module("{module}").{name}\n'
+                self.state.stack.append(temp_name)
+            else:
+                self.state.stack.append(inst.argval)
 
     def generic_load(self, inst: Instruction):
         """`inst.argval` is the variable name, in string"""
