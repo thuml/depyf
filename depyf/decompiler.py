@@ -9,7 +9,7 @@ import dataclasses
 import inspect
 import functools
 from collections import defaultdict
-
+import contextlib
 
 from .block import BasicBlock, IndentationBlock
 from .code_transform import (
@@ -51,6 +51,13 @@ class BlockResult:
 
 
 @dataclasses.dataclass
+class DecompilerState:
+    """State of decompiler, keep track of the evaluation stack, as well as the decompiled source code."""
+    source_code: str
+    stack: list
+
+
+@dataclasses.dataclass
 class Decompiler:
     """A decompiler for a code object."""
     code: CodeType
@@ -58,6 +65,16 @@ class Decompiler:
     temp_prefix: str = "__temp_"
     blocks: List[BasicBlock] = dataclasses.field(default_factory=list)
     blocks_index_map: Dict[str, int] = dataclasses.field(default_factory=dict)
+    state: DecompilerState = dataclasses.field(default_factory=lambda: DecompilerState(source_code="", stack=[]))
+
+    @contextlib.contextmanager
+    def new_state(self, stack):
+        """Create a new state for decompiler."""
+        state = DecompilerState(source_code="", stack=stack)
+        old_state = self.state
+        self.state = state
+        yield
+        self.state = old_state
 
     @staticmethod
     def cleanup_instructions(instructions: List[Instruction]):
@@ -78,6 +95,7 @@ class Decompiler:
         #         raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
         self.blocks = BasicBlock.decompose_basic_blocks(self.instructions)
         self.blocks_index_map = {str(block): idx for idx, block in enumerate(self.blocks)}
+        self.state = DecompilerState(source_code="", stack=[])
 
     def visualize_cfg(self, filepath: str="cfg.png"):
         self.decompile()

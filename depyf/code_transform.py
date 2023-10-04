@@ -5,8 +5,6 @@ import ast
 import astor
 from collections import defaultdict
 import dataclasses
-
-import dis
 import sys
 
 py311 = sys.version_info >= (3, 11)
