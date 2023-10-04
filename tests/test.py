@@ -620,6 +620,23 @@ def test_DICT_MERGE():
     assert scope['f']() == ans
 
 
+def test_CALL_FUNCTION():
+    def func(a, b, c=1):
+        return (a, b, c)
+    def f():
+        a = [1, 2, 3]
+        b = {'a': 4}
+        ans1 = func(1, a, b)
+        ans2 = func(b, 1, a)
+        ans3 = func(a=a, b=b)
+        ans4 = func(a=b, b=a)
+        return ans1, ans2, ans3, ans4
+    ans = f()
+    scope = {'func': func}
+    exec(decompile(f), scope)
+    assert scope['f']() == ans
+
+
 def test_CALL_FUNCTION_EX():
     def func(*args, **kwargs):
         return (args, kwargs)
