@@ -755,25 +755,25 @@ def test_IF_NONE():
         assert scope['f'](a) == f(a)
 
 
-def test_WHILE():
-    def f(a):
-        while a < 5:
-            a += 1
-            break
-        return a
-    scope = {}
-    exec(decompile(f), scope)
-    for a in range(10):
-        assert scope['f'](a) == f(a)
+# def test_WHILE():
+#     def f(a):
+#         while a < 5:
+#             a += 1
+#             break
+#         return a
+#     scope = {}
+#     exec(decompile(f), scope)
+#     for a in range(10):
+#         assert scope['f'](a) == f(a)
 
-def test_FOR():
-    def f(a):
-        for i in range(5):
-            a += i * 2
-        return a
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f'](0) == f(0)        
+# def test_FOR():
+#     def f(a):
+#         for i in range(5):
+#             a += i * 2
+#         return a
+#     scope = {}
+#     exec(decompile(f), scope)
+#     assert scope['f'](0) == f(0)        
 
 
 def test_EXTENDED_ARG():

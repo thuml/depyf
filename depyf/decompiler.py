@@ -66,6 +66,7 @@ class Decompiler:
     blocks: List[BasicBlock] = dataclasses.field(default_factory=list)
     blocks_index_map: Dict[str, int] = dataclasses.field(default_factory=dict)
     state: DecompilerState = dataclasses.field(default_factory=lambda: DecompilerState(source_code="", stack=[]))
+    indentation: int = 4
 
     @contextlib.contextmanager
     def new_state(self, stack):
@@ -289,8 +290,7 @@ class Decompiler:
 
     def generic_jump_if(self, inst: Instruction):
         jump_offset = inst.get_jump_target()
-        jump_block = block.jump_to_block
-        fallthrough_block = block.fallthrough_block
+        jump_index = self.index_of(jump_offset)
         cond = self.state.stack[-1]
         fallthrough_stack = self.state.stack.copy()[:-1]
 
@@ -309,6 +309,33 @@ class Decompiler:
             self.state.source_code += f"if {cond} is None:\n"
         elif "IF_NONE" in inst.opname:
             self.state.source_code += f"if {cond} is not None:\n"
+
+        if_body_start = self.index_of(inst.offset)
+
+        jump_targets = [i.get_jump_target() for i in self.instructions[if_body_start + 1: jump_index] if i.is_jump() and i.get_jump_target() > jump_offset]
+        else_code = ""
+        if jump_targets:
+            # has "else" branch
+            max_jump = max(jump_targets)
+            max_jump_index = self.index_of(max_jump)
+            else_code += "else:\n"
+            with self.new_state(jump_stack):
+                self.decompile_range(jump_index, max_jump_index)
+                source_code = self.state.source_code
+            else_code += add_indentation(source_code, self.indentation)
+
+        with self.new_state(fallthrough_stack):
+            if_body_end = jump_index
+            if else_code and self.instructions[if_body_end - 1].is_jump():
+                # the last instruction is a jump, so it is not part of the if body, but the jump out of the if-else block
+                if_body_end -= 1
+            self.decompile_range(if_body_start + 1, if_body_end)
+            if_code = self.state.source_code
+            if_code = add_indentation(if_code, self.indentation)
+        
+        self.state.source_code += if_code + else_code
+
+        return max_jump_index if else_code else jump_index
 
     POP_JUMP_IF_TRUE = POP_JUMP_IF_FALSE = generic_jump_if
     POP_JUMP_FORWARD_IF_TRUE = POP_JUMP_FORWARD_IF_FALSE = generic_jump_if
@@ -602,7 +629,12 @@ class Decompiler:
                 running_index = output
             else:
                 running_index += 1
-        return self.state.source_code
+
+    def index_of(self, offset: int):
+        for idx, inst in enumerate(self.instructions):
+            if inst.offset == offset:
+                return idx
+        raise ValueError(f"Cannot find instruction with offset {offset}")
 
     @staticmethod
     def cleanup_instructions(instructions: List[Instruction]):
@@ -691,10 +723,10 @@ class Decompiler:
 
     @functools.lru_cache(maxsize=None)
     def decompile(self, indentation=4, temp_prefix: str="__temp_", overwite_fn_name: Optional[str]=None) -> str:
+        self.indentation = indentation
         self.temp_prefix = temp_prefix
-        source_code = self.decompile_range(0, len(self.instructions))
-        # source_code, stack = self.decompile_blocks(self.blocks, [], indentation)
-        # source_code = remove_indentation(source_code, indentation)
+        self.decompile_range(0, len(self.instructions))
+        source_code = self.state.source_code
         # the header might have invalid function name in torchdynamo. only optimize the function body.
         source_code = remove_some_temp(source_code, self.temp_prefix, indentation)
         header = get_function_signature(self.code, overwite_fn_name)
