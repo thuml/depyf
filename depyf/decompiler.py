@@ -12,12 +12,15 @@ from collections import defaultdict
 
 
 from .block import BasicBlock, IndentationBlock
-from .patch import *
 from .code_transform import (
     nop_unreachable_bytecode,
     add_indentation,
     remove_indentation,
     remove_some_temp,
+    propagate_line_nums,
+    convert_instruction,
+    simplify_with_statement,
+    Instruction,
 )
 from .utils import (
     get_function_signature,
@@ -56,12 +59,19 @@ class Decompiler:
     blocks: List[BasicBlock] = dataclasses.field(default_factory=list)
     blocks_index_map: Dict[str, int] = dataclasses.field(default_factory=dict)
 
+    @staticmethod
+    def cleanup_instructions(instructions: List[Instruction]):
+        propagate_line_nums(instructions)
+        simplify_with_statement(instructions)
+        nop_unreachable_bytecode(instructions)
+
     def __init__(self, code: Union[CodeType, Callable]):
         if callable(code):
             code = code.__code__
         self.code = code
-        instructions = list(dis.get_instructions(code))
-        self.instructions = nop_unreachable_bytecode(instructions)
+        instructions = list(convert_instruction(_) for _ in dis.get_instructions(code))
+        self.cleanup_instructions(instructions)
+        self.instructions = instructions
         # supported_opnames = self.supported_opnames()
         # for inst in self.instructions:
         #     if inst.opname not in supported_opnames:
