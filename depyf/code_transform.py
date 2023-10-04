@@ -206,10 +206,11 @@ class RemoveAssignmentTransformer(ast.NodeTransformer):
             if name == self.temp_name:
                 if len(self.temp_occurrences[name]) == 1:
                     return ast.Expr(value=node.value)
-                elif len(self.temp_occurrences[name]) == 2:
+                elif len(self.temp_occurrences[name]) == 3 and isinstance(self.temp_occurrences[name][-1], bool):
                     # we save the `xxx` here
-                    self.temp_occurrences[name][0] = node.value
-                    return None
+                    self.temp_occurrences[name].append(node.value)
+                    if self.temp_occurrences[name][-2]:
+                        return None
         return node
 
 class RemoveAssignment2Transformer(ast.NodeTransformer):
@@ -219,13 +220,45 @@ class RemoveAssignment2Transformer(ast.NodeTransformer):
         self.temp_occurrences = temp_occurrences
     def visit_Name(self, node):
         name = node.id
-        if name == self.temp_name and len(self.temp_occurrences[name]) == 2:
-            return self.temp_occurrences[name][0]
+        if name == self.temp_name and len(self.temp_occurrences[name]) == 4 and isinstance(self.temp_occurrences[name][-2], bool):
+            if self.temp_occurrences[name][-2]:
+                return self.temp_occurrences[name][-1]
         return node
 
+def get_parents(node):
+    """Collect all parent nodes of a given node."""
+    parents = []
+    while node:
+        parents.append(node)
+        node = getattr(node, "parent", None)
+    return parents
+
+def set_parents(node, parent=None):
+    """Recursively set the parent attribute for each node."""
+    for child in ast.iter_child_nodes(node):
+        child.parent = parent
+        set_parents(child, child)
+
+def lowest_common_parent(node1, node2):
+    """Get the lowest common parent for two nodes."""
+    parents1 = get_parents(node1)
+    parents2 = get_parents(node2)
+    
+    # Reverse the parents list to start comparing from the root.
+    parents1.reverse()
+    parents2.reverse()
+    
+    last_common = None
+    for p1, p2 in zip(parents1, parents2):
+        if p1 is p2:
+            last_common = p1
+        else:
+            break
+    return last_common, p1, p2
 
 def remove_some_temp(source_code: str, temp_prefix:str, indentation: int=4) -> str:
     tree = ast.parse(source_code)
+    set_parents(tree)
 
     temp_occurrences = defaultdict(list)
     for node in ast.walk(tree):
@@ -233,6 +266,14 @@ def remove_some_temp(source_code: str, temp_prefix:str, indentation: int=4) -> s
             temp_occurrences[node.id].append(node)
 
     for key in temp_occurrences:
+        if len(temp_occurrences[key]) == 2:
+            node1 = temp_occurrences[key][0]
+            node2 = temp_occurrences[key][1]
+            parent, parent1, parent2 = lowest_common_parent(node1, node2)
+            indentation_nodes = (ast.FunctionDef, ast.AsyncFunctionDef, ast.For, ast.AsyncFor, ast.While, ast.If, ast.Try, ast.With, ast.AsyncWith, ast.ClassDef)
+            # we cannot remove the assignment if the two occurrences are not in the same indentation block
+            can_merge = not isinstance(parent1, indentation_nodes) and not isinstance(parent2, indentation_nodes)
+            temp_occurrences[key].append(can_merge)
         tree = RemoveAssignmentTransformer(key, temp_occurrences).visit(tree)
         tree = RemoveAssignment2Transformer(key, temp_occurrences).visit(tree)
 
