@@ -76,6 +76,534 @@ class Decompiler:
         yield
         self.state = old_state
 
+# ==================== Load Instructions =============================
+
+    def LOAD_CONST(self, inst: Instruction):
+        """Push a constant onto the stack.
+        `inst.argval` is the constant value, we have to use `repr` to get the source code
+        """
+        self.state.stack.append(repr(inst.argval))
+
+    def generic_load(self, inst: Instruction):
+        """`inst.argval` is the variable name, in string"""
+        if "NULL + " in inst.argrepr:
+            # Python 3.11 support
+            self.state.stack.append(None)
+        self.state.stack.append(inst.argval)
+
+    LOAD_FAST = LOAD_GLOBAL = LOAD_DEREF = LOAD_NAME = LOAD_CLASSDEREF = LOAD_CLOSURE = generic_load
+
+    def COPY_FREE_VARS(self, inst: Instruction):
+        # this opcode is used to copy free variables from the outer scope to the closure
+        # it affects the frame, but not the stack or the source code
+        pass
+
+    def LOAD_ATTR(self, inst: Instruction):
+        self.state.stack.append(f"getattr({self.state.stack.pop()}, {repr(inst.argval)})")
+
+    def LOAD_METHOD(self, inst: Instruction):
+        self.state.stack.append(f"{self.state.stack.pop()}.{inst.argval}")
+
+    def LOAD_ASSERTION_ERROR(self, inst: Instruction):
+        self.state.stack.append("AssertionError")
+
+    def PUSH_NULL(self, inst: Instruction):
+        # the `None` object is used to represent `NULL` in python bytecode
+        self.state.stack.append(None)
+
+# ==================== Store Instructions =============================
+
+    def generic_store(self, inst: Instruction):
+        left = inst.argval
+        right = self.state.stack.pop()
+        if left != right:
+            # Inplace operations like `+=` will pop the variable name from the stack, and push the result back to the stack
+            # leading to a source code like `x = x`. We need to avoid this.
+            self.state.source_code += f"{left} = {right}\n"
+
+    STORE_FAST = STORE_GLOBAL = STORE_DEREF = STORE_NAME = generic_store
+
+    def STORE_SUBSCR(self, inst: Instruction):
+        index = self.state.stack.pop()
+        x = self.state.stack.pop()
+        value = self.state.stack.pop()
+        self.state.source_code += f"{x}[{index}] = {value}\n"
+
+    def STORE_ATTR(self, inst: Instruction):
+        x = self.state.stack.pop()
+        value = self.state.stack.pop()
+        self.state.source_code += f"{x}.{inst.argval} = {value}\n"
+
+# ==================== Del Instructions =============================
+
+    def DELETE_SUBSCR(self, inst: Instruction):
+        index = self.state.stack.pop()
+        x = self.state.stack.pop()
+        self.state.source_code += f"del {x}[{index}]\n"
+
+    def generic_delete(self, inst: Instruction):
+        self.state.source_code += f"del {inst.argval}\n"
+    
+    DELETE_NAME = DELETE_FAST = DELETE_GLOBAL = DELETE_DEREF = generic_delete
+
+    def DELETE_ATTR(self, inst: Instruction):
+        x = self.state.stack.pop()
+        self.state.source_code += f"del {x}.{inst.argval}\n"
+
+# ==================== Import Instructions =============================
+    def IMPORT_NAME(self, inst: Instruction):
+        # TODO: check multi-level import, e.g. `import a.b.c`
+        name = inst.argval.split(".")[0]
+        fromlist = self.state.stack.pop()
+        level = self.state.stack.pop()
+        self.state.source_code += f"{name} = __import__({repr(inst.argval)}, fromlist={fromlist}, level={level})\n"
+        self.state.stack.append(name)
+    
+    def IMPORT_FROM(self, inst: Instruction):
+        name = inst.argval
+        module = self.state.stack[-1]
+        self.state.source_code += f"{name} = {module}.{name}\n"
+        self.state.stack.append(name)
+
+# ==================== Unary Instructions =============================
+
+    def generic_unary(self, inst: Instruction):
+        op = {
+            "UNARY_NEGATIVE": "-",
+            "UNARY_POSITIVE": "+",
+            "UNARY_INVERT": "~",
+            "UNARY_NOT": "not",
+        }[inst.opname]
+        self.state.stack.append(f"({op} {self.state.stack.pop()})")
+    
+    UNARY_NEGATIVE = UNARY_POSITIVE = UNARY_INVERT = UNARY_NOT = generic_unary
+
+    def GET_LEN(self, inst: Instruction):
+        self.state.stack.append(f"len({self.state.stack[-1]})")
+
+# ==================== Binary Instructions =============================
+    def generic_binary(self, inst: Instruction):
+        rhs = self.state.stack.pop()
+        lhs = self.state.stack.pop()
+        op = {
+            "BINARY_MULTIPLY": "*",
+            "BINARY_ADD": "+",
+            "BINARY_SUBTRACT": "-",
+            "BINARY_TRUE_DIVIDE": "/",
+            "BINARY_FLOOR_DIVIDE": "//",
+            "BINARY_MODULO": "%",
+            "BINARY_POWER": "**",
+            "BINARY_AND": "&",
+            "BINARY_OR": "|",
+            "BINARY_XOR": "^",
+            "BINARY_LSHIFT": "<<",
+            "BINARY_RSHIFT": ">>",
+            "BINARY_MATRIX_MULTIPLY": "@",
+        }[inst.opname]
+        self.state.stack.append(f"({lhs} {op} {rhs})")
+
+    BINARY_MULTIPLY = BINARY_ADD = BINARY_SUBTRACT = BINARY_TRUE_DIVIDE = BINARY_FLOOR_DIVIDE = BINARY_MODULO = BINARY_POWER = BINARY_AND = BINARY_OR = BINARY_XOR = BINARY_LSHIFT = BINARY_RSHIFT = BINARY_MATRIX_MULTIPLY = generic_binary
+
+    def BINARY_SUBSCR(self, inst: Instruction):
+        rhs = self.state.stack.pop()
+        lhs = self.state.stack.pop()
+        self.state.stack.append(f"{lhs}[{rhs}]")
+
+# ==================== Binary Inplace Instructions =============================
+    def generic_inplace_binary(self, inst: Instruction):
+        rhs = self.state.stack.pop()
+        lhs = self.state.stack.pop()
+        op = {
+            "INPLACE_MULTIPLY": "*",
+            "INPLACE_ADD": "+",
+            "INPLACE_SUBTRACT": "-",
+            "INPLACE_TRUE_DIVIDE": "/",
+            "INPLACE_FLOOR_DIVIDE": "//",
+            "INPLACE_MODULO": "%",
+            "INPLACE_POWER": "**",
+            "INPLACE_AND": "&",
+            "INPLACE_OR": "|",
+            "INPLACE_XOR": "^",
+            "INPLACE_LSHIFT": "<<",
+            "INPLACE_RSHIFT": ">>",
+            "INPLACE_MATRIX_MULTIPLY": "@",
+        }[inst.opname]
+        self.state.source_code += f"{lhs} {op}= {rhs}\n"
+        self.state.stack.append(lhs)
+    
+    INPLACE_MULTIPLY = INPLACE_ADD = INPLACE_SUBTRACT = INPLACE_TRUE_DIVIDE = INPLACE_FLOOR_DIVIDE = INPLACE_MODULO = INPLACE_POWER = INPLACE_AND = INPLACE_OR = INPLACE_XOR = INPLACE_LSHIFT = INPLACE_RSHIFT = INPLACE_MATRIX_MULTIPLY = generic_inplace_binary
+
+    def BINARY_OP(self, inst: Instruction):
+        rhs = self.state.stack.pop()
+        lhs = self.state.stack.pop()
+        if "=" in inst.argrepr:
+            self.state.source_code += f"{lhs} {inst.argrepr} {rhs}\n"
+            self.state.stack.append(lhs)
+        else:
+            self.state.stack.append(f"({lhs} {inst.argrepr} {rhs})")
+
+# ==================== Conditional Test Instructions =============================
+    def COMPARE_OP(self, inst: Instruction):
+        rhs = self.state.stack.pop()
+        lhs = self.state.stack.pop()
+        self.state.stack.append(f"({lhs} {inst.argval} {rhs})")
+
+    def IS_OP(self, inst: Instruction):
+        rhs = self.state.stack.pop()
+        lhs = self.state.stack.pop()
+        op = "is" if inst.argval == 0 else "is not"
+        self.state.stack.append(f"({lhs} {op} {rhs})")
+
+    def CONTAINS_OP(self, inst: Instruction):
+        rhs = self.state.stack.pop()
+        lhs = self.state.stack.pop()
+        op = "in" if inst.argval == 0 else "not in"
+        self.state.stack.append(f"({lhs} {op} {rhs})")
+
+# ==================== Control Flow Instructions =============================
+
+    def BREAK_LOOP(self, inst: Instruction):
+        self.state.source_code += "break\n"
+    
+    def generic_abs_jump(self, inst: Instruction):
+        jump_offset = inst.get_jump_target()
+        if jump_offset > inst.offset:
+            self.state.source_code += "break\n"
+        else:
+            self.state.source_code += "continue\n"
+    
+    JUMP_ABSOLUTE = JUMP_FORWARD = JUMP_BACKWARD = JUMP_BACKWARD_NO_INTERRUPT = generic_abs_jump
+
+    def RETURN_VALUE(self, inst: Instruction):
+        self.state.source_code += f"return {self.state.stack[-1]}\n"
+
+    def YIELD_VALUE(self, inst: Instruction):
+        self.state.source_code += f"yield {self.state.stack[-1]}\n"
+
+    def RETURN_GENERATOR(self, inst: Instruction):
+        # we don't handle generator/coroutine, add this to support simple yield
+        self.state.stack.append(None)
+    def GEN_START(self, inst: Instruction):
+        # self.state.stack.pop()
+        assert inst.argval == 0, "Only generator expression is supported"
+
+    def generic_jump_if(self, inst: Instruction):
+        jump_offset = inst.get_jump_target()
+        jump_block = block.jump_to_block
+        fallthrough_block = block.fallthrough_block
+        cond = self.state.stack[-1]
+        fallthrough_stack = self.state.stack.copy()[:-1]
+
+        # POP_AND_JUMP / JUMP_OR_POP
+        if "POP_JUMP" in inst.opname:
+            jump_stack = self.state.stack.copy()[:-1]
+        elif "OR_POP" in inst.opname:
+            jump_stack = self.state.stack.copy()
+
+        # JUMP_IF_X, so fallthrough if not X
+        if "IF_FALSE" in inst.opname:
+            self.state.source_code += f"if {cond}:\n"
+        elif "IF_TRUE" in inst.opname:
+            self.state.source_code += f"if not {cond}:\n"
+        elif "IF_NOT_NONE" in inst.opname:
+            self.state.source_code += f"if {cond} is None:\n"
+        elif "IF_NONE" in inst.opname:
+            self.state.source_code += f"if {cond} is not None:\n"
+
+    POP_JUMP_IF_TRUE = POP_JUMP_IF_FALSE = generic_jump_if
+    POP_JUMP_FORWARD_IF_TRUE = POP_JUMP_FORWARD_IF_FALSE = generic_jump_if
+    POP_JUMP_BACKWARD_IF_TRUE = POP_JUMP_BACKWARD_IF_FALSE = generic_jump_if
+    POP_JUMP_FORWARD_IF_NONE = POP_JUMP_FORWARD_IF_NOT_NONE = generic_jump_if
+    POP_JUMP_BACKWARD_IF_NONE = POP_JUMP_BACKWARD_IF_NOT_NONE = generic_jump_if
+    JUMP_IF_TRUE_OR_POP = JUMP_IF_FALSE_OR_POP = generic_jump_if
+
+# ==================== Stack Manipulation Instructions =============================
+    def rot_n(self, inst: Instruction):
+        if inst.opname == "ROT_N":
+            n = inst.argval
+        else:
+            n = {
+                "ROT_TWO": 2,
+                "ROT_THREE": 3,
+                "ROT_FOUR": 4,
+            }[inst.opname]
+        values = self.state.stack[-n:]
+        values = [values[-1]] + values[:-1]
+        self.state.stack[-n:] = values
+        
+    ROT_N = ROT_TWO = ROT_THREE = ROT_FOUR = rot_n
+
+    def SWAP(self, inst: Instruction):
+        # not tested, don't know how to generate this instruction
+        n = inst.argval
+        tos = self.state.stack[-1]
+        value = self.state.stack[-1 - n]
+        tos, value = value, tos
+        self.state.stack[-1] = tos
+        self.state.stack[-1 - n] = value
+    
+    def COPY(self, inst: Instruction):
+        # not tested, don't know how to generate this instruction
+        n = inst.argval
+        value = self.state.stack[-1 - n]
+        self.state.stack.append(value)
+    
+    def POP_TOP(self, inst: Instruction):
+        self.state.stack.pop()
+    
+    def DUP_TOP(self, inst: Instruction):
+        # not tested
+        self.state.stack.append(self.state.stack[-1])
+    
+    def DUP_TOP_TWO(self, inst: Instruction):
+        # not tested
+        tos = self.state.stack[-1]
+        tos1 = self.state.stack[-2]
+        self.state.stack.append(tos1)
+        self.state.stack.append(tos)
+
+# ==================== Function Call Instructions =============================
+    def KW_NAMES(self, inst: Instruction):
+        names = self.code.co_consts[inst.arg]
+        self.state.stack.append(repr(names))
+
+    def CALL(self, inst: Instruction):
+        last_inst = [x for x in block.instructions if x.offset < inst.offset][-1]
+        has_kw_names = last_inst.opname == "KW_NAMES"
+        kw_names = tuple()
+        if has_kw_names:
+            kw_names = eval(self.state.stack.pop())
+        args = [(self.state.stack.pop()) for _ in range(inst.argval)]
+        args = args[::-1]
+        pos_args = args[:len(args) - len(kw_names)]
+        kwargs = args[len(args) - len(kw_names):]
+        kwcalls = []
+        for name, value in zip(kwargs, kw_names):
+            kwcalls.append(f"{name}={value}")
+        func = self.state.stack.pop()
+        if self.state.stack and self.state.stack[-1] is None:
+            self.state.stack.pop()
+        temp = self.get_temp_name()
+        self.state.source_code += f"{temp} = {func}({', '.join(pos_args + kwcalls)})\n"
+        self.state.stack.append(temp)
+
+    def generic_call(self, inst: Instruction):
+        args = [(self.state.stack.pop()) for _ in range(inst.argval)]
+        args = args[::-1]
+        func = self.state.stack.pop()
+        temp = self.get_temp_name()
+        self.state.source_code += f"{temp} = {func}({', '.join(args)})\n"
+        self.state.stack.append(temp)
+    
+    CALL_FUNCTION = CALL_METHOD = generic_call
+
+    def CALL_FUNCTION_KW(self, inst: Instruction):
+        kw_args = eval(self.state.stack.pop())
+        kwcalls = []
+        for name in kw_args:
+            kwcalls.append(f"{name}={self.state.stack.pop()}")
+        pos_args = [(self.state.stack.pop()) for _ in range(inst.argval - len(kw_args))]
+        pos_args = pos_args[::-1]
+        func = self.state.stack.pop()
+        temp = self.get_temp_name()
+        self.state.source_code += f"{temp} = {func}({', '.join(pos_args + kwcalls)})\n"
+        self.state.stack.append(temp)
+
+    def CALL_FUNCTION_EX(self, inst: Instruction):
+        if inst.argval == 0:
+            args = self.state.stack.pop()
+            func = self.state.stack.pop()
+            temp = self.get_temp_name()
+            self.state.source_code += f"{temp} = {func}(*{args})\n"
+            self.state.stack.append(temp)
+        elif inst.argval == 1:
+            kw_args = self.state.stack.pop()
+            args = self.state.stack.pop()
+            func = self.state.stack.pop()
+            temp = self.get_temp_name()
+            self.state.source_code += f"{temp} = {func}(*{args}, **{kw_args})\n"
+            self.state.stack.append(temp)
+
+# ==================== Container Related Instructions (tuple, list, set, dict) =============================
+    def UNPACK_SEQUENCE(self, inst: Instruction):
+        varname = self.state.stack.pop()
+        for i in range(inst.argval):
+            self.state.stack.append(f"{varname}[{inst.argval - 1 - i}]")
+    
+    def UNPACK_EX(self, inst: Instruction):
+        varname = self.state.stack.pop()
+        self.state.stack.append(f"list({varname}[{inst.argval}:])")
+        for i in range(inst.argval):
+            self.state.stack.append(f"{varname}[{inst.argval - 1 - i}]")
+
+    def BUILD_SLICE(self, inst: Instruction):
+        tos = self.state.stack.pop()
+        tos1 = self.state.stack.pop()
+        if inst.argval == 2:
+            self.state.stack.append(f"slice({tos1}, {tos})")
+        elif inst.argval == 3:
+            tos2 = self.state.stack.pop()
+            self.state.stack.append(f"slice({tos2}, {tos1}, {tos})")
+
+    def build_tuple(self, inst: Instruction):
+        args = [self.state.stack.pop() for _ in range(inst.argval)]
+        args = args[::-1]
+        if "UNPACK" in inst.opname:
+            args = [f"*{arg}" for arg in args]
+        if inst.argval == 1:
+            self.state.stack.append(f"({args[0]},)")
+        else:
+            self.state.stack.append(f"({', '.join(args)})")
+    
+    BUILD_TUPLE = BUILD_TUPLE_UNPACK = BUILD_TUPLE_UNPACK_WITH_CALL = build_tuple
+
+    def build_list(self, inst: Instruction):
+        args = [self.state.stack.pop() for _ in range(inst.argval)]
+        args = args[::-1]
+        if "UNPACK" in inst.opname:
+            args = [f"*{arg}" for arg in args]
+        self.state.stack.append(f"[{', '.join(args)}]")
+    
+    BUILD_LIST = BUILD_LIST_UNPACK = build_list
+
+    def build_set(self, inst: Instruction):
+        if inst.argval == 0:
+            self.state.stack.append("set()")
+        else:
+            args = [self.state.stack.pop() for _ in range(inst.argval)]
+            args = args[::-1]
+            if "UNPACK" in inst.opname:
+                args = [f"*{arg}" for arg in args]
+            self.state.stack.append(f"{{{', '.join(args)}}}")
+    
+    BUILD_SET = BUILD_SET_UNPACK = build_set
+
+    def build_map_unpack(self, inst: Instruction):
+        if inst.argval == 0:
+            self.state.stack.append("dict()")
+        else:
+            args = [self.state.stack.pop() for _ in range(inst.argval)]
+            args = args[::-1]
+            args = [f"**{arg}" for arg in args]
+            self.state.stack.append(f"{{{', '.join(args)}}}")
+
+    BUILD_MAP_UNPACK = BUILD_MAP_UNPACK_WITH_CALL = build_map_unpack
+
+    def BUILD_MAP(self, inst: Instruction):
+        args = [self.state.stack.pop() for _ in range(inst.argval * 2)]
+        args = args[::-1]
+        keys = args[::2]
+        values = args[1::2]
+        self.state.stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
+
+    def BUILD_CONST_KEY_MAP(self, inst: Instruction):
+        keys = eval(self.state.stack.pop())
+        args = [self.state.stack.pop() for _ in range(inst.argval)]
+        values = args[::-1]
+        self.state.stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
+
+    def BUILD_STRING(self, inst: Instruction):
+        args = [self.state.stack.pop() for _ in range(inst.argval)]
+        args = args[::-1]
+        values = " + ".join(args)
+        self.state.stack.append(values)
+
+    def LIST_TO_TUPLE(self, inst: Instruction):
+        item = self.state.stack.pop()
+        self.state.stack.append(f"tuple({item})")
+
+    def LIST_EXTEND(self, inst: Instruction):
+        assert inst.argval == 1, "Only tested for argval==1"
+        values = self.state.stack.pop()
+        temp = self.get_temp_name()
+        x = self.state.stack.pop()
+        self.state.source_code += f"{temp} = {x}\n"
+        self.state.source_code += f"{temp}.extend({values})\n"
+        self.state.stack.append(temp)
+
+    def generic_update(self, inst: Instruction):
+        assert inst.argval == 1, "Only tested for argval==1"
+        values = self.state.stack.pop()
+        temp = self.get_temp_name()
+        x = self.state.stack.pop()
+        self.state.source_code += f"{temp} = {x}\n"
+        self.state.source_code += f"{temp}.update({values})\n"
+        self.state.stack.append(temp)
+    
+    SET_UPDATE = DICT_UPDATE = DICT_MERGE = generic_update
+
+# ==================== Misc Instructions =============================
+    def RAISE_VARARGS(self, inst: Instruction):
+        if inst.argval == 0:
+            self.state.source_code += "raise\n"
+        elif inst.argval == 1:
+            self.state.source_code += f"raise {self.state.stack.pop()}\n"
+        elif inst.argval == 2:
+            tos = self.state.stack.pop()
+            tos1 = self.state.stack.pop()
+            self.state.source_code += f"raise {tos1} from {tos}\n"
+    
+    def FORMAT_VALUE(self, inst: Instruction):
+        func, spec = inst.argval
+        if spec:
+            form_spec = self.state.stack.pop()
+            value = self.state.stack.pop()
+            self.state.stack.append(f"format({value}, {form_spec})")
+        else:
+            value = self.state.stack.pop()
+            func = str if func is None else func
+            self.state.stack.append(f"{func.__name__}({value})")
+
+
+# ==================== NOP Instructions =============================
+    def generic_nop(self, inst: Instruction):
+        pass
+
+    # "EXTENDED_ARG" is treated as NOP here, because it has been handled by `dis.get_instructions`.
+    # The extended args are already merged into the following instruction's `inst.argval`.
+    EXTENDED_ARG = generic_nop
+
+    NOP = RESUME = SETUP_LOOP = POP_BLOCK = PRECALL = generic_nop
+
+# ==================== Unsupported Instructions =============================
+    def unimplemented_instruction(self, inst: Instruction):
+        raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
+
+    GET_YIELD_FROM_ITER = GET_ITER = FOR_ITER = unimplemented_instruction
+
+    # we don't support try-except/try-finally
+    POP_EXCEPT = RERAISE = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = SETUP_FINALLY = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = BEGIN_FINALLY = END_FINALLY = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = unimplemented_instruction
+
+    # we don't support async/await
+    GET_AWAITABLE = GET_AITER = GET_ANEXT = END_ASYNC_FOR = BEFORE_ASYNC_WITH = SETUP_ASYNC_WITH = SEND = ASYNC_GEN_WRAP = unimplemented_instruction
+
+    CACHE = unimplemented_instruction
+    
+    MAKE_CELL = MAKE_FUNCTION = unimplemented_instruction
+    
+    # we don't know these instructions
+    PRINT_EXPR = COPY_DICT_WITHOUT_KEYS = unimplemented_instruction
+
+    # we only support bytecode for functions
+    IMPORT_STAR = unimplemented_instruction
+    
+    YIELD_FROM = SETUP_ANNOTATIONS = LOAD_BUILD_CLASS = SETUP_WITH = BEFORE_WITH = MATCH_MAPPING = MATCH_SEQUENCE = MATCH_KEYS = MATCH_CLASS = unimplemented_instruction
+
+    # we cannot use list/set/map comprehension
+    SET_ADD = MAP_ADD = LIST_APPEND = unimplemented_instruction
+
+    def decompile_range(self, start: int, end: int):
+        running_index = start
+        while running_index < end:
+            inst = self.instructions[running_index]
+            method = getattr(Decompiler, inst.opname, self.unimplemented_instruction)
+            output = method(self, inst)
+            if output:
+                running_index = output
+            else:
+                running_index += 1
+        return self.state.source_code
+
     @staticmethod
     def cleanup_instructions(instructions: List[Instruction]):
         propagate_line_nums(instructions)
@@ -164,7 +692,8 @@ class Decompiler:
     @functools.lru_cache(maxsize=None)
     def decompile(self, indentation=4, temp_prefix: str="__temp_", overwite_fn_name: Optional[str]=None) -> str:
         self.temp_prefix = temp_prefix
-        source_code, stack = self.decompile_blocks(self.blocks, [], indentation)
+        source_code = self.decompile_range(0, len(self.instructions))
+        # source_code, stack = self.decompile_blocks(self.blocks, [], indentation)
         # source_code = remove_indentation(source_code, indentation)
         # the header might have invalid function name in torchdynamo. only optimize the function body.
         source_code = remove_some_temp(source_code, self.temp_prefix, indentation)
@@ -294,420 +823,3 @@ We identify the start of body2 by checking if the first basic block is jumping t
         # source_code += "=" * 40 + "Basic Block End" + "=" * 40 + "\n"
         # return source_code, stack
 
-        for inst in block.instructions:
-            # ==================== Load Instructions =============================
-            if inst.opname in ["LOAD_CONST"]:
-                # `inst.argval` is the constant value, we have to use `repr` to get the source code
-                stack.append(repr(inst.argval))
-            elif inst.opname in ["LOAD_FAST", "LOAD_GLOBAL", "LOAD_DEREF", "LOAD_CLOSURE", "LOAD_NAME", "LOAD_CLASSDEREF"]:
-                # `inst.argval` is the variable name, in string
-                if "NULL + " in inst.argrepr:
-                    # Python 3.11 support
-                    stack.append(None)
-                stack.append(inst.argval)
-            elif inst.opname in ["COPY_FREE_VARS"]:
-                # this opcode is used to copy free variables from the outer scope to the closure
-                # it affects the frame, but not the stack or the source code
-                pass
-            elif inst.opname in ["LOAD_ATTR"]:
-                stack.append(f"getattr({stack.pop()}, {repr(inst.argval)})")
-            elif inst.opname in ["LOAD_METHOD"]:
-                stack.append(f"{stack.pop()}.{inst.argval}")
-            elif inst.opname in ["LOAD_ASSERTION_ERROR"]:
-                stack.append("AssertionError")
-            elif inst.opname in ["PUSH_NULL"]:
-                # the `None` object is used to represent `NULL` in python bytecode
-                stack.append(None)
-            # ==================== Store Instructions =============================
-            elif inst.opname in ["STORE_FAST", "STORE_GLOBAL", "STORE_DEREF", "STORE_NAME"]:
-                left = inst.argval
-                right = stack.pop()
-                if left != right:
-                    # Inplace operations like `+=` will pop the variable name from the stack, and push the result back to the stack
-                    # leading to a source code like `x = x`. We need to avoid this.
-                    source_code += f"{left} = {right}\n"
-            elif inst.opname in ["STORE_SUBSCR"]:
-                index = stack.pop()
-                x = stack.pop()
-                value = stack.pop()
-                source_code += f"{x}[{index}] = {value}\n"
-            elif inst.opname in ["STORE_ATTR"]:
-                x = stack.pop()
-                value = stack.pop()
-                source_code += f"{x}.{inst.argval} = {value}\n"
-            # ==================== Del Instructions =============================
-            elif inst.opname in ["DELETE_SUBSCR"]:
-                index = stack.pop()
-                x = stack.pop()
-                source_code += f"del {x}[{index}]\n"
-            elif inst.opname in ["DELETE_NAME", "DELETE_FAST", "DELETE_GLOBAL", "DELETE_DEREF"]:
-                source_code += f"del {inst.argval}\n"
-            elif inst.opname in ["DELETE_ATTR"]:
-                x = stack.pop()
-                source_code += f"del {x}.{inst.argval}\n"
-            # ==================== Import Instructions =============================
-            elif inst.opname in ["IMPORT_NAME"]:
-                # TODO: check multi-level import, e.g. `import a.b.c`
-                name = inst.argval.split(".")[0]
-                fromlist = stack.pop()
-                level = stack.pop()
-                source_code += f"{name} = __import__({repr(inst.argval)}, fromlist={fromlist}, level={level})\n"
-                stack.append(name)
-            elif inst.opname in ["IMPORT_FROM"]:
-                name = inst.argval
-                module = stack[-1]
-                source_code += f"{name} = {module}.{name}\n"
-                stack.append(name)
-            # ==================== Unary Instructions =============================
-            elif inst.opname in ["UNARY_NEGATIVE", "UNARY_POSITIVE", "UNARY_INVERT", "UNARY_NOT"]:
-                op = {
-                    "UNARY_NEGATIVE": "-",
-                    "UNARY_POSITIVE": "+",
-                    "UNARY_INVERT": "~",
-                    "UNARY_NOT": "not",
-                }[inst.opname]
-                stack.append(f"({op} {stack.pop()})")
-            elif inst.opname in ["GET_LEN"]:
-                stack.append(f"len({stack[-1]})")
-            # ==================== Binary Instructions =============================
-            elif inst.opname in ["BINARY_MULTIPLY", "BINARY_ADD", "BINARY_SUBTRACT", "BINARY_TRUE_DIVIDE", "BINARY_FLOOR_DIVIDE", "BINARY_MODULO", "BINARY_POWER", "BINARY_AND", "BINARY_OR", "BINARY_XOR", "BINARY_LSHIFT", "BINARY_RSHIFT", "BINARY_MATRIX_MULTIPLY"]:
-                rhs = stack.pop()
-                lhs = stack.pop()
-                op = {
-                    "BINARY_MULTIPLY": "*",
-                    "BINARY_ADD": "+",
-                    "BINARY_SUBTRACT": "-",
-                    "BINARY_TRUE_DIVIDE": "/",
-                    "BINARY_FLOOR_DIVIDE": "//",
-                    "BINARY_MODULO": "%",
-                    "BINARY_POWER": "**",
-                    "BINARY_AND": "&",
-                    "BINARY_OR": "|",
-                    "BINARY_XOR": "^",
-                    "BINARY_LSHIFT": "<<",
-                    "BINARY_RSHIFT": ">>",
-                    "BINARY_MATRIX_MULTIPLY": "@",
-                }[inst.opname]
-                stack.append(f"({lhs} {op} {rhs})")
-            elif inst.opname in ["BINARY_SUBSCR"]:
-                rhs = stack.pop()
-                lhs = stack.pop()
-                stack.append(f"{lhs}[{rhs}]")
-            # ==================== Binary Inplace Instructions =============================
-            elif inst.opname in ["INPLACE_MULTIPLY", "INPLACE_ADD", "INPLACE_SUBTRACT", "INPLACE_TRUE_DIVIDE", "INPLACE_FLOOR_DIVIDE", "INPLACE_MODULO", "INPLACE_POWER", "INPLACE_AND", "INPLACE_OR", "INPLACE_XOR", "INPLACE_LSHIFT", "INPLACE_RSHIFT", "INPLACE_MATRIX_MULTIPLY"]:
-                rhs = stack.pop()
-                lhs = stack.pop()
-                op = {
-                    "INPLACE_MULTIPLY": "*",
-                    "INPLACE_ADD": "+",
-                    "INPLACE_SUBTRACT": "-",
-                    "INPLACE_TRUE_DIVIDE": "/",
-                    "INPLACE_FLOOR_DIVIDE": "//",
-                    "INPLACE_MODULO": "%",
-                    "INPLACE_POWER": "**",
-                    "INPLACE_AND": "&",
-                    "INPLACE_OR": "|",
-                    "INPLACE_XOR": "^",
-                    "INPLACE_LSHIFT": "<<",
-                    "INPLACE_RSHIFT": ">>",
-                    "INPLACE_MATRIX_MULTIPLY": "@",
-                }[inst.opname]
-                source_code += f"{lhs} {op}= {rhs}\n"
-                stack.append(lhs)
-            elif inst.opname in ["BINARY_OP"]:
-                rhs = stack.pop()
-                lhs = stack.pop()
-                if "=" in inst.argrepr:
-                    source_code += f"{lhs} {inst.argrepr} {rhs}\n"
-                    stack.append(lhs)
-                else:
-                    stack.append(f"({lhs} {inst.argrepr} {rhs})")
-            # ==================== Conditional Test Instructions =============================
-            elif inst.opname in ["COMPARE_OP"]:
-                rhs = stack.pop()
-                lhs = stack.pop()
-                stack.append(f"({lhs} {inst.argval} {rhs})")
-            elif inst.opname in ["IS_OP"]:
-                rhs = stack.pop()
-                lhs = stack.pop()
-                op = "is" if inst.argval == 0 else "is not"
-                stack.append(f"({lhs} {op} {rhs})")
-            elif inst.opname in ["CONTAINS_OP"]:
-                rhs = stack.pop()
-                lhs = stack.pop()
-                op = "in" if inst.argval == 0 else "not in"
-                stack.append(f"({lhs} {op} {rhs})")
-            # ==================== Control Flow Instructions =============================
-            elif inst.opname in ["GET_ITER"]:
-                stack.append(f"iter({stack.pop()})")
-            elif inst.opname in ["FOR_ITER"]:
-                temp_name = self.get_temp_name()
-                source_code += f"for {temp_name} in {stack.pop()}:\n"
-                stack.append(temp_name)
-            # "POP_EXCEPT"/"RERAISE"/"WITH_EXCEPT_START"/"JUMP_IF_NOT_EXC_MATCH"/"SETUP_FINALLY"/"CHECK_EG_MATCH"/"PUSH_EXC_INFO"/"PREP_RERAISE_STAR"/"BEGIN_FINALLY"/"END_FINALLY"/"WITH_CLEANUP_FINISH"/"CALL_FINALLY"/"POP_FINALLY"/"WITH_CLEANUP_START"/"SETUP_EXCEPT"/"CHECK_EXC_MATCH" is unsupported, this means we don't support try-except/try-finally
-            # "GET_AWAITABLE"/"GET_AITER"/"GET_ANEXT"/"END_ASYNC_FOR"/"BEFORE_ASYNC_WITH"/"SETUP_ASYNC_WITH"/"SEND"/"ASYNC_GEN_WRAP" are unsupported, this means we don't support async/await
-            elif inst.opname in [
-                "POP_JUMP_IF_TRUE", "POP_JUMP_FORWARD_IF_TRUE", "POP_JUMP_BACKWARD_IF_TRUE",
-                "POP_JUMP_IF_FALSE", "POP_JUMP_FORWARD_IF_FALSE", "POP_JUMP_BACKWARD_IF_FALSE",
-                "POP_JUMP_FORWARD_IF_NOT_NONE", "POP_JUMP_BACKWARD_IF_NOT_NONE",
-                "POP_JUMP_FORWARD_IF_NONE", "POP_JUMP_BACKWARD_IF_NONE",
-                "JUMP_IF_TRUE_OR_POP", "JUMP_IF_FALSE_OR_POP"
-                ]:
-                jump_block = block.jump_to_block
-                fallthrough_block = block.fallthrough_block
-                cond = stack[-1]
-                fallthrough_stack = stack.copy()[:-1]
-
-                # POP_AND_JUMP / JUMP_OR_POP
-                if "POP_JUMP" in inst.opname:
-                    jump_stack = stack.copy()[:-1]
-                elif "OR_POP" in inst.opname:
-                    jump_stack = stack.copy()
-
-                # JUMP_IF_X, so fallthrough if not X
-                if "IF_FALSE" in inst.opname:
-                    source_code += f"if {cond}:\n"
-                elif "IF_TRUE" in inst.opname:
-                    source_code += f"if not {cond}:\n"
-                elif "IF_NOT_NONE" in inst.opname:
-                    source_code += f"if {cond} is None:\n"
-                elif "IF_NONE" in inst.opname:
-                    source_code += f"if {cond} is not None:\n"
-                
-                return BlockResult(source_code, fallthrough_stack, jump_stack)
-            elif inst.opname in ["BREAK_LOOP"]:
-                source_code += "break\n"
-            elif inst.opname in ["JUMP_FORWARD", "JUMP_ABSOLUTE", "JUMP_BACKWARD", "JUMP_BACKWARD_NO_INTERRUPT"]:
-                jump_offset = inst.get_jump_target()
-                if jump_offset > inst.offset:
-                    source_code += "break\n"
-                else:
-                    source_code += "continue\n"
-            elif inst.opname in ["RETURN_VALUE"]:
-                source_code += f"return {stack[-1]}\n"
-                return BlockResult(source_code, stack)
-            elif inst.opname in ["YIELD_VALUE"]:
-                source_code += f"yield {stack[-1]}\n"
-            elif inst.opname in ["RETURN_GENERATOR"]:
-                # we don't handle generator/coroutine, add this to support simple yield
-                stack.append(None)
-            elif inst.opname in ["GEN_START"]:
-                # stack.pop()
-                assert inst.argval == 0, "Only generator expression is supported"
-            # ==================== Function Call Instructions =============================
-            elif inst.opname in ["KW_NAMES"]:
-                names = self.code.co_consts[inst.arg]
-                stack.append(repr(names))
-            elif inst.opname in ["CALL"]:
-                last_inst = [x for x in block.instructions if x.offset < inst.offset][-1]
-                has_kw_names = last_inst.opname == "KW_NAMES"
-                kw_names = tuple()
-                if has_kw_names:
-                    kw_names = eval(stack.pop())
-                args = [(stack.pop()) for _ in range(inst.argval)]
-                args = args[::-1]
-                pos_args = args[:len(args) - len(kw_names)]
-                kwargs = args[len(args) - len(kw_names):]
-                kwcalls = []
-                for name, value in zip(kwargs, kw_names):
-                    kwcalls.append(f"{name}={value}")
-                func = stack.pop()
-                if stack and stack[-1] is None:
-                    stack.pop()
-                temp = self.get_temp_name()
-                source_code += f"{temp} = {func}({', '.join(pos_args + kwcalls)})\n"
-                stack.append(temp)
-            elif inst.opname in ["CALL_FUNCTION", "CALL_METHOD"]:
-                args = [(stack.pop()) for _ in range(inst.argval)]
-                args = args[::-1]
-                func = stack.pop()
-                temp = self.get_temp_name()
-                source_code += f"{temp} = {func}({', '.join(args)})\n"
-                stack.append(temp)
-            elif inst.opname in ["CALL_FUNCTION_KW"]:
-                kw_args = eval(stack.pop())
-                kwcalls = []
-                for name in kw_args:
-                    kwcalls.append(f"{name}={stack.pop()}")
-                pos_args = [(stack.pop()) for _ in range(inst.argval - len(kw_args))]
-                pos_args = pos_args[::-1]
-                func = stack.pop()
-                temp = self.get_temp_name()
-                source_code += f"{temp} = {func}({', '.join(pos_args + kwcalls)})\n"
-                stack.append(temp)
-            elif inst.opname in ["CALL_FUNCTION_EX"]:
-                if inst.argval == 0:
-                    args = stack.pop()
-                    func = stack.pop()
-                    temp = self.get_temp_name()
-                    source_code += f"{temp} = {func}(*{args})\n"
-                    stack.append(temp)
-                elif inst.argval == 1:
-                    kw_args = stack.pop()
-                    args = stack.pop()
-                    func = stack.pop()
-                    temp = self.get_temp_name()
-                    source_code += f"{temp} = {func}(*{args}, **{kw_args})\n"
-                    stack.append(temp)
-            # ==================== Container Related Instructions (tuple, list, set, dict) =============================
-            # "SET_ADD"/"MAP_ADD"/"LIST_APPEND" are unsupported, this means we cannot use list/set/map comprehension
-            elif inst.opname in ["UNPACK_SEQUENCE"]:
-                varname = stack.pop()
-                for i in range(inst.argval):
-                    stack.append(f"{varname}[{inst.argval - 1 - i}]")
-            elif inst.opname in ["UNPACK_EX"]:
-                varname = stack.pop()
-                stack.append(f"list({varname}[{inst.argval}:])")
-                for i in range(inst.argval):
-                    stack.append(f"{varname}[{inst.argval - 1 - i}]")
-            elif inst.opname in ["BUILD_SLICE"]:
-                tos = stack.pop()
-                tos1 = stack.pop()
-                if inst.argval == 2:
-                    stack.append(f"slice({tos1}, {tos})")
-                elif inst.argval == 3:
-                    tos2 = stack.pop()
-                    stack.append(f"slice({tos2}, {tos1}, {tos})")
-            elif inst.opname in ["BUILD_TUPLE", "BUILD_TUPLE_UNPACK", "BUILD_TUPLE_UNPACK_WITH_CALL"]:
-                args = [stack.pop() for _ in range(inst.argval)]
-                args = args[::-1]
-                if "UNPACK" in inst.opname:
-                    args = [f"*{arg}" for arg in args]
-                if inst.argval == 1:
-                    stack.append(f"({args[0]},)")
-                else:
-                    stack.append(f"({', '.join(args)})")
-            elif inst.opname in ["BUILD_LIST", "BUILD_LIST_UNPACK"]:
-                args = [stack.pop() for _ in range(inst.argval)]
-                args = args[::-1]
-                if "UNPACK" in inst.opname:
-                    args = [f"*{arg}" for arg in args]
-                stack.append(f"[{', '.join(args)}]")
-            elif inst.opname in ["BUILD_SET", "BUILD_SET_UNPACK"]:
-                if inst.argval == 0:
-                    stack.append("set()")
-                else:
-                    args = [stack.pop() for _ in range(inst.argval)]
-                    args = args[::-1]
-                    if "UNPACK" in inst.opname:
-                        args = [f"*{arg}" for arg in args]
-                    stack.append(f"{{{', '.join(args)}}}")
-            elif inst.opname in ["BUILD_MAP_UNPACK", "BUILD_MAP_UNPACK_WITH_CALL"]:
-                if inst.argval == 0:
-                    stack.append("dict()")
-                else:
-                    args = [stack.pop() for _ in range(inst.argval)]
-                    args = args[::-1]
-                    args = [f"**{arg}" for arg in args]
-                    stack.append(f"{{{', '.join(args)}}}")
-            elif inst.opname in ["BUILD_MAP"]:
-                args = [stack.pop() for _ in range(inst.argval * 2)]
-                args = args[::-1]
-                keys = args[::2]
-                values = args[1::2]
-                stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
-            elif inst.opname in ["BUILD_CONST_KEY_MAP"]:
-                keys = eval(stack.pop())
-                args = [stack.pop() for _ in range(inst.argval)]
-                values = args[::-1]
-                stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
-            elif inst.opname in ["BUILD_STRING"]:
-                args = [stack.pop() for _ in range(inst.argval)]
-                args = args[::-1]
-                values = " + ".join(args)
-                stack.append(values)
-            elif inst.opname in ["LIST_TO_TUPLE"]:
-                item = stack.pop()
-                stack.append(f"tuple({item})")
-            elif inst.opname in ["LIST_EXTEND"]:
-                assert inst.argval == 1, "Only tested for argval==1"
-                values = stack.pop()
-                temp = self.get_temp_name()
-                x = stack.pop()
-                source_code += f"{temp} = {x}\n"
-                source_code += f"{temp}.extend({values})\n"
-                stack.append(temp)
-            elif inst.opname in ["SET_UPDATE", "DICT_UPDATE", "DICT_MERGE"]:
-                assert inst.argval == 1, "Only tested for argval==1"
-                values = stack.pop()
-                temp = self.get_temp_name()
-                x = stack.pop()
-                source_code += f"{temp} = {x}\n"
-                source_code += f"{temp}.update({values})\n"
-                stack.append(temp)
-            # ==================== Misc Instructions =============================
-            elif inst.opname in ["RAISE_VARARGS"]:
-                if inst.argval == 0:
-                    source_code += "raise\n"
-                elif inst.argval == 1:
-                    source_code += f"raise {stack.pop()}\n"
-                elif inst.argval == 2:
-                    tos = stack.pop()
-                    tos1 = stack.pop()
-                    source_code += f"raise {tos1} from {tos}\n"
-            elif inst.opname in ["GET_ITER"]:
-                raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
-                # "GET_YIELD_FROM_ITER" is not supported
-                stack.append(f"iter({stack.pop()})")
-            elif inst.opname in ["FORMAT_VALUE"]:
-                func, spec = inst.argval
-                if spec:
-                    form_spec = stack.pop()
-                    value = stack.pop()
-                    stack.append(f"format({value}, {form_spec})")
-                else:
-                    value = stack.pop()
-                    func = str if func is None else func
-                    stack.append(f"{func.__name__}({value})")
-            elif inst.opname in ["ROT_N", "ROT_TWO", "ROT_THREE", "ROT_FOUR"]:
-                if inst.opname == "ROT_N":
-                    n = inst.argval
-                else:
-                    n = {
-                        "ROT_TWO": 2,
-                        "ROT_THREE": 3,
-                        "ROT_FOUR": 4,
-                    }[inst.opname]
-                values = stack[-n:]
-                values = [values[-1]] + values[:-1]
-                stack[-n:] = values
-            elif inst.opname in ["SWAP"]:
-                # not tested, don't know how to generate this instruction
-                n = inst.argval
-                tos = stack[-1]
-                value = stack[-1 - n]
-                tos, value = value, tos
-                stack[-1] = tos
-                stack[-1 - n] = value
-            elif inst.opname in ["COPY"]:
-                # not tested, don't know how to generate this instruction
-                n = inst.argval
-                value = stack[-1 - n]
-                stack.append(value)
-            elif inst.opname in ["NOP", "RESUME", "SETUP_LOOP", "POP_BLOCK", "PRECALL", "EXTENDED_ARG"]:
-                # "EXTENDED_ARG" is treated as NOP here, because it has been handled by `dis.get_instructions`.
-                # The extended args are already merged into the following instruction's `inst.argval`.
-                continue
-            elif inst.opname in ["POP_TOP"]:
-                stack.pop()
-            elif inst.opname in ["DUP_TOP"]:
-                # not tested
-                stack.append(stack[-1])
-            elif inst.opname in ["DUP_TOP_TWO"]:
-                # not tested
-                tos = stack[-1]
-                tos1 = stack[-2]
-                stack.append(tos1)
-                stack.append(tos)
-            # ==================== Unsupported Misc Instructions =============================
-            # "CACHE" is unsupported
-            # "MAKE_CELL" is unsupported
-            # "MAKE_FUNCTION" is unsupported
-            # "PRINT_EXPR"/"COPY_DICT_WITHOUT_KEYS" is I don't know
-            # "YIELD_FROM"/"SETUP_ANNOTATIONS" is unsupported
-            # "IMPORT_STAR" is unsupported, because we only support bytecode for functions
-            # "LOAD_BUILD_CLASS"/"SETUP_WITH"/"BEFORE_WITH" is unsupported
-            # "MATCH_MAPPING"/"MATCH_SEQUENCE"/"MATCH_KEYS"/"MATCH_CLASS" is unsupported
-            else:
-                raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
-        return BlockResult(source_code, stack)
