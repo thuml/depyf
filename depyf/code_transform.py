@@ -4,6 +4,108 @@ from types import CodeType
 import ast
 import astor
 from collections import defaultdict
+import dataclasses
+
+import dis
+import sys
+
+py311 = sys.version_info >= (3, 11)
+all_jump_opcode_set = set(dis.hasjabs) | set(dis.hasjrel)
+
+
+@dataclasses.dataclass
+class Instruction:
+    """A mutable version of dis.Instruction"""
+
+    opcode: int
+    opname: str
+    arg: Optional[int]
+    argval: Any
+    argrepr: str
+    offset: Optional[int] = None
+    starts_line: Optional[int] = None
+    is_jump_target: bool = False
+
+    def __hash__(self):
+        return id(self)
+
+    def __eq__(self, other):
+        return id(self) == id(other)
+
+    def short_inst_repr(self):
+        return f"Instruction(opname={self.opname}, offset={self.offset})"
+
+    def get_jump_target(self: "Instruction"):
+        if self.opcode in all_jump_opcode_set:
+            return int(self.argrepr.replace("to ", "").strip())
+        # seems like a bug, "FOR_ITER" is in `dis.hasjrel`, but its `argval` is an absolute offset
+        # if self.opcode in dis.hasjabs:
+        #     return self.argval
+        # elif self.opcode in dis.hasjrel:
+        #     return self.offset + self.argval if not py311 else self.argval
+        else:
+            raise ValueError(f"Instruction {self.opname} does not have jump target")
+
+
+def convert_instruction(i: dis.Instruction) -> Instruction:
+    return Instruction(
+        i.opcode,
+        i.opname,
+        i.arg,
+        i.argval,
+        i.argrepr,
+        i.offset,
+        i.starts_line,
+        i.is_jump_target,
+    )
+
+
+def nop_instruction(inst: Instruction):
+    """Inplace modify an instruction as nop."""
+    inst.opname = "NOP"
+    inst.opcode = dis.opmap["NOP"]
+    inst.arg = 0
+    inst.argval = 0
+    inst.argrepr = ""
+    inst.offset
+    inst.starts_line
+    inst.is_jump_target = False
+    return inst
+
+
+def propagate_line_nums(instructions: List[Instruction]):
+    """Ensure every instruction has line number set in case some are removed"""
+    cur_line_no = None
+
+    def populate_line_num(inst):
+        nonlocal cur_line_no
+        if inst.starts_line:
+            cur_line_no = inst.starts_line
+
+        inst.starts_line = cur_line_no
+
+    for inst in instructions:
+        populate_line_num(inst)
+
+
+def simplify_with_statement(instructions: List[Instruction]):
+    """Simplify with statement.
+    3.10 with statement:
+    SETUP_WITH
+    with body
+    POP_BLOCK
+    some extra code (starts_line == with)
+    """
+    for i, inst in enumerate(instructions):
+        if inst.opname == "SETUP_WITH":
+            line_no = inst.starts_line
+            pop_blocks = [j for j, _inst in enumerate(instructions) if j > i and _inst.opname == "POP_BLOCK" and instructions[j + 1].starts_line == line_no]
+            if pop_blocks:
+                pop_block_index = pop_blocks[0]
+                nop_instruction(instructions[pop_block_index])
+                for _inst in instructions[pop_block_index:]:
+                    if _inst.starts_line == line_no:
+                        nop_instruction(_inst)
 
 
 def nop_unreachable_bytecode(instructions: List[dis.Instruction]) -> List[dis.Instruction]:
@@ -53,17 +155,9 @@ def nop_unreachable_bytecode(instructions: List[dis.Instruction]) -> List[dis.In
             reachable[i + 1] = True
     
     # mark unreachable instructions as NOP
-    new_instructions = [inst if flag else dis.Instruction(
-                    opname="NOP",
-                    opcode=dis.opmap["NOP"],
-                    arg=0,
-                    argval=0,
-                    argrepr="",
-                    offset=inst.offset,
-                    starts_line=inst.starts_line,
-                    is_jump_target=False,
-                ) for inst, flag in zip(instructions, reachable)]
-    return new_instructions
+    for inst, flag in zip(instructions, reachable):
+        if not flag:
+            nop_instruction(inst)
 
 def add_indentation(code: str, indentation: int = 4) -> str:
     """Add indentation to code."""
