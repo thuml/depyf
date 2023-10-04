@@ -467,9 +467,11 @@ class Decompiler:
 
     def CALL_FUNCTION_KW(self, inst: Instruction):
         kw_args = eval(self.state.stack.pop())
+        kw_vals = [(self.state.stack.pop()) for _ in range(len(kw_args))]
+        kw_vals.reverse()
         kwcalls = []
-        for name in kw_args:
-            kwcalls.append(f"{name}={self.state.stack.pop()}")
+        for name, val in zip(kw_args, kw_vals):
+            kwcalls.append(f"{name}={val}")
         pos_args = [(self.state.stack.pop()) for _ in range(inst.argval - len(kw_args))]
         pos_args = pos_args[::-1]
         func = self.state.stack.pop()
