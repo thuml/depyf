@@ -754,6 +754,16 @@ def test_IF_NONE():
     for a in range(10):
         assert scope['f'](a) == f(a)
 
+def test_MAKE_FUNCTION():
+    def f(a):
+        def g(b=3):
+            return a + b
+        return g(2)
+    scope = {}
+    exec(decompile(f), scope)
+    for a in range(10):
+        assert scope['f'](a) == f(a)
+
 
 # def test_WHILE():
 #     def f(a):

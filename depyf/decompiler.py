@@ -83,7 +83,15 @@ class Decompiler:
         """Push a constant onto the stack.
         `inst.argval` is the constant value, we have to use `repr` to get the source code
         """
-        self.state.stack.append(repr(inst.argval))
+        can_repr = False
+        try:
+            can_repr = eval(repr(inst.argval)) == inst.argval
+        except:
+            pass
+        if can_repr:
+            self.state.stack.append(repr(inst.argval))
+        else:
+            self.state.stack.append(inst.argval)
 
     def generic_load(self, inst: Instruction):
         """`inst.argval` is the variable name, in string"""
@@ -93,6 +101,37 @@ class Decompiler:
         self.state.stack.append(inst.argval)
 
     LOAD_FAST = LOAD_GLOBAL = LOAD_DEREF = LOAD_NAME = LOAD_CLASSDEREF = LOAD_CLOSURE = generic_load
+
+    def MAKE_FUNCTION(self, inst: Instruction):
+        qual_name = self.state.stack.pop()
+        code = self.state.stack.pop()
+        if inst.argval & 0x08:
+            # has closure
+            self.state.stack.pop()
+        if inst.argval & 0x04:
+            # has annotations
+            self.state.stack.pop()
+        kw_defaults = self.state.stack.pop() if inst.argval & 0x02 else {}
+        defaults = self.state.stack.pop() if inst.argval & 0x01 else ()
+        if len(kw_defaults) or len(defaults):
+            print("Function with default arguments is not supported, ignore the default arguments")
+        this_index = self.index_of(inst.offset)
+        func_name = qual_name
+        immediately_used = False
+        if self.instructions[this_index + 1].opname == "STORE_FAST":
+            # the function is immediately stored in a variable, use that variable name
+            func_name = self.instructions[this_index + 1].argval
+            immediately_used = True
+        if "<" in func_name:
+            self.state.source_code += f'"original name {qual_name} is illegal, use a temp name."\n'
+            func_name = self.get_temp_name()
+        inner_func = Decompiler(code).decompile(overwite_fn_name=func_name)
+        self.state.source_code += inner_func
+        if not immediately_used:
+            self.state.stack.append(func_name)
+        else:
+            # skip one instruction
+            return this_index + 2
 
     def COPY_FREE_VARS(self, inst: Instruction):
         # this opcode is used to copy free variables from the outer scope to the closure
@@ -606,7 +645,7 @@ class Decompiler:
 
     CACHE = unimplemented_instruction
     
-    MAKE_CELL = MAKE_FUNCTION = unimplemented_instruction
+    MAKE_CELL = unimplemented_instruction
     
     # we don't know these instructions
     PRINT_EXPR = COPY_DICT_WITHOUT_KEYS = unimplemented_instruction
