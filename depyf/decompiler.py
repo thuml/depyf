@@ -20,6 +20,7 @@ from .code_transform import (
     propagate_line_nums,
     convert_instruction,
     simplify_with_statement,
+    simplify_finally_statement,
     Instruction,
 )
 from .utils import (
@@ -360,6 +361,30 @@ class Decompiler:
     POP_JUMP_BACKWARD_IF_NONE = POP_JUMP_BACKWARD_IF_NOT_NONE = generic_jump_if
     JUMP_IF_TRUE_OR_POP = JUMP_IF_FALSE_OR_POP = generic_jump_if
 
+    def SETUP_FINALLY(self, inst: Instruction):
+        start_index = self.index_of(inst.offset)
+        end_index = self.index_of(inst.get_jump_target())
+        pop_block_index = [i for i, x in enumerate(self.instructions) if x.opname == "POP_BLOCK" and start_index <= i < end_index][-1]
+
+        try_code = ""
+        with self.new_state(self.state.stack):
+            self.decompile_range(start_index + 1, pop_block_index)
+            try_code = self.state.source_code
+            try_code = add_indentation(try_code, self.indentation)
+            try_code = "try:\n" + try_code
+        
+        finally_code = ""
+        with self.new_state(self.state.stack):
+            finally_end_index = end_index
+            if self.instructions[end_index - 1].is_jump():
+                finally_end_index -= 1
+            self.decompile_range(pop_block_index + 1, finally_end_index)
+            finally_code = self.state.source_code
+            finally_code = add_indentation(finally_code, self.indentation)
+            finally_code = "finally:\n" + finally_code
+        
+        self.state.source_code += try_code + finally_code
+        return end_index
 # ==================== Stack Manipulation Instructions =============================
     def rot_n(self, inst: Instruction):
         if inst.opname == "ROT_N":
@@ -615,7 +640,7 @@ class Decompiler:
     GET_YIELD_FROM_ITER = GET_ITER = FOR_ITER = unimplemented_instruction
 
     # we don't support try-except/try-finally
-    POP_EXCEPT = RERAISE = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = SETUP_FINALLY = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = BEGIN_FINALLY = END_FINALLY = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = unimplemented_instruction
+    POP_EXCEPT = RERAISE = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = BEGIN_FINALLY = END_FINALLY = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = unimplemented_instruction
 
     # we don't support async/await
     GET_AWAITABLE = GET_AITER = GET_ANEXT = END_ASYNC_FOR = BEFORE_ASYNC_WITH = SETUP_ASYNC_WITH = SEND = ASYNC_GEN_WRAP = unimplemented_instruction
@@ -656,6 +681,7 @@ class Decompiler:
     def cleanup_instructions(instructions: List[Instruction]):
         propagate_line_nums(instructions)
         simplify_with_statement(instructions)
+        simplify_finally_statement(instructions)
         nop_unreachable_bytecode(instructions)
 
     def __init__(self, code: Union[CodeType, Callable]):
@@ -663,71 +689,11 @@ class Decompiler:
             code = code.__code__
         self.code = code
         instructions = list(convert_instruction(_) for _ in dis.get_instructions(code))
-        self.cleanup_instructions(instructions)
+        Decompiler.cleanup_instructions(instructions)
         self.instructions = instructions
-        # supported_opnames = self.supported_opnames()
-        # for inst in self.instructions:
-        #     if inst.opname not in supported_opnames:
-        #         raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
         self.blocks = BasicBlock.decompose_basic_blocks(self.instructions)
         self.blocks_index_map = {str(block): idx for idx, block in enumerate(self.blocks)}
         self.state = DecompilerState(source_code="", stack=[])
-
-    def visualize_cfg(self, filepath: str="cfg.png"):
-        self.decompile()
-        for block in self.blocks:
-            lines = [x for x in block.decompiled_code.splitlines()]
-            if ("if" in lines[-1] or "for" in lines[-1]) and lines[-1].endswith(":"):
-                valid_lines = lines[:-1]
-                valid_code = "".join([x + "\n" for x in valid_lines])
-                simplified_code = remove_some_temp(valid_code, self.temp_prefix)
-                block.decompiled_code = simplified_code + lines[-1] + "\n"
-            else:
-                block.decompiled_code = remove_some_temp(block.decompiled_code, self.temp_prefix)
-
-        BasicBlock.to_graph(self.blocks, filepath=filepath)
-
-    def get_indentation_block(self, starting_block: BasicBlock) -> IndentationBlock:
-        """Get the indentation block that contains the starting block.
-        An indentation block is a block that is indented, e.g. if-else, while, for, etc.
-        Basic blocks in this indentation block are never targeted from outside blocks, and they can only jump to internal blocks or the next basic block only.
-        """
-        start_index = self.blocks_index_map[str(starting_block)]
-        running_index = start_index + 1
-        while running_index < len(self.blocks):
-            left_blocks = self.blocks[start_index: running_index]
-            next_index = running_index
-            for left_block in left_blocks:
-                if left_block.end_misc or left_block.end_with_return:
-                    continue
-                if left_block.to_blocks:
-                    # this is jmp instruction
-                    to_block = left_block.jump_to_block
-                    block_index = self.blocks_index_map[str(to_block)]
-                    next_index = max(next_index, block_index + 1)
-                    if left_block.end_with_if_jmp:
-                        # this is a conditional jmp, we also need to consider the fallthrough block
-                        fallthrough_block = left_block.fallthrough_block
-                        block_index = self.blocks_index_map[str(fallthrough_block)]
-                        next_index = max(next_index, block_index + 1)
-                if left_block.from_blocks:
-                    for from_block in left_block.from_blocks:
-                        block_index = self.blocks_index_map[str(from_block)]
-                        next_index = max(next_index, block_index + 1)
-            if next_index == running_index:
-                break
-            running_index = next_index
-        return IndentationBlock(blocks=self.blocks[start_index: running_index])
-
-    def decompose_indentation_blocks(self, blocks: List[BasicBlock]) -> List[IndentationBlock]:
-        start_index = self.blocks_index_map[str(blocks[0])]
-        end_index = self.blocks_index_map[str(blocks[-1])] + 1
-        indentation_blocks = []
-        while start_index < end_index:
-            indentation_block = self.get_indentation_block(self.blocks[start_index])
-            indentation_blocks.append(indentation_block)
-            start_index = self.blocks_index_map[str(indentation_block.blocks[-1])] + 1
-        return indentation_blocks
 
     def get_temp_name(self):
         self.temp_count += 1

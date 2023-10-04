@@ -109,6 +109,27 @@ def simplify_with_statement(instructions: List[Instruction]):
                         nop_instruction(_inst)
 
 
+def simplify_finally_statement(instructions: List[Instruction]):
+    """Simplify finally statement.
+    3.10 finally statement:
+    SETUP_FINALLY
+    body
+    POP_BLOCK
+    finally code
+    Exception code
+    RERAISE
+    """
+    for i, inst in enumerate(instructions):
+        if inst.opname == "SETUP_FINALLY":
+            finally_target = inst.get_jump_target()
+            reraise_idx = [j for j, _inst in enumerate(instructions) if _inst.offset >= finally_target and _inst.opname == "RERAISE"]
+            if reraise_idx:
+                reraise_index = reraise_idx[0]
+                for j, _inst in enumerate(instructions):
+                    if _inst.offset >= finally_target and j <= reraise_index:
+                        nop_instruction(_inst)
+
+
 def nop_unreachable_bytecode(instructions: List[dis.Instruction]) -> List[dis.Instruction]:
     """Mark unreachable bytecode as NOP."""
     jumps = set(dis.hasjabs) | set(dis.hasjrel)
@@ -140,6 +161,9 @@ def nop_unreachable_bytecode(instructions: List[dis.Instruction]) -> List[dis.In
                 continue
             if "IF" in inst.opname or "FOR_ITER" in inst.opname:
                 # the fallback block is always reachable for conditional jumps
+                reachable[i + 1] = True
+            elif inst.opname == "SETUP_FINALLY":
+                # the finally block is always reachable
                 reachable[i + 1] = True
             else:
                 # this is a direct jump, the target is reachable
