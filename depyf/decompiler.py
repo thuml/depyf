@@ -332,6 +332,15 @@ class Decompiler:
         jump_index = self.index_of(jump_offset)
         this_index = self.index_of(inst.offset)
         cond = self.state.stack[-1]
+
+        if "ASSERT" in self.instructions[this_index + 1].opname:
+            with self.new_state(self.state.stack):
+                self.decompile_range(this_index + 1, jump_index)
+                source_code = self.state.source_code
+            source_code = add_indentation(source_code, self.indentation)
+            self.state.source_code += f"if not {cond}:\n{source_code}"
+            return jump_index
+
         fallthrough_stack = self.state.stack
 
         if_body_start_offset = None
