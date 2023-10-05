@@ -77,6 +77,12 @@ class Decompiler:
                 temp_name = self.get_temp_name()
                 self.state.source_code += f'{temp_name} = importlib.import_module("{module}").{name}\n'
                 self.state.stack.append(temp_name)
+            elif inst.argrepr.startswith("torch."):
+                # Don't know why torch.xxx get here, support this corner case anyway. This deals with something like `torch.float`.
+                self.state.source_code += "import torch\n"
+                temp_name = self.get_temp_name()
+                self.state.source_code += f'{temp_name} = {inst.argval}\n'
+                self.state.stack.append(temp_name)
             else:
                 self.state.stack.append(inst.argval)
 
