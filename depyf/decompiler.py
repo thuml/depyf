@@ -41,8 +41,6 @@ class Decompiler:
     code: CodeType
     temp_count: int = 0
     temp_prefix: str = "__temp_"
-    blocks: List[BasicBlock] = dataclasses.field(default_factory=list)
-    blocks_index_map: Dict[str, int] = dataclasses.field(default_factory=dict)
     state: DecompilerState = dataclasses.field(default_factory=lambda: DecompilerState(source_code="", stack=[]))
     indentation: int = 4
 
@@ -91,7 +89,11 @@ class Decompiler:
         if "NULL + " in inst.argrepr:
             # Python 3.11 support
             self.state.stack.append(None)
-        self.state.stack.append(inst.argval)
+        if inst.argrepr.startswith("."):
+            # list/set/tuple comprehension.
+            self.state.stack.append(inst.argval.replace(".", "comp_arg_"))
+        else:
+            self.state.stack.append(inst.argval)
 
     LOAD_FAST = LOAD_GLOBAL = LOAD_DEREF = LOAD_NAME = LOAD_CLASSDEREF = LOAD_CLOSURE = generic_load
 
@@ -567,7 +569,9 @@ class Decompiler:
         args = args[::-1]
         if "UNPACK" in inst.opname:
             args = [f"*{arg}" for arg in args]
-        self.state.stack.append(f"[{', '.join(args)}]")
+        temp_name = self.get_temp_name()
+        self.state.source_code += f"{temp_name} = [{', '.join(args)}]\n"
+        self.state.stack.append(temp_name)
     
     BUILD_LIST = BUILD_LIST_UNPACK = build_list
 
@@ -625,6 +629,11 @@ class Decompiler:
         self.state.source_code += f"{temp} = {x}\n"
         self.state.source_code += f"{temp}.extend({values})\n"
         self.state.stack.append(temp)
+
+    def LIST_APPEND(self, inst: Instruction):
+        container = self.state.stack[-inst.argval]
+        value = self.state.stack.pop()
+        self.state.source_code += f"{container}.append({value})\n"
 
     def generic_update(self, inst: Instruction):
         assert inst.argval == 1, "Only tested for argval==1"
@@ -695,7 +704,7 @@ class Decompiler:
     YIELD_FROM = SETUP_ANNOTATIONS = LOAD_BUILD_CLASS = SETUP_WITH = BEFORE_WITH = MATCH_MAPPING = MATCH_SEQUENCE = MATCH_KEYS = MATCH_CLASS = unimplemented_instruction
 
     # we cannot use list/set/map comprehension
-    SET_ADD = MAP_ADD = LIST_APPEND = unimplemented_instruction
+    SET_ADD = MAP_ADD = unimplemented_instruction
 
     def decompile_range(self, start: int, end: int):
         running_index = start
@@ -728,13 +737,11 @@ class Decompiler:
         instructions = list(convert_instruction(_) for _ in dis.get_instructions(code))
         Decompiler.cleanup_instructions(instructions)
         self.instructions = instructions
-        self.blocks = BasicBlock.decompose_basic_blocks(self.instructions)
-        self.blocks_index_map = {str(block): idx for idx, block in enumerate(self.blocks)}
         self.state = DecompilerState(source_code="", stack=[])
 
     def get_temp_name(self):
-        self.temp_count += 1
-        return f"{self.temp_prefix}{self.temp_count}"
+        Decompiler.temp_count += 1
+        return f"{self.temp_prefix}{Decompiler.temp_count}"
 
     @staticmethod
     def supported_opnames():
