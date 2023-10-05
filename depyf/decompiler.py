@@ -627,6 +627,9 @@ class Decompiler:
         self.state.source_code += f"{temp}.extend({values})\n"
 
     def LIST_APPEND(self, inst: Instruction):
+        if inst.argval == 1:
+            # it should be a bug, the tos should be the value. fix it anyway.
+            inst.argval += 1
         container = self.state.stack[-inst.argval]
         value = self.state.stack.pop()
         self.state.source_code += f"{container}.append({value})\n"
@@ -640,6 +643,9 @@ class Decompiler:
     SET_UPDATE = DICT_UPDATE = DICT_MERGE = generic_update
 
     def SET_ADD(self, inst: Instruction):
+        if inst.argval == 1:
+            # it should be a bug, the tos should be the value. fix it anyway.
+            inst.argval += 1
         container = self.state.stack[-inst.argval]
         value = self.state.stack.pop()
         self.state.source_code += f"{container}.add({value})\n"

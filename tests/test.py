@@ -762,6 +762,14 @@ def test_MAP_COMP():
     for a in range(10):
         assert scope['f'](a) == f(a)
 
+def test_NESTED_COMP():
+    def f(a):
+        return [{x: {_ for _ in range(x)} for x in range(i)} for i in range(a)]
+    scope = {}
+    exec(decompile(f), scope)
+    for a in range(10):
+        assert scope['f'](a) == f(a)
+
 
 def test_FORMAT_VALUE():
     def f():
