@@ -599,7 +599,7 @@ class Decompiler:
             args = args[::-1]
             args = [f"**{arg}" for arg in args]
             self.state.stack.append(f"{{{', '.join(args)}}}")
-        self.replace_mutable_with_temp()
+        self.replace_mutable_tos_with_temp()
 
     BUILD_MAP_UNPACK = BUILD_MAP_UNPACK_WITH_CALL = build_map_unpack
 
@@ -609,14 +609,14 @@ class Decompiler:
         keys = args[::2]
         values = args[1::2]
         self.state.stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
-        self.replace_mutable_with_temp()
+        self.replace_mutable_tos_with_temp()
 
     def BUILD_CONST_KEY_MAP(self, inst: Instruction):
         keys = eval(self.state.stack.pop())
         args = [self.state.stack.pop() for _ in range(inst.argval)]
         values = args[::-1]
         self.state.stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
-        self.replace_mutable_with_temp()
+        self.replace_mutable_tos_with_temp()
 
     def BUILD_STRING(self, inst: Instruction):
         args = [self.state.stack.pop() for _ in range(inst.argval)]
@@ -645,11 +645,8 @@ class Decompiler:
     def generic_update(self, inst: Instruction):
         assert inst.argval == 1, "Only tested for argval==1"
         values = self.state.stack.pop()
-        temp = self.get_temp_name()
-        x = self.state.stack.pop()
-        self.state.source_code += f"{temp} = {x}\n"
+        temp = self.replace_mutable_tos_with_temp()
         self.state.source_code += f"{temp}.update({values})\n"
-        self.state.stack.append(temp)
     
     SET_UPDATE = DICT_UPDATE = DICT_MERGE = generic_update
 
@@ -758,11 +755,12 @@ class Decompiler:
         Decompiler.temp_count += 1
         return f"{self.temp_prefix}{Decompiler.temp_count}"
 
-    def replace_mutable_with_temp(self):
+    def replace_mutable_tos_with_temp(self):
         ans = self.state.stack.pop()
         temp_name = self.get_temp_name()
         self.state.source_code += f"{temp_name} = {ans}\n"
         self.state.stack.append(temp_name)
+        return temp_name
 
     @staticmethod
     def supported_opnames():
