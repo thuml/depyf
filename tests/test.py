@@ -823,6 +823,35 @@ def test_IF():
     for a in range(10):
         assert scope['f'](a) == f(a)
 
+def test_compound_IF_and():
+    def f(a, b):
+        c = 1
+        if a > 0 and b > 1:
+            c += 1
+        else:
+            c += 2
+        c += 3
+        return c
+    scope = {}
+    exec(decompile(f), scope)
+    for a in range(-3, 3):
+        for b in range(-3, 3):
+            assert scope['f'](a, b) == f(a, b)
+
+def test_compound_IF_or():
+    def f(a, b):
+        c = 1
+        if a > 0 or b > 1:
+            c += 1
+        else:
+            c += 2
+        c += 3
+        return c
+    scope = {}
+    exec(decompile(f), scope)
+    for a in range(-3, 3):
+        for b in range(-3, 3):
+            assert scope['f'](a, b) == f(a, b)
 
 def test_IF_NONE():
     def f(a):

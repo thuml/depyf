@@ -327,6 +327,7 @@ class Decompiler:
         assert inst.argval == 0, "Only generator expression is supported"
 
     def generic_jump_if(self, inst: Instruction):
+        """Only support consecutive and/or, do not support mixed and/or."""
         jump_offset = inst.get_jump_target()
         jump_index = self.index_of(jump_offset)
         this_index = self.index_of(inst.offset)
@@ -405,11 +406,13 @@ class Decompiler:
         else_code = ""
         if jump_targets:
             # has "else" branch
+            else_start_offset = if_body_end_offset
+            else_start_index = self.index_of(else_start_offset)
             max_jump = max(jump_targets)
             max_jump_index = self.index_of(max_jump)
             else_code += "else:\n"
             with self.new_state(jump_stack):
-                self.decompile_range(jump_index, max_jump_index)
+                self.decompile_range(else_start_index, max_jump_index)
                 source_code = self.state.source_code
             else_code += add_indentation(source_code, self.indentation)
 
