@@ -553,7 +553,7 @@ class Decompiler:
         self.state.stack.append(repr(names))
 
     def CALL(self, inst: Instruction):
-        last_inst = [x for x in block.instructions if x.offset < inst.offset][-1]
+        last_inst = [x for x in self.instructions if x.offset < inst.offset][-1]
         has_kw_names = last_inst.opname == "KW_NAMES"
         kw_names = tuple()
         if has_kw_names:
