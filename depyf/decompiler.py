@@ -575,6 +575,10 @@ class Decompiler:
         func = self.state.stack.pop()
         if self.state.stack and self.state.stack[-1] is None:
             self.state.stack.pop()
+        if "iter(" in func:
+            # Why do we need this? Don't know. But sometimes CPython generates CALL with argval=0, but the function actually needs an arg (for list/set/map comprehension).
+            pos_args = [func]
+            func = self.state.stack.pop()
         self.state.stack.append(f"{func}({', '.join(pos_args + kwcalls)})")
         self.replace_mutable_tos_with_temp()
 
