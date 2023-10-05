@@ -144,6 +144,10 @@ class Decompiler:
         # the `None` object is used to represent `NULL` in python bytecode
         self.state.stack.append(None)
 
+    def GET_ITER(self, inst: Instruction):
+        tos = self.state.stack.pop()
+        self.state.stack.append(f"iter({tos})")
+
 # ==================== Store Instructions =============================
 
     def generic_store(self, inst: Instruction):
@@ -400,6 +404,22 @@ class Decompiler:
         
         self.state.source_code += try_code + finally_code
         return end_index
+
+    def FOR_ITER(self, inst: Instruction):
+        start_index = self.index_of(inst.offset)
+        end_index = self.index_of(inst.get_jump_target())
+
+        temp_name = self.get_temp_name()
+        for_code = f"for {temp_name} in {self.state.stack.pop()}:\n"
+        self.state.stack.append(temp_name)
+        with self.new_state(self.state.stack):
+            self.decompile_range(start_index + 1, end_index)
+            code = self.state.source_code
+            for_code = for_code + add_indentation(code, self.indentation)
+
+        self.state.source_code += for_code
+        return end_index
+
 # ==================== Stack Manipulation Instructions =============================
     def rot_n(self, inst: Instruction):
         if inst.opname == "ROT_N":
@@ -654,7 +674,7 @@ class Decompiler:
     def unimplemented_instruction(self, inst: Instruction):
         raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
 
-    GET_YIELD_FROM_ITER = GET_ITER = FOR_ITER = unimplemented_instruction
+    GET_YIELD_FROM_ITER = unimplemented_instruction
 
     # we don't support try-except/try-finally
     POP_EXCEPT = RERAISE = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = BEGIN_FINALLY = END_FINALLY = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = unimplemented_instruction
