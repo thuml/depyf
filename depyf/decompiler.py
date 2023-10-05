@@ -99,6 +99,10 @@ class Decompiler:
 
     def MAKE_FUNCTION(self, inst: Instruction):
         qual_name = self.state.stack.pop()
+        try:
+            qual_name = eval(qual_name)
+        except Exception:
+            pass
         code = self.state.stack.pop()
         if inst.argval & 0x08:
             # has closure
