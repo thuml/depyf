@@ -772,7 +772,7 @@ class Decompiler:
     # The extended args are already merged into the following instruction's `inst.argval`.
     EXTENDED_ARG = generic_nop
 
-    NOP = RESUME = SETUP_LOOP = POP_BLOCK = PRECALL = END_FINALLY = generic_nop
+    NOP = RESUME = SETUP_LOOP = POP_BLOCK = PRECALL = BEGIN_FINALLY = END_FINALLY = generic_nop
 
 # ==================== Unsupported Instructions =============================
     def unimplemented_instruction(self, inst: Instruction):
@@ -781,7 +781,7 @@ class Decompiler:
     GET_YIELD_FROM_ITER = unimplemented_instruction
 
     # we don't support try-except/try-finally
-    POP_EXCEPT = RERAISE = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = BEGIN_FINALLY = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = unimplemented_instruction
+    POP_EXCEPT = RERAISE = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = unimplemented_instruction
 
     # we don't support async/await
     GET_AWAITABLE = GET_AITER = GET_ANEXT = END_ASYNC_FOR = BEFORE_ASYNC_WITH = SETUP_ASYNC_WITH = SEND = ASYNC_GEN_WRAP = unimplemented_instruction
