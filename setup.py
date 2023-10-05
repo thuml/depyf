@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='depyf',
-    version='0.2.0',
+    version='0.3.0',
     description='Decompile python functions, from bytecode to source code!',
     long_description=open("README.md", "r").read(),
     long_description_content_type="text/markdown",
@@ -18,8 +18,6 @@ setup(
     extras_require={
         "dev": [
             "pytest",
-            "networkx",
-            "pygraphviz"
         ]
     }
 )

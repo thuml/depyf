@@ -257,6 +257,8 @@ def lowest_common_parent(node1, node2):
     return last_common, p1, p2
 
 def remove_some_temp(source_code: str, temp_prefix:str, indentation: int=4) -> str:
+    print("code: " + "=" * 80)
+    print(source_code)
     tree = ast.parse(source_code)
     set_parents(tree)
 

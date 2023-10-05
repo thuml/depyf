@@ -11,7 +11,6 @@ import functools
 from collections import defaultdict
 import contextlib
 
-from .block import BasicBlock, IndentationBlock
 from .code_transform import (
     nop_unreachable_bytecode,
     add_indentation,
