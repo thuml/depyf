@@ -670,6 +670,15 @@ def test_CALL_FUNCTION_EX():
     exec(decompile(f), scope)
     assert scope['f']() == ans
 
+def test_var_args():
+    def func(*args, **kwargs):
+        return (args, kwargs)
+    scope = {}
+    exec(decompile(func), scope)
+    a = [1, 2, 3]
+    b = {'a': 4}
+    assert scope['func'](1, a, b, d=5) == func(1, a, b, d=5)
+
 
 def test_complex_signature():
     def func(a, b, *args, **kwargs):
