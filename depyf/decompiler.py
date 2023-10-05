@@ -557,8 +557,11 @@ class Decompiler:
         self.state.stack.append(repr(names))
 
     def CALL(self, inst: Instruction):
-        last_inst = [x for x in self.instructions if x.offset < inst.offset][-1]
-        has_kw_names = last_inst.opname == "KW_NAMES"
+        last_inst = [x for x in self.instructions if x.offset < inst.offset]
+        has_kw_names = False
+        if last_inst:
+            if last_inst[-1].opname == "KW_NAMES" or (len(last_inst) > 1 and last_inst[-2].opname == "KW_NAMES" and last_inst[-1].opname == "PRECALL"):
+                has_kw_names = True
         kw_names = tuple()
         if has_kw_names:
             kw_names = eval(self.state.stack.pop())
