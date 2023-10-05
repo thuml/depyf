@@ -349,6 +349,9 @@ class Decompiler:
             self.state.source_code += f"if {cond} is not None:\n"
 
         if_body_start = self.index_of(inst.offset)
+        if jump_index < if_body_start:
+            self.state.source_code += add_indentation("continue\n", self.indentation)
+            return
 
         jump_targets = [i.get_jump_target() for i in self.instructions[if_body_start + 1: jump_index] if i.is_jump() and i.get_jump_target() > jump_offset]
         else_code = ""
