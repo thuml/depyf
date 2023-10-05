@@ -746,6 +746,15 @@ def test_LIST_COMP():
     for a in range(10):
         assert scope['f'](a) == f(a)
 
+def test_SET_COMP():
+    def f(a):
+        return {i ** 2 for i in range(a)}
+    scope = {}
+    exec(decompile(f), scope)
+    for a in range(10):
+        assert scope['f'](a) == f(a)
+
+
 def test_FORMAT_VALUE():
     def f():
         a = 1

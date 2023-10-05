@@ -576,14 +576,18 @@ class Decompiler:
     BUILD_LIST = BUILD_LIST_UNPACK = build_list
 
     def build_set(self, inst: Instruction):
+        ans = ""
         if inst.argval == 0:
-            self.state.stack.append("set()")
+            ans = "set()"
         else:
             args = [self.state.stack.pop() for _ in range(inst.argval)]
             args = args[::-1]
             if "UNPACK" in inst.opname:
                 args = [f"*{arg}" for arg in args]
-            self.state.stack.append(f"{{{', '.join(args)}}}")
+            ans = f"{{{', '.join(args)}}}"
+        temp_name = self.get_temp_name()
+        self.state.source_code += f"{temp_name} = {ans}\n"
+        self.state.stack.append(temp_name)
     
     BUILD_SET = BUILD_SET_UNPACK = build_set
 
@@ -646,6 +650,11 @@ class Decompiler:
     
     SET_UPDATE = DICT_UPDATE = DICT_MERGE = generic_update
 
+    def SET_ADD(self, inst: Instruction):
+        container = self.state.stack[-inst.argval]
+        value = self.state.stack.pop()
+        self.state.source_code += f"{container}.add({value})\n"
+
 # ==================== Misc Instructions =============================
     def RAISE_VARARGS(self, inst: Instruction):
         if inst.argval == 0:
@@ -704,7 +713,7 @@ class Decompiler:
     YIELD_FROM = SETUP_ANNOTATIONS = LOAD_BUILD_CLASS = SETUP_WITH = BEFORE_WITH = MATCH_MAPPING = MATCH_SEQUENCE = MATCH_KEYS = MATCH_CLASS = unimplemented_instruction
 
     # we cannot use list/set/map comprehension
-    SET_ADD = MAP_ADD = unimplemented_instruction
+    MAP_ADD = unimplemented_instruction
 
     def decompile_range(self, start: int, end: int):
         running_index = start
