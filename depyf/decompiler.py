@@ -599,6 +599,7 @@ class Decompiler:
             args = args[::-1]
             args = [f"**{arg}" for arg in args]
             self.state.stack.append(f"{{{', '.join(args)}}}")
+        self.replace_mutable_with_temp()
 
     BUILD_MAP_UNPACK = BUILD_MAP_UNPACK_WITH_CALL = build_map_unpack
 
@@ -608,12 +609,14 @@ class Decompiler:
         keys = args[::2]
         values = args[1::2]
         self.state.stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
+        self.replace_mutable_with_temp()
 
     def BUILD_CONST_KEY_MAP(self, inst: Instruction):
         keys = eval(self.state.stack.pop())
         args = [self.state.stack.pop() for _ in range(inst.argval)]
         values = args[::-1]
         self.state.stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
+        self.replace_mutable_with_temp()
 
     def BUILD_STRING(self, inst: Instruction):
         args = [self.state.stack.pop() for _ in range(inst.argval)]
@@ -654,6 +657,12 @@ class Decompiler:
         container = self.state.stack[-inst.argval]
         value = self.state.stack.pop()
         self.state.source_code += f"{container}.add({value})\n"
+
+    def MAP_ADD(self, inst: Instruction):
+        container = self.state.stack[-inst.argval - 1]
+        value = self.state.stack.pop()
+        key = self.state.stack.pop()
+        self.state.source_code += f"{container}.__setitem__({key}, {value})\n"
 
 # ==================== Misc Instructions =============================
     def RAISE_VARARGS(self, inst: Instruction):
@@ -712,9 +721,6 @@ class Decompiler:
     
     YIELD_FROM = SETUP_ANNOTATIONS = LOAD_BUILD_CLASS = SETUP_WITH = BEFORE_WITH = MATCH_MAPPING = MATCH_SEQUENCE = MATCH_KEYS = MATCH_CLASS = unimplemented_instruction
 
-    # we cannot use list/set/map comprehension
-    MAP_ADD = unimplemented_instruction
-
     def decompile_range(self, start: int, end: int):
         running_index = start
         while running_index < end:
@@ -751,6 +757,12 @@ class Decompiler:
     def get_temp_name(self):
         Decompiler.temp_count += 1
         return f"{self.temp_prefix}{Decompiler.temp_count}"
+
+    def replace_mutable_with_temp(self):
+        ans = self.state.stack.pop()
+        temp_name = self.get_temp_name()
+        self.state.source_code += f"{temp_name} = {ans}\n"
+        self.state.stack.append(temp_name)
 
     @staticmethod
     def supported_opnames():
