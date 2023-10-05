@@ -488,17 +488,15 @@ class Decompiler:
         func = self.state.stack.pop()
         if self.state.stack and self.state.stack[-1] is None:
             self.state.stack.pop()
-        temp = self.get_temp_name()
-        self.state.source_code += f"{temp} = {func}({', '.join(pos_args + kwcalls)})\n"
-        self.state.stack.append(temp)
+        self.state.stack.append(f"{func}({', '.join(pos_args + kwcalls)})")
+        self.replace_mutable_tos_with_temp()
 
     def generic_call(self, inst: Instruction):
         args = [(self.state.stack.pop()) for _ in range(inst.argval)]
         args = args[::-1]
         func = self.state.stack.pop()
-        temp = self.get_temp_name()
-        self.state.source_code += f"{temp} = {func}({', '.join(args)})\n"
-        self.state.stack.append(temp)
+        self.state.stack.append(f"{func}({', '.join(args)})")
+        self.replace_mutable_tos_with_temp()
     
     CALL_FUNCTION = CALL_METHOD = generic_call
 
@@ -512,24 +510,20 @@ class Decompiler:
         pos_args = [(self.state.stack.pop()) for _ in range(inst.argval - len(kw_args))]
         pos_args = pos_args[::-1]
         func = self.state.stack.pop()
-        temp = self.get_temp_name()
-        self.state.source_code += f"{temp} = {func}({', '.join(pos_args + kwcalls)})\n"
-        self.state.stack.append(temp)
+        self.state.stack.append(f"{func}({', '.join(pos_args + kwcalls)})")
+        self.replace_mutable_tos_with_temp()
 
     def CALL_FUNCTION_EX(self, inst: Instruction):
         if inst.argval == 0:
             args = self.state.stack.pop()
             func = self.state.stack.pop()
-            temp = self.get_temp_name()
-            self.state.source_code += f"{temp} = {func}(*{args})\n"
-            self.state.stack.append(temp)
+            self.state.stack.append(f"{func}(*{args})")
         elif inst.argval == 1:
             kw_args = self.state.stack.pop()
             args = self.state.stack.pop()
             func = self.state.stack.pop()
-            temp = self.get_temp_name()
-            self.state.source_code += f"{temp} = {func}(*{args}, **{kw_args})\n"
-            self.state.stack.append(temp)
+            self.state.stack.append(f"{func}(*{args}, **{kw_args})")
+        self.replace_mutable_tos_with_temp()
 
 # ==================== Container Related Instructions (tuple, list, set, dict) =============================
     def UNPACK_SEQUENCE(self, inst: Instruction):
@@ -569,9 +563,8 @@ class Decompiler:
         args = args[::-1]
         if "UNPACK" in inst.opname:
             args = [f"*{arg}" for arg in args]
-        temp_name = self.get_temp_name()
-        self.state.source_code += f"{temp_name} = [{', '.join(args)}]\n"
-        self.state.stack.append(temp_name)
+        self.state.stack.append(f"[{', '.join(args)}]")
+        self.replace_mutable_tos_with_temp()
     
     BUILD_LIST = BUILD_LIST_UNPACK = build_list
 
@@ -585,9 +578,8 @@ class Decompiler:
             if "UNPACK" in inst.opname:
                 args = [f"*{arg}" for arg in args]
             ans = f"{{{', '.join(args)}}}"
-        temp_name = self.get_temp_name()
-        self.state.source_code += f"{temp_name} = {ans}\n"
-        self.state.stack.append(temp_name)
+        self.state.stack.append(ans)
+        self.replace_mutable_tos_with_temp()
     
     BUILD_SET = BUILD_SET_UNPACK = build_set
 
@@ -631,11 +623,8 @@ class Decompiler:
     def LIST_EXTEND(self, inst: Instruction):
         assert inst.argval == 1, "Only tested for argval==1"
         values = self.state.stack.pop()
-        temp = self.get_temp_name()
-        x = self.state.stack.pop()
-        self.state.source_code += f"{temp} = {x}\n"
+        temp = self.replace_mutable_tos_with_temp()
         self.state.source_code += f"{temp}.extend({values})\n"
-        self.state.stack.append(temp)
 
     def LIST_APPEND(self, inst: Instruction):
         container = self.state.stack[-inst.argval]
