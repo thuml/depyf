@@ -620,7 +620,7 @@ def test_DICT_MERGE():
     assert scope['f']() == ans
 
 
-def test_CALL_FUNCTION():
+def test_CALL_FUNCTION_NORMAL():
     def func(a, b, c=1):
         return (a, b, c)
     def f():
