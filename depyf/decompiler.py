@@ -357,7 +357,7 @@ class Decompiler:
         conditions = [cond]
         for _index in range(this_index, jump_index):
             _inst = self.instructions[_index]
-            if "IF_FALSE" in _inst.opname:
+            if "IF_FALSE" in _inst.opname or "IF_NOT_NONE" in _inst.opname or "IF_NONE" in _inst.opname:
                 # JUMP_IF_FALSE, followed by "and", short-circuit evaluation means we jump to the end of if-block if the condition is false
                 if if_body_end_offset is None:
                     if_body_end_offset = _inst.get_jump_target()
@@ -369,6 +369,10 @@ class Decompiler:
                         self.state.source_code += source_code
                         conditions.append(self.state.stack[-1])
                         last_index = _index
+                    if "IF_NOT_NONE" in _inst.opname:
+                        conditions[-1] = f"{conditions[-1]} is None"
+                    elif "IF_NONE" in _inst.opname:
+                        conditions[-1] = f"{conditions[-1]} is not None"
                     conditions.append("and")
 
                     jump_stack = fallthrough_stack.copy()
@@ -400,13 +404,6 @@ class Decompiler:
                         jump_stack.pop()
                     elif "OR_POP" in _inst.opname:
                         pass
-
-            elif "IF_NOT_NONE" in _inst.opname:
-                # TODO to check, in 3.11
-                self.state.source_code += f"if {cond} is None:\n"
-            elif "IF_NONE" in _inst.opname:
-                # TODO to check, in 3.11
-                self.state.source_code += f"if {cond} is not None:\n"
 
         conditions.pop()
 
