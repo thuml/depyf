@@ -47,14 +47,15 @@ def get_function_signature(code_obj: CodeType, overwite_fn_name: Optional[str]=N
     normal_arg_count = code_obj.co_argcount + code_obj.co_kwonlyargcount
     arg_names = code_obj.co_varnames[:normal_arg_count]
     arg_names = [x if not x.startswith(".") else x.replace(".", "comp_arg_") for x in arg_names]
-    args_str = ', '.join(arg_names)
+    
     import inspect
     if code_obj.co_flags & inspect.CO_VARARGS:
-        args_str += ', *' + code_obj.co_varnames[normal_arg_count]
+        arg_names.append('*' + code_obj.co_varnames[normal_arg_count])
         normal_arg_count += 1
     if code_obj.co_flags & inspect.CO_VARKEYWORDS:
-        args_str += ', **' + code_obj.co_varnames[normal_arg_count]
+        arg_names.append('**' + code_obj.co_varnames[normal_arg_count])
         normal_arg_count += 1
+    args_str = ', '.join(arg_names)
     fn_name = overwite_fn_name if overwite_fn_name is not None else code_obj.co_name
     header = f"def {fn_name}({args_str}):\n"
     return header
