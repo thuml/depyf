@@ -331,8 +331,7 @@ class Decompiler:
         jump_index = self.index_of(jump_offset)
         this_index = self.index_of(inst.offset)
         cond = self.state.stack[-1]
-        fallthrough_stack = self.state.stack.copy()
-        jump_stack = self.state.stack.copy()
+        fallthrough_stack = self.state.stack
 
         if_body_start_offset = None
         if_body_end_offset = None
@@ -346,14 +345,15 @@ class Decompiler:
                     if_body_end_offset = _inst.get_jump_target()
                 if _inst.get_jump_target() == if_body_end_offset:
                     if _index != this_index:
-                        with self.new_state(self.state.stack):
+                        with self.new_state(fallthrough_stack):
                             self.decompile_range(last_index + 1, _index)
                             source_code = self.state.source_code
                         self.state.source_code += source_code
-                        conditions.append(self.state.stack.pop())
+                        conditions.append(self.state.stack[-1])
                         last_index = _index
                     conditions.append("and")
 
+                    jump_stack = fallthrough_stack.copy()
                     fallthrough_stack.pop()
                     # POP_AND_JUMP / JUMP_OR_POP
                     if "POP_JUMP" in _inst.opname:
@@ -367,18 +367,19 @@ class Decompiler:
                     if_body_start_offset = _inst.get_jump_target()
                 if _inst.get_jump_target() == if_body_start_offset:
                     if _index != this_index:
-                        with self.new_state(self.state.stack):
+                        with self.new_state(fallthrough_stack):
                             self.decompile_range(last_index + 1, _index)
                             source_code = self.state.source_code
                         self.state.source_code += source_code
-                        conditions.append(self.state.stack.pop())
+                        conditions.append(self.state.stack[-1])
                         last_index = _index
                     conditions.append("or")
 
-                    jump_stack.pop()
+                    jump_stack = fallthrough_stack.copy()
+                    fallthrough_stack.pop()
                     # POP_AND_JUMP / JUMP_OR_POP
                     if "POP_JUMP" in _inst.opname:
-                        fallthrough_stack.pop()
+                        jump_stack.pop()
                     elif "OR_POP" in _inst.opname:
                         pass
 
