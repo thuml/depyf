@@ -138,12 +138,12 @@ def nop_unreachable_bytecode(instructions: List[dis.Instruction]) -> List[dis.In
     reachable[0] = True
     # each instruction marks the instruction after it
     for i, inst in enumerate(instructions):
-        # the last instruction does not need to mark any following instructions
-        if i == len(instructions) - 1:
-            break
         if inst.is_jump_target:
             # the instruction is the target of a jump
             reachable[i] = True
+        # the last instruction does not need to mark any following instructions
+        if i == len(instructions) - 1:
+            break
         # this instruction is not reachable, nothing to do
         if not reachable[i]:
             continue
