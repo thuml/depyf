@@ -98,11 +98,19 @@ class Decompiler:
     LOAD_FAST = LOAD_GLOBAL = LOAD_DEREF = LOAD_NAME = LOAD_CLASSDEREF = LOAD_CLOSURE = generic_load
 
     def MAKE_FUNCTION(self, inst: Instruction):
-        qual_name = self.state.stack.pop()
-        try:
-            qual_name = eval(qual_name)
-        except Exception:
-            pass
+        if sys.version_info < (3, 11):
+            qual_name = self.state.stack.pop()
+            try:
+                qual_name = eval(qual_name)
+            except Exception:
+                pass
+            func_name = qual_name
+            if "<" in func_name:
+                self.state.source_code += f'"original name {qual_name} is illegal, use a temp name."\n'
+                func_name = self.get_temp_name()
+        else:
+            # Python 3.11 support, see https://docs.python.org/3.11/library/dis.html#opcode-MAKE_FUNCTION
+            func_name = self.get_temp_name()
         code = self.state.stack.pop()
         if inst.argval & 0x08:
             # has closure
@@ -115,15 +123,11 @@ class Decompiler:
         if len(kw_defaults) or len(defaults):
             print("Function with default arguments is not supported, ignore the default arguments")
         this_index = self.index_of(inst.offset)
-        func_name = qual_name
         immediately_used = False
         if self.instructions[this_index + 1].opname == "STORE_FAST":
             # the function is immediately stored in a variable, use that variable name
             func_name = self.instructions[this_index + 1].argval
             immediately_used = True
-        if "<" in func_name:
-            self.state.source_code += f'"original name {qual_name} is illegal, use a temp name."\n'
-            func_name = self.get_temp_name()
         inner_func = Decompiler(code).decompile(overwite_fn_name=func_name)
         self.state.source_code += inner_func
         if not immediately_used:
@@ -774,6 +778,8 @@ class Decompiler:
 
     NOP = RESUME = SETUP_LOOP = POP_BLOCK = PRECALL = BEGIN_FINALLY = END_FINALLY = generic_nop
 
+    MAKE_CELL = generic_nop
+
 # ==================== Unsupported Instructions =============================
     def unimplemented_instruction(self, inst: Instruction):
         raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
@@ -787,9 +793,7 @@ class Decompiler:
     GET_AWAITABLE = GET_AITER = GET_ANEXT = END_ASYNC_FOR = BEFORE_ASYNC_WITH = SETUP_ASYNC_WITH = SEND = ASYNC_GEN_WRAP = unimplemented_instruction
 
     CACHE = unimplemented_instruction
-    
-    MAKE_CELL = unimplemented_instruction
-    
+        
     # we don't know these instructions
     PRINT_EXPR = COPY_DICT_WITHOUT_KEYS = unimplemented_instruction
 
