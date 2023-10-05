@@ -44,8 +44,16 @@ def generate_dot_table(header: str, rows: List[List[str]]) -> str:
 def get_function_signature(code_obj: CodeType, overwite_fn_name: Optional[str]=None) -> str:
     # Extract all required details from the code object
     # Sometimes the code object does not have a name, e.g. when it is a lambda function, so we can overwrite it to be a valid name
-    arg_names = code_obj.co_varnames[:code_obj.co_nlocals]
+    normal_arg_count = code_obj.co_argcount + code_obj.co_kwonlyargcount
+    arg_names = code_obj.co_varnames[:normal_arg_count]
     args_str = ', '.join(arg_names)
+    import inspect
+    if code_obj.co_flags & inspect.CO_VARARGS:
+        args_str += ', *' + code_obj.co_varnames[normal_arg_count]
+        normal_arg_count += 1
+    if code_obj.co_flags & inspect.CO_VARKEYWORDS:
+        args_str += ', **' + code_obj.co_varnames[normal_arg_count]
+        normal_arg_count += 1
     fn_name = overwite_fn_name if overwite_fn_name is not None else code_obj.co_name
     header = f"def {fn_name}({args_str}):\n"
     return header

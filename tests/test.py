@@ -671,6 +671,15 @@ def test_CALL_FUNCTION_EX():
     assert scope['f']() == ans
 
 
+def test_complex_signature():
+    def func(a, b, *args, **kwargs):
+        return (a, b, args, kwargs)
+    scope = {}
+    exec(decompile(func), scope)
+    a = [1, 2, 3]
+    b = {'a': 4}
+    assert scope['func'](1, a, b, d=5) == func(1, a, b, d=5)
+
 
 def test_LOAD_ATTR():
     def f():
@@ -802,6 +811,16 @@ def test_simple_try():
         finally:
             a += 2
         a += 3
+        return a
+    scope = {}
+    exec(decompile(f), scope)
+    for a in range(10):
+        assert scope['f'](a) == f(a)
+
+def test_simple_for():
+    def f(a):
+        for i in range(5):
+            a += i
         return a
     scope = {}
     exec(decompile(f), scope)
