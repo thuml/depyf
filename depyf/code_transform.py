@@ -37,13 +37,13 @@ class Instruction:
         return self.opcode in all_jump_opcode_set
 
     def get_jump_target(self: "Instruction"):
-        if self.is_jump():
+        if self.is_jump() and "to " in self.argrepr:
             return int(self.argrepr.replace("to ", "").strip())
         # seems like a bug, "FOR_ITER" is in `dis.hasjrel`, but its `argval` is an absolute offset
-        # if self.opcode in dis.hasjabs:
-        #     return self.argval
-        # elif self.opcode in dis.hasjrel:
-        #     return self.offset + self.argval if not py311 else self.argval
+        if self.opcode in dis.hasjabs:
+            return self.argval
+        elif self.opcode in dis.hasjrel:
+            return self.offset + self.argval if not py311 else self.argval
         else:
             raise ValueError(f"Instruction {self.opname} does not have jump target")
 
