@@ -404,9 +404,19 @@ class Decompiler:
 
         if if_body_start_offset is None:
             if_body_start_offset = self.instructions[last_index + 1].offset
-
+            
         if_body_start = self.index_of(if_body_start_offset)
-        if_body_end = self.index_of(if_body_end_offset)
+
+        if if_body_end_offset is None:
+            # Don't know where the if body ends, so we have to find the next jump instruction
+            if_body_end = if_body_start + 1
+            while if_body_end < len(self.instructions) and not self.instructions[if_body_end].is_jump():
+                if_body_end += 1
+            if if_body_end == len(self.instructions):
+                if_body_end -= 1
+            if_body_end_offset = self.instructions[if_body_end].offset
+        else:
+            if_body_end = self.index_of(if_body_end_offset)
         if jump_index < if_body_start:
             self.state.source_code += add_indentation("continue\n", self.indentation)
             return
