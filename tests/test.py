@@ -897,6 +897,18 @@ def test_simple_for():
     for a in range(10):
         assert scope['f'](a) == f(a)
 
+class A:
+    def f(self):
+        return __class__
+
+def test_class_method():
+    scope = {}
+    for k, v in zip(A.f.__code__.co_freevars, A.f.__closure__):
+        scope[k] = v.cell_contents
+    exec(decompile(A.f), scope)
+    a = A()
+    assert scope['f'](a) == a.f()
+
 
 def test_EXTENDED_ARG():
     def f():
