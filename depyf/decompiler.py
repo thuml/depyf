@@ -655,8 +655,13 @@ class Decompiler:
 
     def MAP_ADD(self, inst: Instruction):
         container = self.state.stack[-inst.argval - 1]
-        value = self.state.stack.pop()
-        key = self.state.stack.pop()
+        # see https://docs.python.org/3.10/library/dis.html#opcode-MAP_ADD
+        if sys.version_info >= (3, 8):
+            value = self.state.stack.pop()
+            key = self.state.stack.pop()
+        else:
+            key = self.state.stack.pop()
+            value = self.state.stack.pop()
         self.state.source_code += f"{container}.__setitem__({key}, {value})\n"
 
 # ==================== Misc Instructions =============================
