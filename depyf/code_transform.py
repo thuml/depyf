@@ -257,8 +257,6 @@ def lowest_common_parent(node1, node2):
     return last_common, p1, p2
 
 def remove_some_temp(source_code: str, temp_prefix:str, indentation: int=4) -> str:
-    print("code: " + "=" * 80)
-    print(source_code)
     tree = ast.parse(source_code)
     set_parents(tree)
 
@@ -272,9 +270,11 @@ def remove_some_temp(source_code: str, temp_prefix:str, indentation: int=4) -> s
             node1 = temp_occurrences[key][0]
             node2 = temp_occurrences[key][1]
             parent, parent1, parent2 = lowest_common_parent(node1, node2)
+            assignment_node = node1 if isinstance(node1.parent, ast.Assign) else node2
+            assignment_parent = parent1 if isinstance(node1.parent, ast.Assign) else parent2
             indentation_nodes = (ast.FunctionDef, ast.AsyncFunctionDef, ast.For, ast.AsyncFor, ast.While, ast.If, ast.Try, ast.With, ast.AsyncWith, ast.ClassDef)
-            # we cannot remove the assignment if the two occurrences are not in the same indentation block
-            can_merge = not isinstance(parent1, indentation_nodes) and not isinstance(parent2, indentation_nodes)
+            # we cannot remove the assignment if the assignment `temp=xxx` is in an indentation block while the usage of `temp` is not
+            can_merge = not isinstance(assignment_parent, indentation_nodes)
             temp_occurrences[key].append(can_merge)
         tree = RemoveAssignmentTransformer(key, temp_occurrences).visit(tree)
         tree = RemoveAssignment2Transformer(key, temp_occurrences).visit(tree)
