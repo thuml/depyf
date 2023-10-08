@@ -20,7 +20,7 @@ def pytorch_bytecode_src_hook(code: types.CodeType, new_code: types.CodeType):
 
     if bytecode_log.isEnabledFor(logging.DEBUG):
         try:
-            bytecode_log = decompile(new_code)
+            decompiled_src = decompile(new_code)
             bytecode_log.debug("possible source code:")
             bytecode_log.debug(decompiled_src)
         except Exception as e:
