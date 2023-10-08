@@ -50,4 +50,6 @@ def uninstall():
         return
     torch._dynamo.convert_frame.output_bytecode_hooks.remove(pytorch_bytecode_src_hook)
 
-__version__ = open("VERSION.txt").read().strip()
+import os
+
+__version__ = open(f"{os.path.dirname(__file__)}/VERSION.txt").read().strip()
