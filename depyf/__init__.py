@@ -6,3 +6,33 @@ from .decompiler import Decompiler
 def decompile(code: Union[CodeType, Callable]):
     """Decompile a code object or a function."""
     return Decompiler(code).decompile()
+
+
+import types
+
+
+def pytorch_bytecode_src_hook(code: types.CodeType, new_code: types.CodeType):
+    import torch
+    bytecode_log = torch._logging.getArtifactLogger(
+        "torch._dynamo.convert_frame", "bytecode"
+    )
+    import logging
+
+    if bytecode_log.isEnabledFor(logging.DEBUG):
+        try:
+            bytecode_log = decompile(new_code)
+            bytecode_log.debug("possible source code:")
+            bytecode_log.debug(decompiled_src)
+        except Exception as e:
+            bytecode_log.debug("Decompilation fails due to: %s", str(e))
+        finally:
+            bytecode_log.debug(
+                "If you find the decompiled code is wrong,"
+                "please submit an issue at "
+                "https://github.com/youkaichao/depyf/issues."
+            )
+
+def install():
+    """Install the hook to decompile pytorch bytecode."""
+    import torch
+    torch._dynamo.config.output_bytecode_hooks.append(pytorch_bytecode_src_hook)
