@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='depyf',
-    version=open("VERSION.txt").read().strip(),
+    version=open("depyf/VERSION.txt").read().strip(),
     description='Decompile python functions, from bytecode to source code!',
     long_description=open("README.md", "r").read(),
     long_description_content_type="text/markdown",
