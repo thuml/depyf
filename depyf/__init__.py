@@ -35,6 +35,8 @@ def pytorch_bytecode_src_hook(code: types.CodeType, new_code: types.CodeType):
 def install():
     """Install the hook to decompile pytorch bytecode."""
     import torch
+    if getattr(torch._dynamo.config, "output_bytecode_hooks", None) is None:
+        raise RuntimeError("Please upgrade pytorch to have bytecode hooks.")
     if pytorch_bytecode_src_hook in torch._dynamo.config.output_bytecode_hooks:
         return
     torch._dynamo.config.output_bytecode_hooks.append(pytorch_bytecode_src_hook)
@@ -42,6 +44,8 @@ def install():
 def uninstall():
     """Uninstall the hook."""
     import torch
+    if getattr(torch._dynamo.config, "output_bytecode_hooks", None) is None:
+        raise RuntimeError("Please upgrade pytorch to have bytecode hooks.")
     if pytorch_bytecode_src_hook not in torch._dynamo.config.output_bytecode_hooks:
         return
     torch._dynamo.config.output_bytecode_hooks.remove(pytorch_bytecode_src_hook)
