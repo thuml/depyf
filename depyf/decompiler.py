@@ -94,7 +94,7 @@ class Decompiler:
         else:
             self.state.stack.append(inst.argval)
 
-    LOAD_FAST = LOAD_FAST_AND_CLEAR = LOAD_GLOBAL = LOAD_DEREF = LOAD_NAME = LOAD_CLASSDEREF = LOAD_CLOSURE = generic_load
+    LOAD_FAST = LOAD_FAST_AND_CLEAR = LOAD_FAST_CHECK = LOAD_GLOBAL = LOAD_DEREF = LOAD_NAME = LOAD_CLASSDEREF = LOAD_CLOSURE = generic_load
 
     def LOAD_LOCALS(self, inst: Instruction):
         self.state.stack.append("locals()")
@@ -153,6 +153,14 @@ class Decompiler:
 
     def LOAD_ATTR(self, inst: Instruction):
         self.state.stack.append(f"getattr({self.state.stack.pop()}, {repr(inst.argval)})")
+
+    def LOAD_SUPER_ATTR(self, inst: Instruction):
+        # not tested
+        self_obj = self.state.stack.pop()
+        cls_obj = self.state.stack.pop()
+        super_obj = self.state.stack.pop()
+        self.state.stack.append(f"{super_obj}({cls_obj}, {self_obj}).{inst.argval}")
+        self.replace_mutable_tos_with_temp()
 
     def LOAD_METHOD(self, inst: Instruction):
         self.state.stack.append(f"{self.state.stack.pop()}.{inst.argval}")
