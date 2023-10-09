@@ -535,7 +535,7 @@ class Decompiler:
     
     def POP_TOP(self, inst: Instruction):
         self.state.stack.pop()
-    
+
     def DUP_TOP(self, inst: Instruction):
         # not tested
         self.state.stack.append(self.state.stack[-1])
@@ -783,6 +783,9 @@ class Decompiler:
 
     MAKE_CELL = generic_nop
 
+    # our FOR_ITER is different from CPython's FOR_ITER (as it does not need to explicitly consider the case of exhausted iterator), so we don't need to do anything here
+    END_FOR = generic_nop
+
 # ==================== Unsupported Instructions =============================
     def unimplemented_instruction(self, inst: Instruction):
         raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
@@ -809,7 +812,7 @@ class Decompiler:
         running_index = start
         while running_index < end:
             inst = self.instructions[running_index]
-            method = getattr(Decompiler, inst.opname, self.unimplemented_instruction)
+            method = getattr(Decompiler, inst.opname, Decompiler.unimplemented_instruction)
             output = method(self, inst)
             if output:
                 running_index = output
