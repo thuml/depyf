@@ -175,6 +175,14 @@ class Decompiler:
         value = self.state.stack.pop()
         self.state.source_code += f"{x}[{index}] = {value}\n"
 
+    def STORE_SLICE(self, inst: Instruction):
+        # not tested, code according to https://docs.python.org/3.12/library/dis.html#opcode-STORE_SLICE
+        end = self.state.stack.pop()
+        start = self.state.stack.pop()
+        container = self.state.stack.pop()
+        value = self.state.stack.pop()
+        self.state.source_code += f"{container}[{start}:{end}] = {value}\n"
+
     def STORE_ATTR(self, inst: Instruction):
         x = self.state.stack.pop()
         value = self.state.stack.pop()
@@ -821,7 +829,7 @@ class Decompiler:
     GET_YIELD_FROM_ITER = unimplemented_instruction
 
     # we don't support try-except/try-finally
-    POP_EXCEPT = RERAISE = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = unimplemented_instruction
+    POP_EXCEPT = RERAISE = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = CLEANUP_THROW = unimplemented_instruction
 
     # we don't support async/await
     GET_AWAITABLE = GET_AITER = GET_ANEXT = END_ASYNC_FOR = BEFORE_ASYNC_WITH = SETUP_ASYNC_WITH = SEND = ASYNC_GEN_WRAP = unimplemented_instruction
