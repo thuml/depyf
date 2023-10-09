@@ -323,6 +323,9 @@ class Decompiler:
     def RETURN_VALUE(self, inst: Instruction):
         self.state.source_code += f"return {self.state.stack[-1]}\n"
 
+    def RETURN_CONST(self, inst: Instruction):
+        self.state.source_code += f"return {inst.argval}\n"
+
     def YIELD_VALUE(self, inst: Instruction):
         self.state.source_code += f"yield {self.state.stack[-1]}\n"
 
