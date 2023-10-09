@@ -94,7 +94,7 @@ class Decompiler:
         else:
             self.state.stack.append(inst.argval)
 
-    LOAD_FAST = LOAD_GLOBAL = LOAD_DEREF = LOAD_NAME = LOAD_CLASSDEREF = LOAD_CLOSURE = generic_load
+    LOAD_FAST = LOAD_FAST_AND_CLEAR = LOAD_GLOBAL = LOAD_DEREF = LOAD_NAME = LOAD_CLASSDEREF = LOAD_CLOSURE = generic_load
 
     def MAKE_FUNCTION(self, inst: Instruction):
         if sys.version_info < (3, 11):
@@ -522,13 +522,12 @@ class Decompiler:
     ROT_N = ROT_TWO = ROT_THREE = ROT_FOUR = rot_n
 
     def SWAP(self, inst: Instruction):
-        # not tested, don't know how to generate this instruction
         n = inst.argval
         tos = self.state.stack[-1]
-        value = self.state.stack[-1 - n]
+        value = self.state.stack[- n]
         tos, value = value, tos
         self.state.stack[-1] = tos
-        self.state.stack[-1 - n] = value
+        self.state.stack[- n] = value
     
     def COPY(self, inst: Instruction):
         # not tested, don't know how to generate this instruction
