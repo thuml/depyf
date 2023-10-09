@@ -255,6 +255,12 @@ class Decompiler:
         lhs = self.state.stack.pop()
         self.state.stack.append(f"{lhs}[{rhs}]")
 
+    def BINARY_SLICE(self, inst: Instruction):
+        end = self.state.stack.pop()
+        start = self.state.stack.pop()
+        container = self.state.stack.pop()
+        self.state.stack.append(f"{container}[{start}:{end}]")
+
 # ==================== Binary Inplace Instructions =============================
     def generic_inplace_binary(self, inst: Instruction):
         rhs = self.state.stack.pop()
