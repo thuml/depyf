@@ -863,6 +863,9 @@ class Decompiler:
     
     YIELD_FROM = SETUP_ANNOTATIONS = LOAD_BUILD_CLASS = SETUP_WITH = BEFORE_WITH = MATCH_MAPPING = MATCH_SEQUENCE = MATCH_KEYS = MATCH_CLASS = unimplemented_instruction
 
+    # don't find any interesting use case for these instructions
+    CALL_INTRINSIC_2 = unimplemented_instruction
+
     def decompile_range(self, start: int, end: int):
         running_index = start
         while running_index < end:
