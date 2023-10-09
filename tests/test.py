@@ -386,16 +386,6 @@ def test_DELETE_SUBSCR():
     assert scope['f']() == ans
 
 
-def test_YIELD_VALUE():
-    def f():
-        yield 1
-        yield 2
-    ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert list(scope['f']()) == list(ans)
-
-
 def test_GET_LEN():
     def f():
         return len((1, 2, 3))

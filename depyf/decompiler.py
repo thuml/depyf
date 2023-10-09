@@ -333,6 +333,8 @@ class Decompiler:
         self.state.source_code += f"return {inst.argval}\n"
 
     def YIELD_VALUE(self, inst: Instruction):
+        if sys.version_info >= (3, 12):
+            raise NotImplementedError("YIELD_VALUE is not supported in Python 3.12")
         self.state.source_code += f"yield {self.state.stack[-1]}\n"
 
     def RETURN_GENERATOR(self, inst: Instruction):
