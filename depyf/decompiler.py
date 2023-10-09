@@ -469,6 +469,8 @@ class Decompiler:
     POP_JUMP_FORWARD_IF_NONE = POP_JUMP_FORWARD_IF_NOT_NONE = generic_jump_if
     POP_JUMP_BACKWARD_IF_NONE = POP_JUMP_BACKWARD_IF_NOT_NONE = generic_jump_if
     JUMP_IF_TRUE_OR_POP = JUMP_IF_FALSE_OR_POP = generic_jump_if
+    POP_JUMP_IF_NOT_NONE = POP_JUMP_BACKWARD_IF_NOT_NONE
+    POP_JUMP_IF_NONE = POP_JUMP_BACKWARD_IF_NONE
 
     def SETUP_FINALLY(self, inst: Instruction):
         start_index = self.index_of(inst.offset)
