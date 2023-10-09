@@ -166,6 +166,7 @@ Hopefully, by using this package, you can understand python bytecode now!
 
 The following python major versions are tested:
 
+- Python 3.12
 - Python 3.11
 - Python 3.10
 - Python 3.9
