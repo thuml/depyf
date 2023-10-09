@@ -96,6 +96,17 @@ class Decompiler:
 
     LOAD_FAST = LOAD_FAST_AND_CLEAR = LOAD_GLOBAL = LOAD_DEREF = LOAD_NAME = LOAD_CLASSDEREF = LOAD_CLOSURE = generic_load
 
+    def LOAD_LOCALS(self, inst: Instruction):
+        self.state.stack.append("locals()")
+        self.replace_mutable_tos_with_temp()
+
+    def LOAD_FROM_DICT_OR_GLOBALS(self, inst: Instruction):
+        tos = self.state.stack.pop()
+        self.state.stack.append(f"{tos}[{inst.argval}] if '{inst.argval}' in {tos} else {inst.argval}")
+        self.replace_mutable_tos_with_temp()
+
+    LOAD_FROM_DICT_OR_DEREF = LOAD_FROM_DICT_OR_GLOBALS
+
     def MAKE_FUNCTION(self, inst: Instruction):
         if sys.version_info < (3, 11):
             qual_name = self.state.stack.pop()
