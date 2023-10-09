@@ -620,6 +620,22 @@ class Decompiler:
             self.state.stack.append(f"{func}(*{args}, **{kw_args})")
         self.replace_mutable_tos_with_temp()
 
+    def CALL_INTRINSIC_1(self, inst: Instruction):
+        if inst.argrepr in ["INTRINSIC_1_INVALID", "INTRINSIC_IMPORT_STAR", "INTRINSIC_STOPITERATION_ERROR", "INTRINSIC_ASYNC_GEN_WRAP"]:
+            # invalid intrinsic, skip
+            pass
+        elif inst.argrepr in ["INTRINSIC_TYPEVAR", "INTRINSIC_PARAMSPEC", "INTRINSIC_TYPEVARTUPLE", "INTRINSIC_SUBSCRIPT_GENERIC", "INTRINSIC_TYPEALIAS"]:
+            # not tested, skip
+            pass
+        elif inst.argrepr == "INTRINSIC_PRINT":
+            self.state.source_code += f"print({self.state.stack.pop()})\n"
+            self.state.stack.append("None")
+        elif inst.argrepr == "INTRINSIC_UNARY_POSITIVE":
+            self.state.stack[-1] = f"+{self.state.stack[-1]}"
+        elif inst.argrepr == "INTRINSIC_LIST_TO_TUPLE":
+            return self.LIST_TO_TUPLE(inst)
+
+
 # ==================== Container Related Instructions (tuple, list, set, dict) =============================
     def UNPACK_SEQUENCE(self, inst: Instruction):
         varname = self.state.stack.pop()
