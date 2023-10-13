@@ -32,23 +32,21 @@ def pytorch_bytecode_src_hook(code: types.CodeType, new_code: types.CodeType):
                 "https://github.com/youkaichao/depyf/issues."
             )
 
+_handle = None
+
 def install():
-    """Install the hook to decompile pytorch bytecode."""
-    import torch
-    if getattr(torch._dynamo.convert_frame, "output_bytecode_hooks", None) is None:
-        raise RuntimeError("Please upgrade pytorch to have bytecode hooks.")
-    if pytorch_bytecode_src_hook in torch._dynamo.convert_frame.output_bytecode_hooks:
+    global _handle
+    if _handle is not None:
         return
-    torch._dynamo.convert_frame.output_bytecode_hooks.append(pytorch_bytecode_src_hook)
+    _handle = torch._dynamo.convert_frame.register_bytecode_hook(pytorch_bytecode_src_hook)
+
 
 def uninstall():
-    """Uninstall the hook."""
-    import torch
-    if getattr(torch._dynamo.convert_frame, "output_bytecode_hooks", None) is None:
-        raise RuntimeError("Please upgrade pytorch to have bytecode hooks.")
-    if pytorch_bytecode_src_hook not in torch._dynamo.convert_frame.output_bytecode_hooks:
+    global _handle
+    if _handle is None:
         return
-    torch._dynamo.convert_frame.output_bytecode_hooks.remove(pytorch_bytecode_src_hook)
+    _handle.remove()
+    _handle = None
 
 import os
 
