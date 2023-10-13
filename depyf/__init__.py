@@ -35,6 +35,7 @@ def pytorch_bytecode_src_hook(code: types.CodeType, new_code: types.CodeType):
 _handle = None
 
 def install():
+    import torch
     global _handle
     if _handle is not None:
         return
