@@ -57,9 +57,70 @@ for _ in range(100):
     toy_example(torch.randn(10), torch.randn(10))
 ```
 
-Then, run the code with environment variable `export TORCH_LOGS="+dynamo,guards,bytecode"` to get detailed logging information. 
+Then, run the code with environment variable `export TORCH_LOGS="+dynamo,guards,bytecode"` to get detailed logging information. (Or you can `export TORCH_LOGS="+bytecode"` to focus on the bytecode only.)
 
-In the long log output, you can see that decompiled bytecode occurs after the modified bytecode of Dynamo.
+In the long log output, you can see that decompiled bytecode occurs after the modified bytecode of Dynamo:
+
+```text
+ORIGINAL BYTECODE toy_example /workspace/youkaichao/code/pytorch/ykc.py line 12 
+ 14           0 LOAD_FAST                0 (a)
+              2 LOAD_GLOBAL              0 (torch)
+              4 LOAD_METHOD              1 (abs)
+              6 LOAD_FAST                0 (a)
+              8 CALL_METHOD              1
+             10 LOAD_CONST               1 (1)
+             12 BINARY_ADD
+             14 BINARY_TRUE_DIVIDE
+             16 STORE_FAST               2 (x)
+
+ 15          18 LOAD_FAST                1 (b)
+             20 LOAD_METHOD              2 (sum)
+             22 CALL_METHOD              0
+             24 LOAD_CONST               2 (0)
+             26 COMPARE_OP               0 (<)
+             28 POP_JUMP_IF_FALSE       19 (to 38)
+
+ 16          30 LOAD_FAST                1 (b)
+             32 LOAD_CONST               3 (-1)
+             34 BINARY_MULTIPLY
+             36 STORE_FAST               1 (b)
+
+ 17     >>   38 LOAD_FAST                2 (x)
+             40 LOAD_FAST                1 (b)
+             42 BINARY_MULTIPLY
+             44 RETURN_VALUE
+
+
+MODIFIED BYTECODE toy_example /workspace/youkaichao/code/pytorch/ykc.py line 12 
+ 12           0 LOAD_GLOBAL              3 (__compiled_fn_0)
+              2 LOAD_FAST                0 (a)
+              4 LOAD_FAST                1 (b)
+              6 CALL_FUNCTION            2
+              8 UNPACK_SEQUENCE          2
+             10 STORE_FAST               2 (x)
+             12 POP_JUMP_IF_FALSE       12 (to 24)
+             14 LOAD_GLOBAL              4 (__resume_at_30_1)
+             16 LOAD_FAST                1 (b)
+             18 LOAD_FAST                2 (x)
+             20 CALL_FUNCTION            2
+             22 RETURN_VALUE
+        >>   24 LOAD_GLOBAL              5 (__resume_at_38_2)
+             26 LOAD_FAST                1 (b)
+             28 LOAD_FAST                2 (x)
+             30 CALL_FUNCTION            2
+             32 RETURN_VALUE
+
+
+possible source code:
+def toy_example(a, b):
+    __temp_1 = __compiled_fn_0(a, b)
+    x = __temp_1[0]
+    if __temp_1[1]:
+        return __resume_at_30_1(b, x)
+    return __resume_at_38_2(b, x)
+
+If you find the decompiled code is wrong,please submit an issue at https://github.com/youkaichao/depyf/issues.
+```
 
 Hopefully, by using this package, you can understand python bytecode now!
 
