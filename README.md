@@ -36,6 +36,26 @@ The output source code is semantically equivalent to the function, but not synta
 
 Please run the [Jupyter Lab Notebook](https://github.com/youkaichao/depyf/blob/master/explain_pt2.ipynb).
 
+In the notebook, you can interactively select the content you want to explore.
+
+You can see guarding conditions:
+
+![](imgs/guards.png)
+
+You can see compiled code:
+
+![](imgs/compiled_code.png)
+
+You can see compiled subgraph:
+
+![](imgs/compiled_subgraph.png)
+
+You can see other referenced functions, like `resume` functions:
+
+![](imgs/referenced_func.png)
+
+Explore anything you like!
+
 ## Enhance PyTorch logging
 
 `depyf` works closely with PyTorch. If you have a PyTorch program with `torch.compile`, you only need to add a single line to enable the decompilation of PyTorch bytecode.
