@@ -29,7 +29,7 @@ def pytorch_bytecode_src_hook(code: types.CodeType, new_code: types.CodeType):
             bytecode_log.debug(
                 "If you find the decompiled code is wrong,"
                 "please submit an issue at "
-                "https://github.com/youkaichao/depyf/issues."
+                "https://github.com/thuml/depyf/issues."
             )
 
 _handle = None
