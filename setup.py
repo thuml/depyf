@@ -6,7 +6,7 @@ setup(
     description='Decompile python functions, from bytecode to source code!',
     long_description=open("README.md", "r").read(),
     long_description_content_type="text/markdown",
-    url='https://github.com/youkaichao/depyf',
+    url='https://github.com/thuml/depyf',
     author='Kaichao You',
     author_email="youkaichao@gmail.com",
     license="MIT",
