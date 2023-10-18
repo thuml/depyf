@@ -10,8 +10,6 @@ from typing import List, Callable, Dict, Union, Set
 from dataclasses import dataclass
 import contextlib
 
-from IPython.display import display, JSON, Markdown, Code
-
 import depyf
 
 class CodeProxy:
@@ -51,6 +49,7 @@ class CodeProxy:
         yield CodeProxy.used_instances
 
 def display_func(self):
+    from IPython.display import display, JSON, Markdown, Code
     display(Markdown("# transformed source code:"))
     with CodeProxy.record() as instances:
         data = self.to_data()
@@ -180,19 +179,7 @@ class DynamoOptimizationResult:
 
     _ipython_display_ = display_func
 
-def explain(fn: Callable):
-    if hasattr(fn, "_torchdynamo_orig_callable"):
-        inner_fn = innermost_fn(fn)
-    else:
-        inner_fn = fn
-    result = DynamoOptimizationResult(inner_fn)
-    return result
-
 def remove_indentation(code: str):
     lines = code.splitlines()
     indent = len(lines[0]) - len(lines[0].lstrip())
     return "".join([line[indent:] + "\n" for line in lines])
-
-def dump_src(fn: Callable):
-    result = explain(fn)
-    return result.to_src()
