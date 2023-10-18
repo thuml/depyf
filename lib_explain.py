@@ -10,7 +10,7 @@ from typing import List, Callable, Dict, Union, Set
 from dataclasses import dataclass
 import contextlib
 
-from IPython.display import display, JSON, Markdown
+from IPython.display import display, JSON, Markdown, Code
 
 import depyf
 
@@ -21,13 +21,15 @@ class CodeProxy:
         i = 0
         new_name = name
         if new_name.endswith(":"):
+            name = name[:-1]
             while True:
-                new_name = f"{name}{i}"
+                new_name = f"{name}_{i}"
                 if new_name not in CodeProxy.instances:
                     break
                 i += 1
         self.name = new_name
         code = "".join(["  " + line + "\n" for line in code.splitlines() if line.strip() != ""])
+        self.raw_code = code
         self.code = f"""<details>
   <summary>{self.name}</summary>
 
@@ -119,7 +121,7 @@ class DynamoOptimizationResult:
         self.compiled_code_entries = [CacheResult(fn, cache) for cache in caches]
         self.code = fn.__code__
         try:
-            decompiled_source_code = depyf.decompile(self.code)
+            decompiled_source_code = depyf.Decompiler(self.code).decompile(overwite_fn_name=self.name)
         except Exception as e:
             print(str(e))
             decompiled_source_code = "'Failed to decompile.'\n"
@@ -134,6 +136,43 @@ class DynamoOptimizationResult:
         }
         return data
 
+    def to_src(self):
+        raw_code = self.source_code_proxy.raw_code
+        signature = raw_code.splitlines()[0].replace("def ", "def compiled_", 1)
+        code = signature.strip()
+        code_obj = self.fn.__code__
+        normal_arg_count = code_obj.co_argcount + code_obj.co_kwonlyargcount
+        arg_names = code_obj.co_varnames[:normal_arg_count]
+        arg_dict = "L = {" + ", ".join([f'"{name}": {name}' for name in arg_names]) + "}"
+        code += "\n" + " " * 4 + arg_dict
+
+        additional_code = ""
+
+        for entry in self.compiled_code_entries:
+            guard = (" \\\n" + " " * 8 + "and ").join(["(" + x + ")" for x in entry.guard])
+            guard_func_name = CodeProxy(guard, "guard:").name
+            additional_code += f"\ndef {guard_func_name}(L):\n" + " " * 4 + "return " + guard + "\n"
+
+            compiled_subgraph_name = entry.compiled_subgraph_proxy.name
+            compiled_subgraph_code = entry.compiled_subgraph_proxy.raw_code
+            compiled_subgraph_code = f"def {compiled_subgraph_name}(" + compiled_subgraph_code[compiled_subgraph_code.index("(self,") + 6:].lstrip()
+            additional_code += "\n" + remove_indentation(compiled_subgraph_code) + "\n"
+
+            func_name = entry.compiled_code_proxy.name
+            compiled_code = entry.compiled_code_proxy.raw_code
+            compiled_code = f"def {func_name}" + compiled_code[compiled_code.index("("):]
+            additional_code += "\n" + remove_indentation(compiled_code) + "\n"
+
+            for name, func in entry.referenced_global_functions.items():
+                additional_code = func.to_src() + f"\n\n#============ separator for {name} ============#\n" + additional_code
+
+            code += "\n" + " " * 4 + f"if {guard_func_name}(L):\n" + " " * 8 + f"return {func_name}({', '.join(arg_names)})"
+        
+        additional_code += "\n" + remove_indentation(self.source_code_proxy.raw_code) + "\n"
+        original_func_name = self.source_code_proxy.name
+        code += "\n" + " " * 4 + "#Note: this function might be compiled again, i.e. adding one more guard and compiled code. It might well not be executed directly.\n" " " * 4 + f"return {original_func_name}({', '.join(arg_names)})"
+        return additional_code + code
+
     _ipython_display_ = display_func
 
 def explain(fn: Callable):
@@ -143,3 +182,12 @@ def explain(fn: Callable):
         inner_fn = fn
     result = DynamoOptimizationResult(inner_fn)
     return result
+
+def remove_indentation(code: str):
+    lines = code.splitlines()
+    indent = len(lines[0]) - len(lines[0].lstrip())
+    return "".join([line[indent:] + "\n" for line in lines])
+
+def dump_src(fn: Callable):
+    result = explain(fn)
+    return result.to_src()
