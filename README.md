@@ -184,7 +184,7 @@ Please run the [Jupyter Lab Notebook](https://github.com/thuml/depyf/blob/master
 
 In the notebook, you can interactively select the content you want to explore. The UI looks like the following:
 
-![](imgs/ui.png)
+![](https://raw.githubusercontent.com/thuml/depyf/master/imgs/ui.png)
 
 ## Enhance `torch.compile` logging
 
