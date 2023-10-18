@@ -184,7 +184,7 @@ Please run the [Jupyter Lab Notebook](https://github.com/thuml/depyf/blob/master
 
 In the notebook, you can interactively select the content you want to explore. The UI looks like the following:
 
-![](imgs/guards.png)
+![](imgs/ui.png)
 
 ## Enhance PyTorch logging
 
