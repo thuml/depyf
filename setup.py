@@ -10,6 +10,7 @@ setup(
     author='Kaichao You',
     author_email="youkaichao@gmail.com",
     license="MIT",
+    include_package_data=True,  # This line is important!
     packages=find_packages(include=["depyf"]),
     python_requires=">=3.7",
     install_requires=[
