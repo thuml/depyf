@@ -86,7 +86,7 @@ class CacheResult:
             print(str(e))
             compiled_code = "'Failed to decompile.'\n"
         self.compiled_code = compiled_code
-        self.compiled_code_proxy = CodeProxy(compiled_code, "cache_code:")
+        self.compiled_code_proxy = CodeProxy(compiled_code, "compiled_code:")
         resume_fns = [name for name in code.co_names if name.startswith("__resume")]
         self.referenced_global_functions = {name: DynamoOptimizationResult(getattr(module, name), name) for name in resume_fns}
         self.code = code
@@ -164,14 +164,19 @@ class DynamoOptimizationResult:
             additional_code += "\n" + remove_indentation(compiled_code) + "\n"
 
             for name, func in entry.referenced_global_functions.items():
-                additional_code = func.to_src() + f"\n\n#============ separator for {name} ============#\n" + additional_code
+                additional_code = func.to_src() + additional_code
 
             code += "\n" + " " * 4 + f"if {guard_func_name}(L):\n" + " " * 8 + f"return {func_name}({', '.join(arg_names)})"
         
-        additional_code += "\n" + remove_indentation(self.source_code_proxy.raw_code) + "\n"
+        original_code_lines = remove_indentation(self.source_code_proxy.raw_code).splitlines()
+        original_code_lines = [original_code_lines[0], " " * 4 + "# Note: if there is a compiled version below, this function might well not be executed directly. Please check the compiled version if possible."] + original_code_lines[1:]
+        original_code = "".join([x + "\n" for x in original_code_lines])
+
+        additional_code += "\n" + original_code + "\n"
+
         original_func_name = self.source_code_proxy.name
-        code += "\n" + " " * 4 + "# Note: this function might be compiled again, i.e. adding one more guard and compiled code. It might well not be executed directly.\n" + " " * 4 + f"return {original_func_name}({', '.join(arg_names)})"
-        return additional_code + code
+        code += "\n" + " " * 4 + "# Note: this function might well not be executed directly. It might well be compiled again, i.e. adding one more guards and compiled code.\n" + " " * 4 + f"return {original_func_name}({', '.join(arg_names)})"
+        return additional_code + code + f"\n\n#============ end of {self.name} ============#\n"
 
     _ipython_display_ = display_func
 

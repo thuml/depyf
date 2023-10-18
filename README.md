@@ -48,31 +48,32 @@ def guard_2(L):
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and (___skip_backend_check() or ___current_backend() == ___lookup_backend(5098820160)) \
+        and (___skip_backend_check() or ___current_backend() == ___lookup_backend(5096739488)) \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
-def __compiled_fn_3(L_b_ : torch.Tensor, L_x_ : torch.Tensor):
+def __compiled_fn_4(L_b_ : torch.Tensor, L_x_ : torch.Tensor):
       l_b_ = L_b_
       l_x_ = L_x_
       mul = l_x_ * l_b_;  l_x_ = l_b_ = None
       return (mul,)
 
 
-def cache_code_5(b, x):
-      return __compiled_fn_3(b, x)[0]
+def compiled_code_2(b, x):
+      return __compiled_fn_4(b, x)[0]
 
 
 def __resume_at_38_2(b, x):
+    # Note: if there is a compiled version below, this function might well not be executed directly. Please check the compiled version if possible.
     return x * b
 
 def compiled___resume_at_38_2(b, x):
     L = {"b": b, "x": x}
     if guard_2(L):
-        return cache_code_5(b, x)
-    # Note: this function might be compiled again, i.e. adding one more guard and compiled code. It might well not be executed directly.
+        return compiled_code_2(b, x)
+    # Note: this function might well not be executed directly. It might well be compiled again, i.e. adding one more guards and compiled code.
     return __resume_at_38_2(b, x)
 
-#============ separator for __resume_at_38_2 ============#
+#============ end of __resume_at_38_2 ============#
 
 def guard_1(L):
     return (___guarded_code.valid) \
@@ -80,10 +81,10 @@ def guard_1(L):
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and (___skip_backend_check() or ___current_backend() == ___lookup_backend(5098820160)) \
+        and (___skip_backend_check() or ___current_backend() == ___lookup_backend(5096739488)) \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
-def __compiled_fn_4(L_b_ : torch.Tensor, L_x_ : torch.Tensor):
+def __compiled_fn_3(L_b_ : torch.Tensor, L_x_ : torch.Tensor):
       l_b_ = L_b_
       l_x_ = L_x_
       b = l_b_ * -1;  l_b_ = None
@@ -91,22 +92,23 @@ def __compiled_fn_4(L_b_ : torch.Tensor, L_x_ : torch.Tensor):
       return (mul_1,)
 
 
-def cache_code_4(b, x):
-      return __compiled_fn_4(b, x)[0]
+def compiled_code_1(b, x):
+      return __compiled_fn_3(b, x)[0]
 
 
 def __resume_at_30_1(b, x):
+    # Note: if there is a compiled version below, this function might well not be executed directly. Please check the compiled version if possible.
     b = b * -1
     return x * b
 
 def compiled___resume_at_30_1(b, x):
     L = {"b": b, "x": x}
     if guard_1(L):
-        return cache_code_4(b, x)
-    # Note: this function might be compiled again, i.e. adding one more guard and compiled code. It might well not be executed directly.
+        return compiled_code_1(b, x)
+    # Note: this function might well not be executed directly. It might well be compiled again, i.e. adding one more guards and compiled code.
     return __resume_at_30_1(b, x)
 
-#============ separator for __resume_at_30_1 ============#
+#============ end of __resume_at_30_1 ============#
 
 def guard_0(L):
     return (___guarded_code.valid) \
@@ -114,7 +116,7 @@ def guard_0(L):
         and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and (___skip_backend_check() or ___current_backend() == ___lookup_backend(5098820160)) \
+        and (___skip_backend_check() or ___current_backend() == ___lookup_backend(5096739488)) \
         and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names))
 
 def __compiled_fn_0(L_a_ : torch.Tensor, L_b_ : torch.Tensor):
@@ -128,15 +130,16 @@ def __compiled_fn_0(L_a_ : torch.Tensor, L_b_ : torch.Tensor):
       return (x, lt)
 
 
-def cache_code_3(a, b):
-      __temp_8 = __compiled_fn_0(a, b)
-      x = __temp_8[0]
-      if __temp_8[1]:
+def compiled_code_0(a, b):
+      __temp_29 = __compiled_fn_0(a, b)
+      x = __temp_29[0]
+      if __temp_29[1]:
           return __resume_at_30_1(b, x)
       return __resume_at_38_2(b, x)
 
 
 def toy_example(a, b):
+    # Note: if there is a compiled version below, this function might well not be executed directly. Please check the compiled version if possible.
     x = a / (torch.abs(a) + 1)
     if b.sum() < 0:
         b = b * -1
@@ -145,9 +148,11 @@ def toy_example(a, b):
 def compiled_toy_example(a, b):
     L = {"a": a, "b": b}
     if guard_0(L):
-        return cache_code_3(a, b)
-    # Note: this function might be compiled again, i.e. adding one more guard and compiled code. It might well not be executed directly.
+        return compiled_code_0(a, b)
+    # Note: this function might well not be executed directly. It might well be compiled again, i.e. adding one more guards and compiled code.
     return toy_example(a, b)
+
+#============ end of toy_example ============#
 ```
 
 Explore anything you like!
