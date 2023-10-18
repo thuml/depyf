@@ -170,7 +170,7 @@ class DynamoOptimizationResult:
         
         additional_code += "\n" + remove_indentation(self.source_code_proxy.raw_code) + "\n"
         original_func_name = self.source_code_proxy.name
-        code += "\n" + " " * 4 + "#Note: this function might be compiled again, i.e. adding one more guard and compiled code. It might well not be executed directly.\n" " " * 4 + f"return {original_func_name}({', '.join(arg_names)})"
+        code += "\n" + " " * 4 + "# Note: this function might be compiled again, i.e. adding one more guard and compiled code. It might well not be executed directly.\n" + " " * 4 + f"return {original_func_name}({', '.join(arg_names)})"
         return additional_code + code
 
     _ipython_display_ = display_func
