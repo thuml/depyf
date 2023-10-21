@@ -176,7 +176,7 @@ class DynamoOptimizationResult:
             additional_code += f"\ndef {guard_func_name}(L):\n" + " " * 4 + "return " + guard + "\n"
 
             # prepare compiled subgraph, like `__compiled_fn_0`
-            additional_code += "\n" + remove_indentation(entry.compiled_subgraph_proxy.raw_code) + "\n"
+            additional_code += "\n" + "# Note: if you see an additional `self` argument, it is because this compiled subgraph function is a bounded method of a class instance.\n" + remove_indentation(entry.compiled_subgraph_proxy.raw_code) + "\n"
 
             # prepare compiled code, like `compiled_code_0`
             additional_code += "\n" + remove_indentation(entry.compiled_code_proxy.raw_code) + "\n"
