@@ -12,10 +12,22 @@ import contextlib
 
 import depyf
 
+
+def decompile_ensure(fn, overwite_fn_name=None):
+    try:
+        decompiled_source_code = depyf.Decompiler(fn).decompile(overwite_fn_name=overwite_fn_name)
+    except Exception as e:
+        print(str(e))
+        decompiled_source_code = "'Failed to decompile.'\n"
+    return decompiled_source_code
+
+
 class CodeProxy:
     instances: Dict[str, "CodeProxy"] = {}
     used_instances: Set[str] = set()
-    def __init__(self, code: str, name: str):
+
+    @staticmethod
+    def get_new_name(name: str):
         i = 0
         new_name = name
         if new_name.endswith(":"):
@@ -25,19 +37,34 @@ class CodeProxy:
                 if new_name not in CodeProxy.instances:
                     break
                 i += 1
+        return new_name
+
+    @staticmethod
+    def consume_new_name(name: str):
+        new_name = CodeProxy.get_new_name(name)
+        CodeProxy.instances[new_name] = None
+        return new_name
+
+    @staticmethod
+    def decompile_with_name(code: CodeType, name: str):
+        new_name = CodeProxy.get_new_name(name)
+        self = CodeProxy(decompile_ensure(code, new_name))
         self.name = new_name
-        code = "".join(["  " + line + "\n" for line in code.splitlines() if line.strip() != ""])
-        self.raw_code = code
         self.code = f"""<details>
   <summary>{self.name}</summary>
 
   ```python
-{code}
+{self.raw_code}
   ```
 </details>
 """
         CodeProxy.instances[self.name] = self
-    
+        return self
+
+    def __init__(self, code: str):
+        # Don't directly use this constructor. Use decompile_with_name instead.
+        self.raw_code = "".join(["  " + line + "\n" for line in code.splitlines() if line.strip() != ""])
+
     def __str__(self):
         CodeProxy.used_instances.add(self.name)
         return self.name
@@ -67,7 +94,7 @@ class CacheResult:
     guard: List[str]
     compiled_subgraph: Callable
     compiled_subgraph_proxy: CodeProxy
-    compiled_code: str
+    compiled_code: CodeType
     compiled_code_proxy: CodeProxy
     referenced_global_functions: Dict[str, "DynamoOptimizationResult"]
 
@@ -77,15 +104,12 @@ class CacheResult:
         compiled_subgraphs = [name for name in code.co_names if name.startswith("__compiled")]
         assert len(compiled_subgraphs) == 1
         module = import_module(fn.__module__)
+        # deal with compiled_subgraph
         self.compiled_subgraph = innermost_fn(getattr(module, compiled_subgraphs[0]))
-        self.compiled_subgraph_proxy = CodeProxy(innermost_fn(self.compiled_subgraph).__self__.code, compiled_subgraphs[0])
-        try:
-            compiled_code = depyf.decompile(code)
-        except Exception as e:
-            print(str(e))
-            compiled_code = "'Failed to decompile.'\n"
-        self.compiled_code = compiled_code
-        self.compiled_code_proxy = CodeProxy(compiled_code, "compiled_code:")
+        self.compiled_subgraph_proxy = CodeProxy.decompile_with_name(self.compiled_subgraph, compiled_subgraphs[0])
+        # deal with compiled_code
+        self.compiled_code = code
+        self.compiled_code_proxy = CodeProxy.decompile_with_name(self.compiled_code, "compiled_code:")
         resume_fns = [name for name in code.co_names if name.startswith("__resume")]
         self.referenced_global_functions = {name: DynamoOptimizationResult(getattr(module, name), name) for name in resume_fns}
         self.code = code
@@ -106,7 +130,6 @@ class DynamoOptimizationResult:
     name: str
     fn: Callable
     code: CodeType
-    source_code: str
     source_code_proxy: CodeProxy
     compiled_code_entries: List[CacheResult]
 
@@ -119,13 +142,7 @@ class DynamoOptimizationResult:
         caches = _debug_get_cache_entry_list(fn.__code__)
         self.compiled_code_entries = [CacheResult(fn, cache) for cache in caches]
         self.code = fn.__code__
-        try:
-            decompiled_source_code = depyf.Decompiler(self.code).decompile(overwite_fn_name=self.name)
-        except Exception as e:
-            print(str(e))
-            decompiled_source_code = "'Failed to decompile.'\n"
-        self.source_code = decompiled_source_code
-        self.source_code_proxy = CodeProxy(self.source_code, self.name)
+        self.source_code_proxy = CodeProxy.decompile_with_name(self.code, self.name)
     
     def to_data(self):
         data = {
@@ -137,8 +154,12 @@ class DynamoOptimizationResult:
 
     def to_src(self):
         raw_code = self.source_code_proxy.raw_code
+
+        # prepare function signature, from `def toy_example(a, b)` to `def compiled_toy_example(a, b)`
         signature = raw_code.splitlines()[0].replace("def ", "def compiled_", 1)
         code = signature.strip()
+
+        # prepare args for guards, like `L = {"a": a, "b": b}`
         code_obj = self.fn.__code__
         normal_arg_count = code_obj.co_argcount + code_obj.co_kwonlyargcount
         arg_names = code_obj.co_varnames[:normal_arg_count]
@@ -148,33 +169,26 @@ class DynamoOptimizationResult:
         additional_code = ""
 
         for entry in self.compiled_code_entries:
+
+            # prepare guards, like `def guard_0(L):\n    return a > 0 and b > 0`
             guard = (" \\\n" + " " * 8 + "and ").join(["(" + x + ")" for x in entry.guard])
-            guard_func_name = CodeProxy(guard, "guard:").name
+            guard_func_name = CodeProxy.consume_new_name("guard:")
             additional_code += f"\ndef {guard_func_name}(L):\n" + " " * 4 + "return " + guard + "\n"
 
-            compiled_subgraph_name = entry.compiled_subgraph_proxy.name
-            compiled_subgraph_code = entry.compiled_subgraph_proxy.raw_code
-            compiled_subgraph_code = f"def {compiled_subgraph_name}(" + compiled_subgraph_code[compiled_subgraph_code.index("(self,") + 6:].lstrip()
-            additional_code += "\n" + remove_indentation(compiled_subgraph_code) + "\n"
+            # prepare compiled subgraph, like `__compiled_fn_0`
+            additional_code += "\n" + remove_indentation(entry.compiled_subgraph_proxy.raw_code) + "\n"
 
-            func_name = entry.compiled_code_proxy.name
-            compiled_code = entry.compiled_code_proxy.raw_code
-            compiled_code = f"def {func_name}" + compiled_code[compiled_code.index("("):]
-            additional_code += "\n" + remove_indentation(compiled_code) + "\n"
+            # prepare compiled code, like `compiled_code_0`
+            additional_code += "\n" + remove_indentation(entry.compiled_code_proxy.raw_code) + "\n"
 
             for name, func in entry.referenced_global_functions.items():
                 additional_code = func.to_src() + additional_code
 
-            code += "\n" + " " * 4 + f"if {guard_func_name}(L):\n" + " " * 8 + f"return {func_name}({', '.join(arg_names)})"
+            code += "\n" + " " * 4 + f"if {guard_func_name}(L):\n" + " " * 8 + f"return {entry.compiled_code_proxy.name}({', '.join(arg_names)})"
         
-        original_code_lines = remove_indentation(self.source_code_proxy.raw_code).splitlines()
-        original_code_lines = [original_code_lines[0], " " * 4 + "# Note: if there is a compiled version below, this function might well not be executed directly. Please check the compiled version if possible."] + original_code_lines[1:]
-        original_code = "".join([x + "\n" for x in original_code_lines])
+        additional_code += "\n" + "# Note: if there is a compiled version below, this function might well not be executed directly. Please check the compiled version if possible.\n" + remove_indentation(self.source_code_proxy.raw_code) + "\n"
 
-        additional_code += "\n" + original_code + "\n"
-
-        original_func_name = self.source_code_proxy.name
-        code += "\n" + " " * 4 + "# Note: this function might well not be executed directly. It might well be compiled again, i.e. adding one more guards and compiled code.\n" + " " * 4 + f"return {original_func_name}({', '.join(arg_names)})"
+        code += "\n" + " " * 4 + "# Note: this function might well not be executed directly. It might well be compiled again, i.e. adding one more guards and compiled code.\n" + " " * 4 + f"return {self.source_code_proxy.name}({', '.join(arg_names)})"
         return additional_code + code + f"\n\n#============ end of {self.name} ============#\n"
 
     _ipython_display_ = display_func
