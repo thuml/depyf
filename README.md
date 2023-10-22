@@ -4,7 +4,7 @@ Have you ever felt overwhelmed by the complexities of `torch.compile`? Diving in
 
 We are excited to announce `depyf`, a new tool to pull out all the artifacts of `torch.compile`, and to decompile all the bytecode into source code so that every user understands it.
 <details>
-<summary>Explain `torch.compile` in source code</summary>
+<summary># Explain `torch.compile` in source code</summary>
 
 ```diff
 import torch
