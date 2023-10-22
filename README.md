@@ -13,6 +13,38 @@ Nightly version (recommended): `pip install git+https://github.com/thuml/depyf.g
 # Usage
 
 <details>
+<summary><h2>Debug <code>torch.compile</code> with your favorite debugger.</h2></summary>
+
+```diff
+import torch
+from torch import _dynamo as torchdynamo
+from typing import List
+
++ @torch.compile(backend="eager")
+- @torch.compile
+def toy_example(a, b):
+    x = a / (torch.abs(a) + 1)
+    if b.sum() < 0:
+        b = b * -1
+    return x * b
+
++ import depyf
++ with depyf.prepare_debug(toy_example, "./dump_src_dir"):
++     # run your code long enough under `depyf.prepare_debug` to prepare all the source code for debugging
++     for _ in range(100):
++         toy_example(torch.randn(10), torch.randn(10))
++ # the program will pause here for you to set breakpoints
++ with depyf.debug():
++     # then you can hit breakpoints when running the function
++     toy_example(torch.randn(10), torch.randn(10))
+- toy_example(torch.randn(10), torch.randn(10))
+```
+
+Run the above program with your favorite debugger, and debug the compiled code as you like. The UI looks like the following:
+
+![](https://raw.githubusercontent.com/thuml/depyf/master/imgs/debug.png)
+
+<details>
 <summary><h2>Explain <code>torch.compile</code> in source code</h2></summary>
 
 ```diff
