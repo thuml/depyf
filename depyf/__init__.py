@@ -3,6 +3,8 @@ from types import CodeType
 
 from .decompiler import Decompiler
 
+from .code_transform import structure_hash
+
 def decompile(code: Union[CodeType, Callable]):
     """Decompile a code object or a function."""
     return Decompiler(code).decompile()

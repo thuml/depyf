@@ -6,6 +6,7 @@ import astor
 from collections import defaultdict
 import dataclasses
 import sys
+import hashlib
 
 py311 = sys.version_info >= (3, 11)
 all_jump_opcode_set = set(dis.hasjabs) | set(dis.hasjrel)
@@ -281,3 +282,35 @@ def remove_some_temp(source_code: str, temp_prefix:str, indentation: int=4) -> s
 
     reconstructed_code = astor.to_source(tree, indent_with=" " * indentation)
     return reconstructed_code
+
+class IdentifierReplacer(ast.NodeTransformer):
+
+    def visit_Name(self, node):
+        return ast.copy_location(ast.Name(id='PLACEHOLDER', ctx=node.ctx), node)
+
+    def visit_FunctionDef(self, node):
+        node.name = 'PLACEHOLDER'
+        return self.generic_visit(node)
+
+    def visit_AsyncFunctionDef(self, node):
+        node.name = 'PLACEHOLDER'
+        return self.generic_visit(node)
+
+    def visit_ClassDef(self, node):
+        node.name = 'PLACEHOLDER'
+        return self.generic_visit(node)
+
+    def visit_Attribute(self, node):
+        node.attr = 'PLACEHOLDER'
+        return self.generic_visit(node)
+
+def structure_hash(source_code: str) -> str:
+    """Compute the hash of code structure, ignore the name difference.
+    This is because PyTorch dynamically generates function names.
+    """
+    tree = ast.parse(source_code)
+    tree = IdentifierReplacer().visit(tree)
+    modified_code = astor.to_source(tree)
+    print(modified_code)
+    hash_value = hashlib.md5(modified_code.encode()).hexdigest()
+    return hash_value
