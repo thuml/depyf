@@ -285,27 +285,27 @@ def remove_some_temp(source_code: str, temp_prefix:str, indentation: int=4) -> s
 
 class IdentifierReplacer(ast.NodeTransformer):
 
-    def visit_Name(self, node):
-        return ast.copy_location(ast.Name(id='PLACEHOLDER', ctx=node.ctx), node)
+    # def visit_Name(self, node):
+    #     return ast.copy_location(ast.Name(id='PLACEHOLDER', ctx=node.ctx), node)
 
     def visit_FunctionDef(self, node):
         node.name = 'PLACEHOLDER'
         return self.generic_visit(node)
 
-    def visit_AsyncFunctionDef(self, node):
-        node.name = 'PLACEHOLDER'
-        return self.generic_visit(node)
+    # def visit_AsyncFunctionDef(self, node):
+    #     node.name = 'PLACEHOLDER'
+    #     return self.generic_visit(node)
 
-    def visit_ClassDef(self, node):
-        node.name = 'PLACEHOLDER'
-        return self.generic_visit(node)
+    # def visit_ClassDef(self, node):
+    #     node.name = 'PLACEHOLDER'
+    #     return self.generic_visit(node)
 
-    def visit_Attribute(self, node):
-        node.attr = 'PLACEHOLDER'
-        return self.generic_visit(node)
+    # def visit_Attribute(self, node):
+    #     node.attr = 'PLACEHOLDER'
+    #     return self.generic_visit(node)
 
 def structure_hash(source_code: str) -> str:
-    """Compute the hash of code structure, ignore the name difference.
+    """Compute the hash of code structure, ignore the function name difference.
     This is because PyTorch dynamically generates function names.
     """
     tree = ast.parse(source_code)
