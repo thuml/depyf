@@ -3,8 +3,8 @@
 Have you ever felt overwhelmed by the complexities of `torch.compile`? Diving into its workings can feel like black magic, with bytecode and Python internal details that many users fail to understand, hindering them from understanding and debugging `torch.compile`.
 
 We are excited to announce `depyf`, a new tool to pull out all the artifacts of `torch.compile`, and to decompile all the bytecode into source code so that every user understands it.
-
-# Example usage:
+<details>
+<summary>Explain `torch.compile` in source code</summary>
 
 ```diff
 import torch
@@ -145,6 +145,8 @@ def compiled_toy_example(a, b):
 ```
 
 You can explore the code with your favorite IDE. Start from the `toy_example` function, and pay attention to the `compiled_toy_example` function below, walk through all the details of guards/compiled code/compiled subgraph/resume functions. It's all in readable source code format!
+
+</details>
 
 # Installation
 
