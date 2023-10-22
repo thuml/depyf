@@ -54,3 +54,48 @@ def uninstall():
 import os
 
 __version__ = open(f"{os.path.dirname(__file__)}/VERSION.txt").read().strip()
+
+import contextlib
+import warnings
+
+@contextlib.contextmanager
+def debug(func, dump_src_dir):
+    """Usage:
+    with depyf.debug(toy_example, "dump_src_dir"):
+        for i in range(100):
+            toy_example(torch.randn(10), torch.randn(10))
+    Run the code once to generate source code, and set breakpoint in the generated source code.
+    Run the code again to debug.
+    """
+    def debuggable_hook(code, new_code):
+        try:
+            import os
+            src = Decompiler(new_code).decompile(overwite_fn_name="compiled_code")
+            full_hash = structure_hash(src)
+            filename = os.path.join(dump_src_dir, f"compiled_code_{full_hash}.py")
+            if not os.path.exists(filename):
+                with open(filename, "w") as f:
+                    f.write(src)
+            compiled_code = compile(src, filename=filename, mode="exec")
+            scope = {}
+            exec(compiled_code, scope)
+            func = scope["compiled_code"]
+            return func.__code__
+        except Exception:
+            pass
+    
+    warnings.warn((
+        "You are trying to debug `torch.compile`. Please make sure the code "
+        "runs multiple times to cover all the possible branches."
+    ))
+
+    try:
+        handle = torch._dynamo.convert_frame.register_bytecode_hook(debuggable_hook)
+        yield
+    finally:
+        handle.remove()
+        from depyf.explain import dump_src
+        full_src = dump_src(func)
+        filename = os.path.join(dump_src_dir, f"full_code.py")
+        with open(filename, "w") as f:
+            f.write(full_src)
