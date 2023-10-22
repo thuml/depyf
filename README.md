@@ -13,7 +13,7 @@ Nightly version (recommended): `pip install git+https://github.com/thuml/depyf.g
 # Usage
 
 <details>
-<summary>Explain `torch.compile` in source code</summary>
+<summary>Explain <code>torch.compile</code> in source code</summary>
 
 ```diff
 import torch
@@ -158,7 +158,7 @@ You can explore the code with your favorite IDE. Start from the `toy_example` fu
 </details>
 
 <details>
-<summary>Interactively explore artifacts of `torch.compile`</summary>
+<summary>Interactively explore artifacts of <code>torch.compile</code></summary>
 
 Please run the [Jupyter Lab Notebook](https://github.com/thuml/depyf/blob/master/explain_pt2.ipynb).
 
@@ -169,7 +169,7 @@ In the notebook, you can interactively select the content you want to explore. T
 </details>
 
 <details>
-<summary>Enhance `torch.compile` logging</summary>
+<summary>Enhance <code>torch.compile</code> logging</summary>
 
 `depyf` works closely with PyTorch. If you have a PyTorch program with `torch.compile`, you only need to add a single line to enable the decompilation of PyTorch bytecode.
 
