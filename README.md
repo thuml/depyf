@@ -44,6 +44,8 @@ Run the above program with your favorite debugger, and debug the compiled code a
 
 ![](https://raw.githubusercontent.com/thuml/depyf/master/imgs/debug.png)
 
+Note: when you are debugging a function that calls some resume functions, the debugging might not work. Please set breakpoints for resume functions directly. See [the discussion](https://github.com/pytorch/pytorch/issues/111633#issuecomment-1774107022) for details.
+
 </details>
 
 <details>
