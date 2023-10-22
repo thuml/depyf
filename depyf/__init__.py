@@ -67,9 +67,10 @@ def debug(func, dump_src_dir):
     Run the code once to generate source code, and set breakpoint in the generated source code.
     Run the code again to debug.
     """
+    import os
+
     def debuggable_hook(code, new_code):
         try:
-            import os
             src = Decompiler(new_code).decompile(overwite_fn_name="compiled_code")
             full_hash = structure_hash(src)
             filename = os.path.join(dump_src_dir, f"compiled_code_{full_hash}.py")
@@ -88,6 +89,9 @@ def debug(func, dump_src_dir):
         "You are trying to debug `torch.compile`. Please make sure the code "
         "runs multiple times to cover all the possible branches."
     ))
+
+    if not os.path.exists(dump_src_dir):
+        os.makedirs(dump_src_dir)
 
     try:
         handle = torch._dynamo.convert_frame.register_bytecode_hook(debuggable_hook)
