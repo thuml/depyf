@@ -3,8 +3,17 @@
 Have you ever felt overwhelmed by the complexities of `torch.compile`? Diving into its workings can feel like black magic, with bytecode and Python internal details that many users fail to understand, hindering them from understanding and debugging `torch.compile`.
 
 We are excited to announce `depyf`, a new tool to pull out all the artifacts of `torch.compile`, and to decompile all the bytecode into source code so that every user understands it.
+
+# Installation
+
+Stable release: `pip install depyf`
+
+Nightly version (recommended): `pip install git+https://github.com/thuml/depyf.git`
+
+# Usage
+
 <details>
-<summary># Explain `torch.compile` in source code</summary>
+<summary>Explain `torch.compile` in source code</summary>
 
 ```diff
 import torch
@@ -148,39 +157,8 @@ You can explore the code with your favorite IDE. Start from the `toy_example` fu
 
 </details>
 
-# Installation
-
-Stable release: `pip install depyf`
-
-Nightly version (recommended): `pip install git+https://github.com/thuml/depyf.git`
-
-# Other usages:
-
-## General Usage:
-
-`depyf` is a general-purpose tool to decompile Python bytecode into source code.
-
-```python
-# obtain a callable object or codeobject
-def func():
-    print("hello, world!")
-# import the `decompile` function
-from depyf import decompile
-# and decompile it into source code!
-print(decompile(func))
-```
-
-Example output:
-
-```python
-def func():
-    print('hello, world!')
-    return None
-```
-
-The output source code is semantically equivalent to the function, but not syntactically the same. It verbosely adds many details that are hidden in the Python code. For example, the above output code explicitly returns `None`, which is typically ignored.
-
-## Interactively explore artifacts of `torch.compile`
+<details>
+<summary>Interactively explore artifacts of `torch.compile`</summary>
 
 Please run the [Jupyter Lab Notebook](https://github.com/thuml/depyf/blob/master/explain_pt2.ipynb).
 
@@ -188,7 +166,10 @@ In the notebook, you can interactively select the content you want to explore. T
 
 ![](https://raw.githubusercontent.com/thuml/depyf/master/imgs/ui.png)
 
-## Enhance `torch.compile` logging
+</details>
+
+<details>
+<summary>Enhance `torch.compile` logging</summary>
 
 `depyf` works closely with PyTorch. If you have a PyTorch program with `torch.compile`, you only need to add a single line to enable the decompilation of PyTorch bytecode.
 
@@ -277,6 +258,35 @@ MODIFIED BYTECODE toy_example /workspace/thuml/code/pytorch/ykc.py line 12
 + 
 + If you find the decompiled code is wrong,please submit an issue at https://github.com/thuml/depyf/issues.
 ```
+
+</details>
+
+<details>
+<summary>General Usage</summary>
+
+`depyf` is a general-purpose tool to decompile Python bytecode into source code.
+
+```python
+# obtain a callable object or codeobject
+def func():
+    print("hello, world!")
+# import the `decompile` function
+from depyf import decompile
+# and decompile it into source code!
+print(decompile(func))
+```
+
+Example output:
+
+```python
+def func():
+    print('hello, world!')
+    return None
+```
+
+The output source code is semantically equivalent to the function, but not syntactically the same. It verbosely adds many details that are hidden in the Python code. For example, the above output code explicitly returns `None`, which is typically ignored.
+
+</details>
 
 :warning: We recommend running the above examples with PyTorch nightly.
 
