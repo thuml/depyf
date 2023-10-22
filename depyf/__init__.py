@@ -58,26 +58,33 @@ __version__ = open(f"{os.path.dirname(__file__)}/VERSION.txt").read().strip()
 import contextlib
 import warnings
 
-@contextlib.contextmanager
-def prepare_debug(func, dump_src_dir):
-    import os
+import dataclasses
 
-    def debuggable_hook(code, new_code):
+@dataclasses.dataclass
+class DebuggableHook(object):
+    dump_src_dir: str
+    type_name: str
+
+    def __call__(self, code, new_code):
         try:
-            src = Decompiler(new_code).decompile(overwite_fn_name="compiled_code")
+            src = Decompiler(new_code).decompile(overwite_fn_name=self.type_name)
             full_hash = structure_hash(src)
-            filename = os.path.join(dump_src_dir, f"compiled_code_{full_hash}.py")
+            filename = os.path.join(self.dump_src_dir, f"{self.type_name}_{full_hash}.py")
             if not os.path.exists(filename):
                 with open(filename, "w") as f:
                     f.write(src)
             compiled_code = compile(src, filename=filename, mode="exec")
             scope = {}
             exec(compiled_code, scope)
-            func = scope["compiled_code"]
+            func = scope[self.type_name]
             return func.__code__
         except Exception:
             pass
-    
+
+@contextlib.contextmanager
+def prepare_debug(func, dump_src_dir):
+    import os
+
     warnings.warn((
         "You are trying to debug `torch.compile`. Please make sure the code "
         "runs multiple times to cover all the possible branches."
@@ -87,7 +94,7 @@ def prepare_debug(func, dump_src_dir):
         os.makedirs(dump_src_dir)
 
     import torch
-    handle = torch._dynamo.convert_frame.register_bytecode_hook(debuggable_hook)
+    handle = torch._dynamo.convert_frame.register_bytecode_hook(DebuggableHook(dump_src_dir, "compiled_code"))
 
     try:
         yield
