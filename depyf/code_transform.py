@@ -311,6 +311,5 @@ def structure_hash(source_code: str) -> str:
     tree = ast.parse(source_code)
     tree = IdentifierReplacer().visit(tree)
     modified_code = astor.to_source(tree)
-    print(modified_code)
     hash_value = hashlib.md5(modified_code.encode()).hexdigest()
     return hash_value
