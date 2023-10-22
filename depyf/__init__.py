@@ -59,14 +59,7 @@ import contextlib
 import warnings
 
 @contextlib.contextmanager
-def debug(func, dump_src_dir):
-    """Usage:
-    with depyf.debug(toy_example, "dump_src_dir"):
-        for i in range(100):
-            toy_example(torch.randn(10), torch.randn(10))
-    Run the code once to generate source code, and set breakpoint in the generated source code.
-    Run the code again to debug.
-    """
+def prepare_debug(func, dump_src_dir):
     import os
 
     def debuggable_hook(code, new_code):
@@ -93,8 +86,10 @@ def debug(func, dump_src_dir):
     if not os.path.exists(dump_src_dir):
         os.makedirs(dump_src_dir)
 
+    import torch
+    handle = torch._dynamo.convert_frame.register_bytecode_hook(debuggable_hook)
+
     try:
-        handle = torch._dynamo.convert_frame.register_bytecode_hook(debuggable_hook)
         yield
     finally:
         handle.remove()
@@ -103,3 +98,13 @@ def debug(func, dump_src_dir):
         filename = os.path.join(dump_src_dir, f"full_code.py")
         with open(filename, "w") as f:
             f.write(full_src)
+        input(f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
+
+@contextlib.contextmanager
+def debug():
+    import torch
+    callback = torch._dynamo.eval_frame.set_eval_frame(False)
+    try:
+        yield
+    finally:
+        torch._dynamo.eval_frame.set_eval_frame(callback)
