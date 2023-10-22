@@ -94,12 +94,12 @@ def prepare_debug(func, dump_src_dir):
         os.makedirs(dump_src_dir)
 
     import torch
-    handle = torch._dynamo.convert_frame.register_bytecode_hook(DebuggableHook(dump_src_dir, "compiled_code"))
+    compiled_code_handle = torch._dynamo.convert_frame.register_bytecode_hook(DebuggableHook(dump_src_dir, "compiled_code"))
 
     try:
         yield
     finally:
-        handle.remove()
+        compiled_code_handle.remove()
         from depyf.explain import dump_src
         full_src = dump_src(func)
         filename = os.path.join(dump_src_dir, f"full_code.py")
