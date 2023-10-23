@@ -6,6 +6,7 @@ from typing import List, Callable, Dict, Union, Set
 
 def _extract_artifacts(fn: Callable):
     if hasattr(fn, "_torchdynamo_orig_callable"):
+        # this can deal with various types of callable objects, including `nn.Module`.
         inner_fn = innermost_fn(fn)
     else:
         inner_fn = fn
