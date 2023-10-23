@@ -12,6 +12,8 @@ Nightly version (recommended): `pip install git+https://github.com/thuml/depyf.g
 
 # Usage
 
+Note: some usage examples can be found at [the test folder](https://github.com/thuml/depyf/tree/master/tests/test_pytorch).
+
 <details>
 <summary><h2>Debug <code>torch.compile</code> with your favorite debugger.</h2></summary>
 
