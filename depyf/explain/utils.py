@@ -47,12 +47,13 @@ class CodeProxy:
 
     @staticmethod
     def decompile_with_name(code: CodeType, name: str):
-        new_name = CodeProxy.get_new_name(name)
         if hasattr(code, "__code__"):
             code = code.__code__
         if code.co_name.startswith("compiled_code_"):
             src = open(code.co_filename).read()
+            new_name = code.co_name
         else:
+            new_name = CodeProxy.get_new_name(name)
             src = decompile_ensure(code, new_name)
         self = CodeProxy(src)
         self.name = new_name
