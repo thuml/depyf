@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict, Union, Callable, Optional
+from typing import List, Tuple, Dict, Union, Callable, Optional, Any
 from types import CodeType
 
 from .decompiler import Decompiler
@@ -59,24 +59,27 @@ import contextlib
 import warnings
 
 import dataclasses
+import itertools
 
 @dataclasses.dataclass
 class DebuggableHook(object):
     dump_src_dir: str
     type_name: str
+    code_counter: Any = dataclasses.field(default_factory=lambda: itertools.count(start=0))
 
     def __call__(self, code, new_code):
         try:
-            src = Decompiler(new_code).decompile(overwite_fn_name=self.type_name)
-            full_hash = structure_hash(src)
-            filename = os.path.join(self.dump_src_dir, f"{self.type_name}_{full_hash}.py")
+            n = next(self.code_counter)
+            filename = os.path.join(self.dump_src_dir, f"{self.type_name}_{n}.py")
+            func_name = f"{self.type_name}_{n}"
+            src = Decompiler(new_code).decompile(overwite_fn_name=func_name)
             if not os.path.exists(filename):
                 with open(filename, "w") as f:
                     f.write(src)
             compiled_code = compile(src, filename=filename, mode="exec")
             scope = {}
             exec(compiled_code, scope)
-            func = scope[self.type_name]
+            func = scope[func_name]
             return func.__code__
         except Exception:
             pass
