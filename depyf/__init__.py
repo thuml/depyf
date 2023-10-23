@@ -86,7 +86,7 @@ class CompiledSubgraphHook(object):
     dump_src_dir: str
     type_name: str
 
-    def __call__(self, fn):
+    def __call__(self, name, fn):
         try:
             import torch
             import types
@@ -99,7 +99,7 @@ class CompiledSubgraphHook(object):
                 fn = fn.__call__
             src = Decompiler(fn).decompile(overwite_fn_name=self.type_name)
             full_hash = structure_hash(src)
-            filename = os.path.join(self.dump_src_dir, f"{self.type_name}_{full_hash}.py")
+            filename = os.path.join(self.dump_src_dir, f"{name}.py")
             if not os.path.exists(filename):
                 with open(filename, "w") as f:
                     f.write(src)
@@ -135,8 +135,8 @@ def prepare_debug(func, dump_src_dir):
         from depyf.explain import dump_src, _extract_artifacts, _collect_compiled_subgraphs
         compiled_subgraphs = _collect_compiled_subgraphs(_extract_artifacts(func))
         hook = CompiledSubgraphHook(dump_src_dir, "compiled_subgraph")
-        for compiled_subgraph in compiled_subgraphs:
-            hook(compiled_subgraph)
+        for name, compiled_subgraph in compiled_subgraphs.items():
+            hook(name, compiled_subgraph)
         full_src = dump_src(func)
         filename = os.path.join(dump_src_dir, f"full_code.py")
         with open(filename, "w") as f:
