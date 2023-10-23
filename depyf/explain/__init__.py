@@ -12,6 +12,11 @@ def _extract_artifacts(fn: Callable):
     result = DynamoOptimizationResult(inner_fn)
     return result
 
+def _collect_compiled_subgraphs(result: DynamoOptimizationResult):
+    compiled_subgraphs = [entry.compiled_subgraph for entry in result.compiled_code_entries]
+    compiled_subgraphs = sum([_collect_compiled_subgraphs(func) for entry in result.compiled_code_entries for func in entry.referenced_global_functions.values()], compiled_subgraphs)
+    return compiled_subgraphs
+
 def interactive_explain(fn: Callable):
     artifacts = _extract_artifacts(fn)
     return artifacts
