@@ -73,9 +73,8 @@ class DebuggableHook(object):
             filename = os.path.join(self.dump_src_dir, f"{self.type_name}_{n}.py")
             func_name = f"{self.type_name}_{n}"
             src = Decompiler(new_code).decompile(overwite_fn_name=func_name)
-            if not os.path.exists(filename):
-                with open(filename, "w") as f:
-                    f.write(src)
+            with open(filename, "w") as f:
+                f.write(src)
             compiled_code = compile(src, filename=filename, mode="exec")
             scope = {}
             exec(compiled_code, scope)
@@ -103,9 +102,8 @@ class CompiledSubgraphHook(object):
             src = Decompiler(fn).decompile(overwite_fn_name=self.type_name)
             full_hash = structure_hash(src)
             filename = os.path.join(self.dump_src_dir, f"{name}.py")
-            if not os.path.exists(filename):
-                with open(filename, "w") as f:
-                    f.write(src)
+            with open(filename, "w") as f:
+                f.write(src)
             compiled_code = compile(src, filename=filename, mode="exec")
             scope = {}
             exec(compiled_code, scope)
