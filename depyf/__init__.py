@@ -81,6 +81,38 @@ class DebuggableHook(object):
         except Exception:
             pass
 
+@dataclasses.dataclass
+class CompiledSubgraphHook(object):
+    dump_src_dir: str
+    type_name: str
+
+    def __call__(self, fn):
+        try:
+            import torch
+            import types
+            fn = torch._dynamo.eval_frame.innermost_fn(fn)
+            if hasattr(fn, "__func__"):
+                # deal with bounded or partial function
+                fn = fn.__func__
+            if hasattr(fn, "__call__") and isinstance(fn.__call__, types.FunctionType):
+                # deal with callable object
+                fn = fn.__call__
+            src = Decompiler(fn).decompile(overwite_fn_name=self.type_name)
+            full_hash = structure_hash(src)
+            filename = os.path.join(self.dump_src_dir, f"{self.type_name}_{full_hash}.py")
+            if not os.path.exists(filename):
+                with open(filename, "w") as f:
+                    f.write(src)
+            compiled_code = compile(src, filename=filename, mode="exec")
+            scope = {}
+            exec(compiled_code, scope)
+            func = scope[self.type_name]
+            fn.__code__ = func.__code__
+
+        except Exception as e:
+            print(str(e))
+
+
 @contextlib.contextmanager
 def prepare_debug(func, dump_src_dir):
     import os
@@ -100,7 +132,11 @@ def prepare_debug(func, dump_src_dir):
         yield
     finally:
         compiled_code_handle.remove()
-        from depyf.explain import dump_src
+        from depyf.explain import dump_src, _extract_artifacts, _collect_compiled_subgraphs
+        compiled_subgraphs = _collect_compiled_subgraphs(_extract_artifacts(func))
+        hook = CompiledSubgraphHook(dump_src_dir, "compiled_subgraph")
+        for compiled_subgraph in compiled_subgraphs:
+            hook(compiled_subgraph)
         full_src = dump_src(func)
         filename = os.path.join(dump_src_dir, f"full_code.py")
         with open(filename, "w") as f:
