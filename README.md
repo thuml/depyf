@@ -2,7 +2,11 @@
 
 Have you ever felt overwhelmed by the complexities of `torch.compile`? Diving into its workings can feel like black magic, with bytecode and Python internal details that many users fail to understand, hindering them from understanding and debugging `torch.compile`.
 
-We are excited to announce `depyf`, a new tool to pull out all the artifacts of `torch.compile`, and to decompile all the bytecode into source code so that every user understands it.
+We are excited to announce `depyf`, a new tool to debug and understand `torch.compile`.
+
+Demo debugging:
+
+![](https://raw.githubusercontent.com/thuml/depyf/master/imgs/demo.gif)
 
 # Installation
 
