@@ -1,4 +1,4 @@
-# Understand and Deubg `torch.compile`!
+# Understand and Debug `torch.compile`!
 
 Have you ever felt overwhelmed by the complexities of `torch.compile`? Diving into its workings can feel like black magic, with bytecode and Python internal details that many users fail to understand, hindering them from understanding and debugging `torch.compile`.
 
