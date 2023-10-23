@@ -185,7 +185,6 @@ class DynamoOptimizationResult:
             additional_code += "\n" + "# Note: if you see an additional `self` argument, it is because this compiled subgraph function is a bounded method of a class instance.\n" + remove_indentation(entry.compiled_subgraph_proxy.raw_code) + "\n"
 
             # prepare compiled code, like `compiled_code_0`
-            additional_code += f"\n# Function type: compiled code\n# Function hash: {depyf.structure_hash(remove_indentation(entry.compiled_code_proxy.raw_code))}"
             additional_code += "\n" + remove_indentation(entry.compiled_code_proxy.raw_code) + "\n"
 
             for name, func in entry.referenced_global_functions.items():
