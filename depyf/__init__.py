@@ -115,7 +115,10 @@ class CompiledSubgraphHook(object):
 
 
 @contextlib.contextmanager
-def prepare_debug(func, dump_src_dir):
+def prepare_debug(func, dump_src_dir, pause=True):
+    """
+    pause: whether to wait for users to set breakpoints. set it to False in testing.
+    """
     import os
 
     warnings.warn((
@@ -142,7 +145,9 @@ def prepare_debug(func, dump_src_dir):
         filename = os.path.join(dump_src_dir, f"full_code.py")
         with open(filename, "w") as f:
             f.write(full_src)
-        input(f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
+        
+        if pause:
+            input(f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
 
 @contextlib.contextmanager
 def debug():
