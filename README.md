@@ -6,7 +6,7 @@ We are excited to announce `depyf`, a new tool to debug and understand `torch.co
 
 Demo debugging:
 
-![](https://raw.githubusercontent.com/thuml/depyf/master/imgs/demo.gif)
+![](https://github.com/thuml/depyf/blob/master/imgs/demo.gif)
 
 # Installation
 
