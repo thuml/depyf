@@ -152,7 +152,12 @@ class Decompiler:
         pass
 
     def LOAD_ATTR(self, inst: Instruction):
-        self.state.stack.append(f"getattr({self.state.stack.pop()}, {repr(inst.argval)})")
+        lhs = str(self.state.stack.pop())
+        rhs = inst.argval
+        if rhs.isidentifier():
+            self.state.stack.append(f"{lhs}.{rhs}")
+        else:
+            self.state.stack.append(f"getattr({lhs}, {repr(rhs)})")
 
     def LOAD_SUPER_ATTR(self, inst: Instruction):
         # not tested
