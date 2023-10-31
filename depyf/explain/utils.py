@@ -11,8 +11,6 @@ from dataclasses import dataclass
 import contextlib
 
 import depyf
-from depyf.backend import subgraph_name_to_bwd_files, subgraph_name_to_fwd_files, subgraph_name_to_src_files, subgraph_name_to_joint_graph_files
-
 
 def decompile_ensure(fn, overwite_fn_name=None):
     try:
@@ -185,15 +183,13 @@ class DynamoOptimizationResult:
 
             # prepare compiled subgraph, like `__compiled_fn_0`
             subgraph_name = entry.compiled_subgraph_proxy.name
-            if subgraph_name in subgraph_name_to_src_files and len(subgraph_name_to_src_files[subgraph_name]) > 0:
-                additional_code += "\n" + "# Captured subgraph: " + " ".join(subgraph_name_to_src_files[subgraph_name])
-            if subgraph_name in subgraph_name_to_joint_graph_files and len(subgraph_name_to_joint_graph_files[subgraph_name]) > 0:
-                additional_code += "\n" + "# Joint forward-backward graph: " + " ".join(subgraph_name_to_joint_graph_files[subgraph_name])
-            if subgraph_name in subgraph_name_to_fwd_files and len(subgraph_name_to_fwd_files[subgraph_name]) > 0:
-                additional_code += "\n" + "# Forward graph: " + " ".join(subgraph_name_to_fwd_files[subgraph_name])
-            if subgraph_name in subgraph_name_to_bwd_files and len(subgraph_name_to_bwd_files[subgraph_name]) > 0:
-                additional_code += "\n" + "# Backward graph: " + " ".join(subgraph_name_to_bwd_files[subgraph_name])
-            additional_code += "\n" + "# Note: please refer to the graph code file mentioned above.\n" + f"def {subgraph_name}(*args, **kwargs):\n    pass\n" # + remove_indentation(entry.compiled_subgraph_proxy.raw_code) + "\n"
+            additional_code += "\n"
+            additional_code += f"# Note: please refer to the graph code in {subgraph_name}*.py.\n"
+            additional_code += f"# captured graph: Dynamo generated graph (debuggable when using eager backend).\n"
+            additional_code += f"# joint graph: joint forward+backward graph from aot autograd.\n"
+            additional_code += f"# forward graph: forward graph from aot autograd (debuggable when using aot_eager backend).\n"
+            additional_code += f"# backward graph: backward graph from aot autograd (debuggable when using aot_eager backend).\n"
+            additional_code += f"def {subgraph_name}(*args, **kwargs):\n    pass\n"
 
             # prepare compiled code, like `compiled_code_0`
             additional_code += "\n" + remove_indentation(entry.compiled_code_proxy.raw_code) + "\n"
