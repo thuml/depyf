@@ -11,6 +11,7 @@ from dataclasses import dataclass
 import contextlib
 
 import depyf
+from depyf.backend import subgraph_name_to_bwd_files, subgraph_name_to_fwd_files, subgraph_name_to_src_files, subgraph_name_to_joint_graph_files
 
 
 def decompile_ensure(fn, overwite_fn_name=None):
@@ -183,7 +184,16 @@ class DynamoOptimizationResult:
             additional_code += f"\ndef {guard_func_name}(L):\n" + " " * 4 + "return " + guard + "\n"
 
             # prepare compiled subgraph, like `__compiled_fn_0`
-            additional_code += "\n" + "# Note: if you see an additional `self` argument, it is because this compiled subgraph function is a bounded method of a class instance.\n" + remove_indentation(entry.compiled_subgraph_proxy.raw_code) + "\n"
+            subgraph_name = entry.compiled_subgraph_proxy.name
+            if subgraph_name in subgraph_name_to_src_files and len(subgraph_name_to_src_files[subgraph_name]) > 0:
+                additional_code += "\n" + "# Captured subgraph: " + " ".join(subgraph_name_to_src_files[subgraph_name])
+            if subgraph_name in subgraph_name_to_joint_graph_files and len(subgraph_name_to_joint_graph_files[subgraph_name]) > 0:
+                additional_code += "\n" + "# Joint forward-backward graph: " + " ".join(subgraph_name_to_joint_graph_files[subgraph_name])
+            if subgraph_name in subgraph_name_to_fwd_files and len(subgraph_name_to_fwd_files[subgraph_name]) > 0:
+                additional_code += "\n" + "# Forward graph: " + " ".join(subgraph_name_to_fwd_files[subgraph_name])
+            if subgraph_name in subgraph_name_to_bwd_files and len(subgraph_name_to_bwd_files[subgraph_name]) > 0:
+                additional_code += "\n" + "# Backward graph: " + " ".join(subgraph_name_to_bwd_files[subgraph_name])
+            additional_code += "\n" + "# Note: please refer to the graph code file mentioned above.\n" + f"def {subgraph_name}(*args, **kwargs):\n    pass\n" # + remove_indentation(entry.compiled_subgraph_proxy.raw_code) + "\n"
 
             # prepare compiled code, like `compiled_code_0`
             additional_code += "\n" + remove_indentation(entry.compiled_code_proxy.raw_code) + "\n"
