@@ -130,6 +130,28 @@ class CompiledSubgraphHook(object):
             print(str(e))
 
 
+code = """
+def _exec_with_source(src: str, globals, co_fields=None):
+    key = _loader.cache(src, globals, co_fields)
+    import hashlib
+    import os
+    hash_value = hashlib.md5(src.encode()).hexdigest()
+    src = "#" + key + src
+    count = 0
+    while True:
+        filename = "{filedir}/compiled_code_" + hash_value + "_" + str(count) + ".py"
+        if not os.path.exists(filename):
+            with open(filename, "w") as f:
+                f.write(src)
+            break
+        # might be a hash collision
+        existing_code = open(filename).read()
+        if existing_code == src:
+            break
+        count += 1
+    exec(compile(src, filename, "exec"), globals)
+"""
+
 @contextlib.contextmanager
 def prepare_debug(func, dump_src_dir, pause=True):
     """
@@ -148,20 +170,21 @@ def prepare_debug(func, dump_src_dir, pause=True):
     import torch
     compiled_code_handle = torch._dynamo.convert_frame.register_bytecode_hook(DebuggableHook(dump_src_dir, "compiled_code"))
 
+    scope = {}
+    exec(compile(code.format(filedir=dump_src_dir), "noname", "exec"), scope)
+    old_code = torch.fx.graph_module._exec_with_source.__code__
+    torch.fx.graph_module._exec_with_source.__code__ = scope["_exec_with_source"].__code__
+
     try:
         yield
     finally:
         compiled_code_handle.remove()
         from depyf.explain import dump_src, _extract_artifacts, _collect_compiled_subgraphs
-        compiled_subgraphs = _collect_compiled_subgraphs(_extract_artifacts(func))
-        hook = CompiledSubgraphHook(dump_src_dir, "compiled_subgraph")
-        for name, compiled_subgraph in compiled_subgraphs.items():
-            hook(name, compiled_subgraph)
         full_src = dump_src(func)
         filename = os.path.join(dump_src_dir, f"full_code.py")
         with open(filename, "w") as f:
             f.write(full_src)
-        
+        torch.fx.graph_module._exec_with_source.__code__ = old_code
         if pause:
             input(f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
 
