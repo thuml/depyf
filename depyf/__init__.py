@@ -1,8 +1,6 @@
 from typing import List, Tuple, Dict, Union, Callable, Optional, Any
 from types import CodeType
 
-import functools
-
 from .decompiler import Decompiler
 
 from .code_transform import structure_hash
@@ -85,25 +83,6 @@ class DebuggableHook(object):
         except Exception:
             pass
 
-def extract_underlying_func(fn: Callable):
-    """Functions like bounded method also have `__code__` attribute, but it is read-only. We want to get the underlying function so that we can change its code object.
-    """
-    if hasattr(fn, "__func__"):
-        # deal with bounded function
-        fn = fn.__func__
-    elif hasattr(fn, "__wrapped__"):
-        # deal with lru_cache or other decorators
-        fn = fn.__wrapped__
-    elif isinstance(fn, functools.partial):
-        # deal with partial function
-        fn = fn.func
-    elif hasattr(fn, "__call__") and hasattr(fn.__call__, "__func__"):
-        # deal with callable object
-        fn = fn.__call__.__func__
-    else:
-        return fn
-    return extract_underlying_func(fn)
-
 @dataclasses.dataclass
 class CompiledSubgraphHook(object):
     dump_src_dir: str
@@ -166,6 +145,8 @@ def prepare_debug(func, dump_src_dir, pause=True):
 
     if not os.path.exists(dump_src_dir):
         os.makedirs(dump_src_dir)
+
+    dump_src_dir = os.path.abspath(dump_src_dir)
 
     import torch
     compiled_code_handle = torch._dynamo.convert_frame.register_bytecode_hook(DebuggableHook(dump_src_dir, "compiled_code"))
