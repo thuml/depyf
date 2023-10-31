@@ -25,8 +25,9 @@ Note: some usage examples can be found at [the test folder](https://github.com/t
 import torch
 from torch import _dynamo as torchdynamo
 from typing import List
++ from depyf.explain.backend import eager, aot_eager
 
-+ @torch.compile(backend="eager")
++ @torch.compile(backend=eager)
 - @torch.compile
 def toy_example(a, b):
     x = a / (torch.abs(a) + 1)
@@ -49,6 +50,8 @@ def toy_example(a, b):
 Run the above program with your favorite debugger, and debug the compiled code as you like. The UI looks like the following:
 
 ![](https://raw.githubusercontent.com/thuml/depyf/master/imgs/debug.png)
+
+AOT Autograd is also supported, and you just need to switch the backend to `aot_eager`.
 
 Note: when you are debugging a function that calls some resume functions, the debugging might not work. Please set breakpoints for resume functions directly. See [the discussion](https://github.com/pytorch/pytorch/issues/111633#issuecomment-1774107022) for details.
 
