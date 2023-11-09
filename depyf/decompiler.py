@@ -937,3 +937,7 @@ class Decompiler:
 
     def __hash__(self):
         return hash(self.code)
+
+def decompile(code: Union[CodeType, Callable]):
+    """Decompile a code object or a function."""
+    return Decompiler(code).decompile()

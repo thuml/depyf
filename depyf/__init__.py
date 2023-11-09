@@ -1,15 +1,7 @@
-from typing import List, Tuple, Dict, Union, Callable, Optional, Any
 from types import CodeType
 import warnings
 
-from .decompiler import Decompiler
-
-from .code_transform import structure_hash
-
-def decompile(code: Union[CodeType, Callable]):
-    """Decompile a code object or a function."""
-    return Decompiler(code).decompile()
-
+from .decompiler import Decompiler, decompile
 
 try:
     import torch
@@ -24,8 +16,8 @@ except ImportError:
     pass
 
 from depyf.explain.enhance_logging import install, uninstall
+from depyf.explain.enable_debugging import prepare_debug, debug
 
 import os
 
 __version__ = open(f"{os.path.dirname(__file__)}/VERSION.txt").read().strip()
-
