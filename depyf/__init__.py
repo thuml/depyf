@@ -122,6 +122,32 @@ class CompiledSubgraphHook(object):
             print(str(e))
 
 
+code = """def lazy_format_graph_code(name, gm, maybe_id=None):
+    from torch._dynamo.bytecode_transformation import _unique_id_counter
+    from copy import copy
+    # torch.compile already called the next, we should add minus 1 to get the correct name
+    current_count = next(copy(_unique_id_counter)) - 1
+    func_name = "__compiled_fn_" + str(current_count)
+    file_name = name if name != func_name else "Captured Graph"
+    file_name = func_name + " " + file_name
+    import inspect, os
+    fn = gm.forward
+    filepath = inspect.getsourcefile(fn)
+    src = open(filepath).read()
+    new_filepath = os.path.dirname(filepath) + "/" + file_name + ".py"
+    os.rename(filepath, new_filepath)
+    scope = fn.__globals__
+    exec(compile(src, filename=new_filepath, mode="exec"), scope)
+    fn.__func__.__code__ = scope[fn.__name__].__code__
+    del scope[fn.__name__]
+"""
+
+scope = {}
+exec(compile(code, "noname", "exec"), scope)
+new_code = scope["lazy_format_graph_code"].__code__
+
+old_code = torch._dynamo.utils.lazy_format_graph_code.__code__
+
 @contextlib.contextmanager
 def prepare_debug(func, dump_src_dir, pause=True):
     """
@@ -166,6 +192,9 @@ def prepare_debug(func, dump_src_dir, pause=True):
         exec(compile(src, filename, "exec"), globals)
 
     torch.fx.graph_module._exec_with_source = _exec_with_source
+    # we have to directly manipulate the code object, since the function has been imported in many places.
+    # simply replacing torch._dynamo.utils.lazy_format_graph_code does not work for those functions.
+    torch._dynamo.utils.lazy_format_graph_code.__code__ = new_code
 
     try:
         yield
@@ -177,6 +206,7 @@ def prepare_debug(func, dump_src_dir, pause=True):
         with open(filename, "w") as f:
             f.write(full_src)
         torch.fx.graph_module._exec_with_source = old_func
+        torch._dynamo.utils.lazy_format_graph_code.__code__ = old_code
         if pause:
             input(f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
 
