@@ -1,5 +1,4 @@
 import torch
-from depyf.explain.backend import eager, aot_eager
 
 class ToyModule(torch.nn.Module):
     def __init__(self):
@@ -13,7 +12,7 @@ class ToyModule(torch.nn.Module):
 
 toy_module = ToyModule()
 
-toy_module = torch.compile(toy_module)
+toy_module = torch.compile(toy_module, backend="eager")
 
 import depyf
 # uncomment the following line to allow you to set breakpoints in the dumped source code

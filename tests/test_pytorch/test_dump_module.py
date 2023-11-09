@@ -1,5 +1,4 @@
 import torch
-from depyf.explain.backend import eager, aot_eager
 
 class ToyModule(torch.nn.Module):
     def __init__(self):
@@ -13,7 +12,7 @@ class ToyModule(torch.nn.Module):
 
 toy_module = ToyModule()
 
-toy_module = torch.compile(toy_module, backend=eager)
+toy_module = torch.compile(toy_module, backend="eager")
 
 toy_module(torch.randn(10), torch.randn(10))
 
