@@ -27,7 +27,12 @@ def lazy_format_graph_code(name, gm, maybe_id=None):
 
     # update file path
     filepath = inspect.getsourcefile(fn)
-    src = open(filepath).read()
+    # try to use verbose code with type and shape annotations
+    src = "from __future__ import annotations\n" + gm._graph.python_code(root_module="self", verbose=True).src
+    try:
+        compile(src, "noname", "exec")
+    except Exception as e:
+        src = open(filepath).read()
     os.remove(filepath)
     count = 0
     while True:
