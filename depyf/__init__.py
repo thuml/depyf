@@ -122,31 +122,8 @@ class CompiledSubgraphHook(object):
             print(str(e))
 
 
-code = """def lazy_format_graph_code(name, gm, maybe_id=None):
-    from torch._dynamo.bytecode_transformation import _unique_id_counter
-    from copy import copy
-    # torch.compile already called the next, we should add minus 1 to get the correct name
-    current_count = next(copy(_unique_id_counter)) - 1
-    func_name = "__compiled_fn_" + str(current_count)
-    file_name = name if name != func_name else "Captured Graph"
-    file_name = func_name + " " + file_name
-    import inspect, os
-    fn = gm.forward
-    filepath = inspect.getsourcefile(fn)
-    src = open(filepath).read()
-    new_filepath = os.path.dirname(filepath) + "/" + file_name + ".py"
-    os.rename(filepath, new_filepath)
-    scope = fn.__globals__
-    exec(compile(src, filename=new_filepath, mode="exec"), scope)
-    fn.__func__.__code__ = scope[fn.__name__].__code__
-    del scope[fn.__name__]
-"""
-
-scope = {}
-exec(compile(code, "noname", "exec"), scope)
-new_code = scope["lazy_format_graph_code"].__code__
-
-old_code = torch._dynamo.utils.lazy_format_graph_code.__code__
+from .lazy_format_graph_code import lazy_format_graph_code
+from .patch_run import boxed_run
 
 @contextlib.contextmanager
 def prepare_debug(func, dump_src_dir, pause=True):
@@ -194,7 +171,8 @@ def prepare_debug(func, dump_src_dir, pause=True):
     torch.fx.graph_module._exec_with_source = _exec_with_source
     # we have to directly manipulate the code object, since the function has been imported in many places.
     # simply replacing torch._dynamo.utils.lazy_format_graph_code does not work for those functions.
-    torch._dynamo.utils.lazy_format_graph_code.__code__ = new_code
+    old_code = torch._dynamo.utils.lazy_format_graph_code.__code__
+    torch._dynamo.utils.lazy_format_graph_code.__code__ = lazy_format_graph_code.__code__
 
     try:
         yield
@@ -214,7 +192,12 @@ def prepare_debug(func, dump_src_dir, pause=True):
 def debug():
     import torch
     callback = torch._dynamo.eval_frame.set_eval_frame(False)
+    # sometimes pytorch use Interpreter to run node by node. This cannot be debugged.
+    # we patch this function to run the graph function directly.
+    old_run_code = torch.fx.Interpreter.boxed_run.__code__
+    torch.fx.Interpreter.boxed_run.__code__ = boxed_run.__code__
     try:
         yield
     finally:
         torch._dynamo.eval_frame.set_eval_frame(callback)
+        torch.fx.Interpreter.boxed_run.__code__ = old_run_code
