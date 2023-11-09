@@ -153,7 +153,7 @@ def prepare_debug(func, dump_src_dir, pause=True):
         src = "# " + key + src
         count = 0
         while True:
-            filename = f"{dump_src_dir}/compiled_code_" + hash_value + "_" + str(count) + ".py"
+            filename = f"{dump_src_dir}/fx_graph_code_" + hash_value + "_" + str(count) + ".py"
             if not os.path.exists(filename):
                 with open(filename, "w") as f:
                     f.write(src)
