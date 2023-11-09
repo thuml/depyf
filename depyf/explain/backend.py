@@ -47,20 +47,63 @@ def update_fn_name(fn, name):
     fn.__code__ = scope[fn.__name__].__code__
     del scope[fn.__name__]
 
-def eager(gm: torch.fx.GraphModule, example_inputs: List[torch.Tensor]):
-    update_fn_name(gm.forward, _get_current_name() + "_captured_graph")
-    return gm.forward  # return a python callable
+def convert_eager_backend(name):
+    original_backend = torch._dynamo.backends.registry.lookup_backend(name)
 
-def aot_eager(gm: torch.fx.GraphModule, example_inputs: List[torch.Tensor]):
-    name = _get_current_name()
-    update_fn_name(gm.forward, name + "_captured_graph")
-    def my_partition(*args, **kwargs):
-        fw_graph, bw_graph = default_partition(*args, **kwargs)
-        update_fn_name(fw_graph.forward, name + "_forward_graph")
-        update_fn_name(bw_graph.forward, name + "_backward_graph")
-        update_fn_name(args[0].forward, name + "_joint_graph")
-        return fw_graph, bw_graph
-    def fwd_compiler(gm, example_inputs):
-        return gm.forward
-    # bwd_compiler is called lazily. we cannot rely on that.
-    return aot_function(gm, fwd_compiler, partition_fn=my_partition)  # return a python callable
+    def new_backend(gm: torch.fx.GraphModule, example_inputs: List[torch.Tensor]):
+        func = original_backend(gm, example_inputs)
+        update_fn_name(func.forward, _get_current_name() + "_captured_graph")
+        return func  # return a python callable
+
+    return new_backend
+
+eager = convert_eager_backend("eager")
+
+def convert_aot_backend(name):
+    original_backend = torch._dynamo.backends.registry.lookup_backend(name)
+    if "partition_fn" in original_backend.__closure__[0].cell_contents:
+        partition_fn = original_backend.__closure__[0].cell_contents["partition_fn"]
+    else:
+        partition_fn = torch._functorch.aot_autograd.aot_module_simplified.__defaults__[1]
+    def new_backend(gm: torch.fx.GraphModule, example_inputs: List[torch.Tensor]):
+        name = _get_current_name()
+        update_fn_name(gm.forward, name + "_captured_graph")
+        def my_partition(*args, **kwargs):
+            fw_graph, bw_graph = partition_fn(*args, **kwargs)
+            update_fn_name(fw_graph.forward, name + "_forward_graph")
+            update_fn_name(bw_graph.forward, name + "_backward_graph")
+            update_fn_name(args[0].forward, name + "_joint_graph")
+            return fw_graph, bw_graph
+        
+        # mock the partition_fn
+        if "partition_fn" in original_backend.__closure__[0].cell_contents:
+            original_backend.__closure__[0].cell_contents["partition_fn"] = my_partition
+
+            output = original_backend(gm, example_inputs)
+
+            original_backend.__closure__[0].cell_contents["partition_fn"] = partition_fn
+        else:
+            defaults = torch._functorch.aot_autograd.aot_module_simplified.__defaults__
+            torch._functorch.aot_autograd.aot_module_simplified.__defaults__ = (torch._functorch.aot_autograd.aot_module_simplified.__defaults__[0], my_partition, *torch._functorch.aot_autograd.aot_module_simplified.__defaults__[2:])
+
+            output = original_backend(gm, example_inputs)
+
+            torch._functorch.aot_autograd.aot_module_simplified.__defaults__ = defaults
+        return output
+    
+    return new_backend
+
+aot_eager = convert_aot_backend("aot_eager")
+
+# not tested
+aot_eager_decomp_partition = convert_aot_backend("aot_eager_decomp_partition")
+aot_eager_default_partitioner = convert_aot_backend("aot_eager_default_partitioner")
+aot_ts = convert_aot_backend("aot_ts")
+
+__all__ = [
+    "eager",
+    "aot_eager",
+    # "aot_eager_decomp_partition",
+    # "aot_eager_default_partitioner",
+    # "aot_ts",
+]
