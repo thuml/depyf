@@ -185,10 +185,11 @@ class DynamoOptimizationResult:
             subgraph_name = entry.compiled_subgraph_proxy.name
             additional_code += "\n"
             additional_code += f"# Note: please refer to the graph code in {subgraph_name}*.py.\n"
-            additional_code += f"# captured graph: Dynamo generated graph (debuggable when using eager backend).\n"
-            additional_code += f"# joint graph: joint forward+backward graph from aot autograd.\n"
-            additional_code += f"# forward graph: forward graph from aot autograd (debuggable when using aot_eager backend).\n"
-            additional_code += f"# backward graph: backward graph from aot autograd (debuggable when using aot_eager backend).\n"
+            additional_code += f"# Captured Graph: Dynamo generated graph (debuggable when using eager backend).\n"
+            additional_code += f"# Joint graph: joint forward+backward graph from aot autograd.\n"
+            additional_code += f"# Forward graph: forward graph from aot autograd (debuggable when using aot_eager backend).\n"
+            additional_code += f"# Backward graph: backward graph from aot autograd (debuggable when using aot_eager backend).\n"
+            additional_code += f"# AFTER XXX: graph processed by inductor (not debuggable).\n"
             additional_code += f"def {subgraph_name}(*args, **kwargs):\n    pass\n"
 
             # prepare compiled code, like `compiled_code_0`
