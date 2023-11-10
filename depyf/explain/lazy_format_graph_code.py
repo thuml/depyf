@@ -32,7 +32,10 @@ def lazy_format_graph_code(name, gm, maybe_id=None):
     try:
         compile(src, "noname", "exec")
     except Exception as e:
-        src = open(filepath).read()
+        simple_code = open(filepath).read()
+        commented_src = "\n# code below is commented out due to syntax error. You can refer to the code for shape and dtype annotation.\n"
+        commented_src += "".join(["# " + line + "\n" for line in src.splitlines()])
+        src = simple_code + commented_src
     os.remove(filepath)
     count = 0
     while True:
