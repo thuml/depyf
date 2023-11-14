@@ -32,6 +32,9 @@ def lazy_format_graph_code(name, gm, maybe_id=None):
     try:
         compile(src, "noname", "exec")
     except Exception as e:
+        # the pytorch version is before this PR: https://github.com/pytorch/pytorch/pull/113345
+        import warnings
+        warnings.warn("Verbose code contains syntax error, it is recommended to use new version of PyTorch to get runnable code with shape and type annotations.")
         simple_code = open(filepath).read()
         commented_src = "\n# code below is commented out due to syntax error. You can refer to the code for shape and dtype annotation.\n"
         commented_src += "".join(["# " + line + "\n" for line in src.splitlines()])
