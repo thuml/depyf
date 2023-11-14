@@ -21,3 +21,4 @@ from depyf.explain.enable_debugging import prepare_debug, debug
 import os
 
 __version__ = open(f"{os.path.dirname(__file__)}/VERSION.txt").read().strip()
+

@@ -33,9 +33,10 @@ from .lazy_format_graph_code import lazy_format_graph_code
 from .patch_run import boxed_run
 
 @contextlib.contextmanager
-def prepare_debug(func, dump_src_dir, pause=True):
+def prepare_debug(func, dump_src_dir, pause=True, clean_wild_fx_code=True):
     """
     pause: whether to wait for users to set breakpoints. set it to False in testing.
+    clean_wild_fx_code: whether to clean the wild fx code that are not recognized for parts of compiled functions. They are usually used by PyTorch internally.
     """
     import os
 
@@ -128,6 +129,10 @@ def prepare_debug(func, dump_src_dir, pause=True):
         torch.fx.graph_module._exec_with_source = old_func
         torch._dynamo.utils.lazy_format_graph_code.__code__ = old_code
         PyCodeCache.load_by_key_path = old_inductor_fn
+        if clean_wild_fx_code:
+            for file in os.listdir(dump_src_dir):
+                if file.split(os.path.sep)[-1].startswith("fx_graph_code"):
+                    os.remove(os.path.join(dump_src_dir, file))
         if pause:
             input(f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
 
