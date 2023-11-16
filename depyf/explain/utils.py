@@ -211,3 +211,19 @@ def remove_indentation(code: str):
     lines = code.splitlines()
     indent = len(lines[0]) - len(lines[0].lstrip())
     return "".join([line[indent:] + "\n" for line in lines])
+
+def write_code_to_file_template(src, path_template):
+    import os
+    count = 0
+    while True:
+        new_filepath = path_template % str(count)
+        if not os.path.exists(new_filepath):
+            with open(new_filepath, "w") as f:
+                f.write(src)
+            break
+        # might be a hash collision
+        existing_code = open(new_filepath).read()
+        if existing_code == src:
+            break
+        count += 1
+    return new_filepath
