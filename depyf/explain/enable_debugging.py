@@ -44,6 +44,15 @@ def patch(parent, name, value):
         setattr(parent, name, old_value)
 
 @contextlib.contextmanager
+def enable_bytecode_hook(hook):
+    import torch
+    handle = torch._dynamo.convert_frame.register_bytecode_hook(hook)
+    try:
+        yield
+    finally:
+        handle.remove()
+
+@contextlib.contextmanager
 def prepare_debug(func, dump_src_dir, pause=True, clean_wild_fx_code=True):
     """
     pause: whether to wait for users to set breakpoints. set it to False in testing.
@@ -68,28 +77,32 @@ def prepare_debug(func, dump_src_dir, pause=True, clean_wild_fx_code=True):
     data["unpatched__exec_with_source"] = torch.fx.graph_module._exec_with_source
     data["unpatched_load_by_key_path"] = torch._inductor.codecache.PyCodeCache.load_by_key_path
 
+    bytecode_hook = DebuggableHook(dump_src_dir, "compiled_code")
+
+    # patch some functions
     with patch(torch.fx.graph_module, "_exec_with_source", patched__exec_with_source), \
         patch(torch._inductor.codecache.PyCodeCache, "load_by_key_path", patched_load_by_key_path), \
         patch(torch._dynamo.utils.lazy_format_graph_code, "__code__", patched_lazy_format_graph_code.__code__):
         # we have to directly manipulate the code object, since the function has been imported in many places.
         # simply replacing torch._dynamo.utils.lazy_format_graph_code does not work for those functions.
         # Note: `unitest.mock.patch` does not work here, since it will not patch the code object. (it will try to delete the code object and then set a new code object. The `delattr` will raise an error.)
-        try:
-            compiled_code_handle = torch._dynamo.convert_frame.register_bytecode_hook(DebuggableHook(dump_src_dir, "compiled_code"))
-            yield
-        finally:
-            compiled_code_handle.remove()
-            from depyf.explain import dump_src, _extract_artifacts, _collect_compiled_subgraphs
-            full_src = dump_src(func)
-            filename = os.path.join(dump_src_dir, f"full_code.py")
-            with open(filename, "w") as f:
-                f.write(full_src)
-            if clean_wild_fx_code:
-                for file in os.listdir(dump_src_dir):
-                    if file.split(os.path.sep)[-1].startswith("fx_graph_code"):
-                        os.remove(os.path.join(dump_src_dir, file))
-            if pause:
-                input(f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
+
+        # enable bytecode hook
+        with enable_bytecode_hook(bytecode_hook):
+            try:
+                yield
+            finally:
+                from depyf.explain import dump_src, _extract_artifacts, _collect_compiled_subgraphs
+                full_src = dump_src(func)
+                filename = os.path.join(dump_src_dir, f"full_code.py")
+                with open(filename, "w") as f:
+                    f.write(full_src)
+                if clean_wild_fx_code:
+                    for file in os.listdir(dump_src_dir):
+                        if file.split(os.path.sep)[-1].startswith("fx_graph_code"):
+                            os.remove(os.path.join(dump_src_dir, file))
+                if pause:
+                    input(f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
 
 @contextlib.contextmanager
 def debug():
