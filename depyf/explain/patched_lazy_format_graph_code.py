@@ -1,4 +1,4 @@
-def lazy_format_graph_code(name, gm, maybe_id=None):
+def patched_lazy_format_graph_code(name, gm, maybe_id=None):
     from torch._dynamo.bytecode_transformation import _unique_id_counter
     from copy import copy
     # torch.compile already called the next, we should add minus 1 to get the correct name
