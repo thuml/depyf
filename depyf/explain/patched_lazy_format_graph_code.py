@@ -56,3 +56,18 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None):
     exec(compile(src, filename=new_filepath, mode="exec"), scope)
     fn.__code__ = scope[fn.__name__].__code__
     del scope[fn.__name__]
+
+    # original code
+    def format_name():
+        if maybe_id is not None:
+            return f"{name} {maybe_id}"
+        else:
+            return name
+
+    return LazyString(
+        lambda: _format_graph_code(
+            f"===== {format_name()} =====\n",
+            gm.forward.__code__.co_filename,
+            gm.print_readable(print_output=False),
+        )
+    )

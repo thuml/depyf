@@ -28,7 +28,7 @@ class DebuggableHook(object):
         except Exception:
             pass
 
-from .patch_run import boxed_run
+from .patched_boxed_run import patched_boxed_run
 from .patched__exec_with_source import patched__exec_with_source
 from .patched_load_by_key_path import patched_load_by_key_path
 from .patched_lazy_format_graph_code import patched_lazy_format_graph_code
@@ -67,13 +67,10 @@ def prepare_debug(func, dump_src_dir, pause=True, clean_wild_fx_code=True):
     data["dump_src_dir"] = dump_src_dir
     data["unpatched__exec_with_source"] = torch.fx.graph_module._exec_with_source
     data["unpatched_load_by_key_path"] = torch._inductor.codecache.PyCodeCache.load_by_key_path
-    from torch.fx import graph_module
-    from torch._inductor.codecache import PyCodeCache
-    from torch._dynamo.utils import lazy_format_graph_code
 
-    with patch(graph_module, "_exec_with_source", patched__exec_with_source), \
-        patch(PyCodeCache, "load_by_key_path", patched_load_by_key_path), \
-        patch(lazy_format_graph_code, "__code__", patched_lazy_format_graph_code.__code__):
+    with patch(torch.fx.graph_module, "_exec_with_source", patched__exec_with_source), \
+        patch(torch._inductor.codecache.PyCodeCache, "load_by_key_path", patched_load_by_key_path), \
+        patch(torch._dynamo.utils.lazy_format_graph_code, "__code__", patched_lazy_format_graph_code.__code__):
         # we have to directly manipulate the code object, since the function has been imported in many places.
         # simply replacing torch._dynamo.utils.lazy_format_graph_code does not work for those functions.
         # Note: `unitest.mock.patch` does not work here, since it will not patch the code object. (it will try to delete the code object and then set a new code object. The `delattr` will raise an error.)
@@ -100,10 +97,8 @@ def debug():
     callback = torch._dynamo.eval_frame.set_eval_frame(False)
     # sometimes pytorch use Interpreter to run node by node. This cannot be debugged.
     # we patch this function to run the graph function directly.
-    old_run_code = torch.fx.Interpreter.boxed_run.__code__
-    torch.fx.Interpreter.boxed_run.__code__ = boxed_run.__code__
-    try:
-        yield
-    finally:
-        torch._dynamo.eval_frame.set_eval_frame(callback)
-        torch.fx.Interpreter.boxed_run.__code__ = old_run_code
+    with patch(torch.fx.Interpreter.boxed_run, "__code__", patched_boxed_run.__code__):
+        try:
+            yield
+        finally:
+            torch._dynamo.eval_frame.set_eval_frame(callback)
