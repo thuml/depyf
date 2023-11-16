@@ -28,9 +28,20 @@ class DebuggableHook(object):
         except Exception:
             pass
 
-
-from .lazy_format_graph_code import lazy_format_graph_code
 from .patch_run import boxed_run
+from .patched__exec_with_source import patched__exec_with_source
+from .patched_load_by_key_path import patched_load_by_key_path
+from .patched_lazy_format_graph_code import patched_lazy_format_graph_code
+
+
+@contextlib.contextmanager
+def patch(parent, name, value):
+    old_value = getattr(parent, name)
+    setattr(parent, name, value)
+    try:
+        yield
+    finally:
+        setattr(parent, name, old_value)
 
 @contextlib.contextmanager
 def prepare_debug(func, dump_src_dir, pause=True, clean_wild_fx_code=True):
@@ -39,6 +50,7 @@ def prepare_debug(func, dump_src_dir, pause=True, clean_wild_fx_code=True):
     clean_wild_fx_code: whether to clean the wild fx code that are not recognized for parts of compiled functions. They are usually used by PyTorch internally.
     """
     import os
+    import torch
 
     warnings.warn((
         "You are trying to debug `torch.compile`. Please make sure the code "
@@ -50,91 +62,37 @@ def prepare_debug(func, dump_src_dir, pause=True, clean_wild_fx_code=True):
 
     dump_src_dir = os.path.abspath(dump_src_dir)
 
-    import torch
-    compiled_code_handle = torch._dynamo.convert_frame.register_bytecode_hook(DebuggableHook(dump_src_dir, "compiled_code"))
+    from .global_variables import data
 
-    old_func = torch.fx.graph_module._exec_with_source
-    def _exec_with_source(src: str, globals, co_fields=None):
-        old_func(src, globals, co_fields)
-        import inspect
-        key = inspect.getsourcefile(globals["forward"])
-        import hashlib
-        import os
-        hash_value = hashlib.md5(src.encode()).hexdigest()
-        src = "# " + key + src
-        count = 0
-        while True:
-            filename = f"{dump_src_dir}/fx_graph_code_" + hash_value + "_" + str(count) + ".py"
-            if not os.path.exists(filename):
-                with open(filename, "w") as f:
-                    f.write(src)
-                break
-            # might be a hash collision
-            existing_code = open(filename).read()
-            if existing_code == src:
-                break
-            count += 1
-        exec(compile(src, filename, "exec"), globals)
-
-    torch.fx.graph_module._exec_with_source = _exec_with_source
-    # we have to directly manipulate the code object, since the function has been imported in many places.
-    # simply replacing torch._dynamo.utils.lazy_format_graph_code does not work for those functions.
-    old_code = torch._dynamo.utils.lazy_format_graph_code.__code__
-    torch._dynamo.utils.lazy_format_graph_code.__code__ = lazy_format_graph_code.__code__
-
+    data["dump_src_dir"] = dump_src_dir
+    data["unpatched__exec_with_source"] = torch.fx.graph_module._exec_with_source
+    data["unpatched_load_by_key_path"] = torch._inductor.codecache.PyCodeCache.load_by_key_path
+    from torch.fx import graph_module
     from torch._inductor.codecache import PyCodeCache
-    old_inductor_fn = PyCodeCache.load_by_key_path
+    from torch._dynamo.utils import lazy_format_graph_code
 
-    def new_inductor_fn(
-            key: str,
-            path: str,
-            linemap,
-            attrs,
-        ):
-        # hack the path to our dump_src_dir
-        src = open(path).read()
-        os.remove(path)
-
-        from torch._dynamo.bytecode_transformation import _unique_id_counter
-        from copy import copy
-        # torch.compile already called the next, we should add minus 1 to get the correct name
-        current_count = next(copy(_unique_id_counter)) - 1
-        func_name = "__compiled_fn_" + str(current_count)
-        count = 0
-        while True:
-            new_filepath = os.path.join(dump_src_dir, func_name + " kernel " + str(count) + ".py")
-            if not os.path.exists(new_filepath):
-                with open(new_filepath, "w") as f:
-                    f.write(src)
-                break
-            # might be a hash collision
-            existing_code = open(new_filepath).read()
-            if existing_code == src:
-                break
-            count += 1
-
-        path = new_filepath
-        return old_inductor_fn(key, path, linemap, attrs)
-
-    PyCodeCache.load_by_key_path = new_inductor_fn
-    try:
-        yield
-    finally:
-        compiled_code_handle.remove()
-        from depyf.explain import dump_src, _extract_artifacts, _collect_compiled_subgraphs
-        full_src = dump_src(func)
-        filename = os.path.join(dump_src_dir, f"full_code.py")
-        with open(filename, "w") as f:
-            f.write(full_src)
-        torch.fx.graph_module._exec_with_source = old_func
-        torch._dynamo.utils.lazy_format_graph_code.__code__ = old_code
-        PyCodeCache.load_by_key_path = old_inductor_fn
-        if clean_wild_fx_code:
-            for file in os.listdir(dump_src_dir):
-                if file.split(os.path.sep)[-1].startswith("fx_graph_code"):
-                    os.remove(os.path.join(dump_src_dir, file))
-        if pause:
-            input(f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
+    with patch(graph_module, "_exec_with_source", patched__exec_with_source), \
+        patch(PyCodeCache, "load_by_key_path", patched_load_by_key_path), \
+        patch(lazy_format_graph_code, "__code__", patched_lazy_format_graph_code.__code__):
+        # we have to directly manipulate the code object, since the function has been imported in many places.
+        # simply replacing torch._dynamo.utils.lazy_format_graph_code does not work for those functions.
+        # Note: `unitest.mock.patch` does not work here, since it will not patch the code object. (it will try to delete the code object and then set a new code object. The `delattr` will raise an error.)
+        try:
+            compiled_code_handle = torch._dynamo.convert_frame.register_bytecode_hook(DebuggableHook(dump_src_dir, "compiled_code"))
+            yield
+        finally:
+            compiled_code_handle.remove()
+            from depyf.explain import dump_src, _extract_artifacts, _collect_compiled_subgraphs
+            full_src = dump_src(func)
+            filename = os.path.join(dump_src_dir, f"full_code.py")
+            with open(filename, "w") as f:
+                f.write(full_src)
+            if clean_wild_fx_code:
+                for file in os.listdir(dump_src_dir):
+                    if file.split(os.path.sep)[-1].startswith("fx_graph_code"):
+                        os.remove(os.path.join(dump_src_dir, file))
+            if pause:
+                input(f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
 
 @contextlib.contextmanager
 def debug():
