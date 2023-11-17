@@ -257,3 +257,11 @@ def get_code_owner(fn):
         else:
             break
     return fn
+
+def get_current_compiled_fn_name():
+    import torch
+    from torch._dynamo.bytecode_transformation import _unique_id_counter
+    from copy import copy
+    # torch.compile already called the next, we should add minus 1 to get the correct name
+    current_count = next(copy(_unique_id_counter)) - 1
+    return "__compiled_fn_" + str(current_count)
