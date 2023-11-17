@@ -9,21 +9,8 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None):
     import inspect, os
     fn = gm.forward
 
-    while True:
-        if hasattr(fn, "__func__"):
-            # deal with bounded function
-            fn = fn.__func__
-        elif hasattr(fn, "__wrapped__"):
-            # deal with lru_cache or other decorators
-            fn = fn.__wrapped__
-        elif isinstance(fn, functools.partial):
-            # deal with partial function
-            fn = fn.func
-        elif hasattr(fn, "__call__") and hasattr(fn.__call__, "__func__"):
-            # deal with callable object
-            fn = fn.__call__.__func__
-        else:
-            break
+    from depyf.explain.utils import get_code_owner
+    fn = get_code_owner(fn)
 
     # update file path
     filepath = inspect.getsourcefile(fn)
