@@ -1,15 +1,11 @@
 def patched_lazy_format_graph_code(name, gm, maybe_id=None):
-    from torch._dynamo.bytecode_transformation import _unique_id_counter
-    from copy import copy
-    # torch.compile already called the next, we should add minus 1 to get the correct name
-    current_count = next(copy(_unique_id_counter)) - 1
-    func_name = "__compiled_fn_" + str(current_count)
+    from depyf.explain.utils import get_current_compiled_fn_name, get_code_owner, write_code_to_file_template
+    func_name = get_current_compiled_fn_name()
     file_name = name if name != func_name else "Captured Graph"
     file_name = func_name + " " + file_name
     import inspect, os
     fn = gm.forward
 
-    from depyf.explain.utils import get_code_owner
     fn = get_code_owner(fn)
 
     # update file path
@@ -26,7 +22,6 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None):
         commented_src += "".join(["# " + line + "\n" for line in src.splitlines()])
         src = simple_code + commented_src
     os.remove(filepath)
-    from depyf.explain.utils import write_code_to_file_template
     new_filepath = write_code_to_file_template(src, os.path.dirname(filepath) + "/" + file_name + " " + "%s" + ".py")
     scope = fn.__globals__
     exec(compile(src, filename=new_filepath, mode="exec"), scope)
