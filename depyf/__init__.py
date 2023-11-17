@@ -12,11 +12,11 @@ try:
             "Please use the nightly version of PyTorch to enable bytecode hooks.\n"
             "PyTorch nightly can be installed by: `conda install pytorch-nightly::pytorch torchvision torchaudio -c pytorch-nightly`"
         ))
+
+    from depyf.explain.enhance_logging import install, uninstall
+    from depyf.explain.enable_debugging import prepare_debug, debug
 except ImportError:
     pass
-
-from depyf.explain.enhance_logging import install, uninstall
-from depyf.explain.enable_debugging import prepare_debug, debug
 
 import os
 
