@@ -39,25 +39,15 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None):
         commented_src += "".join(["# " + line + "\n" for line in src.splitlines()])
         src = simple_code + commented_src
     os.remove(filepath)
-    count = 0
-    while True:
-        new_filepath = os.path.dirname(filepath) + "/" + file_name + " " + str(count) + ".py"
-        if not os.path.exists(new_filepath):
-            with open(new_filepath, "w") as f:
-                f.write(src)
-            break
-        # might be a hash collision
-        existing_code = open(new_filepath).read()
-        if existing_code == src:
-            # really the same code
-            break
-        count += 1
+    from depyf.explain.utils import write_code_to_file_template
+    new_filepath = write_code_to_file_template(src, os.path.dirname(filepath) + "/" + file_name + " " + "%s" + ".py")
     scope = fn.__globals__
     exec(compile(src, filename=new_filepath, mode="exec"), scope)
     fn.__code__ = scope[fn.__name__].__code__
     del scope[fn.__name__]
 
-    # original code
+    # =========================================
+    # original code of `lazy_format_graph_code`
     def format_name():
         if maybe_id is not None:
             return f"{name} {maybe_id}"
