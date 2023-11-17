@@ -1,6 +1,6 @@
 # depyf is a tool to help you understand and adapt to PyTorch compiler `torch.compile`.
 
-[![Documentation Status](https://readthedocs.org/projects/depyf/badge/?version=latest)](https://depyf.readthedocs.io/en/latest/) ![Python Decompilation Tests](https://github.com/thuml/depyf/actions/workflows/test_decompile.yml/badge.svg) ![PyTorch Integration Tests](https://github.com/thuml/depyf/actions/workflows/test_pytorch.yml/badge.svg) ![MIT License](https://img.shields.io/github/license/thuml/depyf)
+[![Documentation Status](https://readthedocs.org/projects/depyf/badge/?version=latest)](https://depyf.readthedocs.io/en/latest/) ![Supported Python Versions](https://img.shields.io/badge/python-%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue) ![Python Decompilation Tests](https://github.com/thuml/depyf/actions/workflows/test_decompile.yml/badge.svg) ![PyTorch Integration Tests](https://github.com/thuml/depyf/actions/workflows/test_pytorch.yml/badge.svg) ![MIT License](https://img.shields.io/github/license/thuml/depyf)
 
 Have you ever felt overwhelmed by the complexities of `torch.compile`? Diving into its workings can feel like black magic, with bytecode and Python internal details that many users fail to understand, hindering them from understanding and debugging `torch.compile`.
 
