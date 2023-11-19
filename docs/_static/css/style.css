@@ -1,0 +1,6 @@
+.wy-side-nav-search {
+    background-color: #fff;
+}
+a.icon.icon-home, a.icon.icon-home::before {
+    color: #2980b9;
+}
