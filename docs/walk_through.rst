@@ -8,14 +8,16 @@ In this tutorial, we will learn how does PyTorch compiler work for the following
     import torch
 
     @torch.compile
-    def modified_sigmoid(x, y):
+    def modified_sigmoid(inputs):
+        x = inputs["x"]
+        y = inputs["y"]
         x = 1.0 / (torch.exp(-x) + 5)
         if x.mean() > 0.5:
             x = x / 1.1
         return x * y
 
-    shape_10_inputs = torch.randn(10, requires_grad=True), torch.randn(10, requires_grad=True)
-    shape_8_inputs = torch.randn(8, requires_grad=True), torch.randn(8, requires_grad=True)
+    shape_10_inputs = {"x": torch.randn(10, requires_grad=True), "y": torch.randn(10, requires_grad=True)}
+    shape_8_inputs = {"x": torch.randn(8, requires_grad=True), "y": torch.randn(8, requires_grad=True)}
     # warmup
     for i in range(100):
         output = modified_sigmoid(*shape_10_inputs)
@@ -151,3 +153,5 @@ Let's explain it step-by-step:
     f(x, b)
     # the second call of f(x, b) hit a condition, so we can just execute the compiled code
     f(x, b)
+
+That's basically how ``torch.compile`` works as a Just-In-Time compiler. We can even extract those compiled entries from functions, see the `PyTorch documentation <https://pytorch.org/docs/main/torch.compiler_deepdive.html#how-to-inspect-artifacts-generated-by-torchdynamo>`_ for more details.
