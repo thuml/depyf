@@ -28,4 +28,8 @@ todo_include_todos = True
 
 html_static_path = ["_static"]
 
-html_logo = "_static/images/depyf-logo.png"
+html_logo = "_static/images/depyf-logo.svg"
+
+html_css_files = [
+    'css/style.css',
+]
