@@ -20,11 +20,11 @@ In this tutorial, we will learn how does PyTorch compiler work for the following
     shape_8_inputs = {"x": torch.randn(8, requires_grad=True), "y": torch.randn(8, requires_grad=True)}
     # warmup
     for i in range(100):
-        output = modified_sigmoid(*shape_10_inputs)
-        output = modified_sigmoid(*shape_8_inputs)
+        output = modified_sigmoid(shape_10_inputs)
+        output = modified_sigmoid(shape_8_inputs)
     
     # execution of compiled functions
-    output = modified_sigmoid(*shape_10_inputs)
+    output = modified_sigmoid(shape_10_inputs)
 
 The code tries to implement a strange sigmoid function :math:`\frac{1}{e^{-x} + 5}`, and scales the output according to its activation value, then multiplies the output with another tensor ``y``.
 
@@ -155,3 +155,34 @@ Let's explain it step-by-step:
     f(x, b)
 
 That's basically how ``torch.compile`` works as a Just-In-Time compiler. We can even extract those compiled entries from functions, see the `PyTorch documentation <https://pytorch.org/docs/main/torch.compiler_deepdive.html#how-to-inspect-artifacts-generated-by-torchdynamo>`_ for more details.
+
+How does Dynamo transform and modify the function?
+---------------------------------------------------
+
+As we understand the global picture of ``torch.compile`` as a Just-In-Time compiler, we can diver deeper in how it works. Unlike general purpose compilers like ``gcc`` or ``llvm``, ``torch.compile`` is a domain-specific compiler: it only focuses on PyTorch related computation graph. Therefore, we need a tool to separate users code into two parts: plain python code and computation graph code.
+
+``Dynamo``, living inside the module ``torch._dynamo``, is the tool for doing this. Normally we don't interact with this module directly. It is called inside the ``torch.compile`` function.
+
+Conceptually, ``Dynamo`` does the following things:
+
+- Find the first operation that cannot be represented in computation graph but requires the value of computed value in the graph (e.g. ``print`` a tensor's value, use a tensor's value to decide ``if`` statements control flow in Python).
+- Split the previous operations into two parts: a computation graph that is purely about tensor computation, and some Python code about manipulating Python objects.
+- Leave the rest operations as one or two new functions (called ``resume functions``), and trigger the above analysis again.
+
+To enable such a fine-grained manipulation of functions, ``Dynamo`` operates on the level of Python bytecode, a level that is lower than Python source code.
+
+The following procedure describes what Dynamo does to our function ``modified_sigmoid``.
+
+.. image:: _static/images/dynamo-workflow.svg
+  :width: 1200
+  :alt: Dynamo workflow
+
+One important feature of ``Dynamo``, is that it can analyze all the functions called inside the ``modified_sigmoid`` function. If a function can be represented entirely in a computation graph, that function call will be inlined and the function call is eliminated.
+
+The mission of ``Dynamo``, is to extract computation graphs from Python code in a safe and sound way. Once we have the computation graphs, we can enter the world of computation graph optimization now.
+
+AOTAutograd: generate backward computation graph from forward graph
+------------------------------------------------------------------------
+
+The above code only deals with forward computation graph. One important missing piece is how to get the backward computation graph to compute the gradient.
+
