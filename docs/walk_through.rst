@@ -8,10 +8,10 @@ In this tutorial, we will learn how does PyTorch compiler work for the following
     import torch
 
     @torch.compile
-    def modified_sigmoid(inputs):
+    def function(inputs):
         x = inputs["x"]
         y = inputs["y"]
-        x = 1.0 / (torch.exp(-x) + 5)
+        x = x.cos().cos()
         if x.mean() > 0.5:
             x = x / 1.1
         return x * y
@@ -20,13 +20,13 @@ In this tutorial, we will learn how does PyTorch compiler work for the following
     shape_8_inputs = {"x": torch.randn(8, requires_grad=True), "y": torch.randn(8, requires_grad=True)}
     # warmup
     for i in range(100):
-        output = modified_sigmoid(shape_10_inputs)
-        output = modified_sigmoid(shape_8_inputs)
+        output = function(shape_10_inputs)
+        output = function(shape_8_inputs)
     
     # execution of compiled functions
-    output = modified_sigmoid(shape_10_inputs)
+    output = function(shape_10_inputs)
 
-The code tries to implement a strange sigmoid function :math:`\frac{1}{e^{-x} + 5}`, and scales the output according to its activation value, then multiplies the output with another tensor ``y``.
+The code tries to implement a strange activation function :math:`\text{cos}(\text{cos}(x))`, and scales the output according to its activation value, then multiplies the output with another tensor ``y``.
 
 The tutorial intends to cover the following aspects of PyTorch compiler:
 
@@ -171,13 +171,13 @@ Conceptually, ``Dynamo`` does the following things:
 
 To enable such a fine-grained manipulation of functions, ``Dynamo`` operates on the level of Python bytecode, a level that is lower than Python source code.
 
-The following procedure describes what Dynamo does to our function ``modified_sigmoid``.
+The following procedure describes what Dynamo does to our function ``function``.
 
 .. image:: _static/images/dynamo-workflow.svg
   :width: 1200
   :alt: Dynamo workflow
 
-One important feature of ``Dynamo``, is that it can analyze all the functions called inside the ``modified_sigmoid`` function. If a function can be represented entirely in a computation graph, that function call will be inlined and the function call is eliminated.
+One important feature of ``Dynamo``, is that it can analyze all the functions called inside the ``function`` function. If a function can be represented entirely in a computation graph, that function call will be inlined and the function call is eliminated.
 
 The mission of ``Dynamo``, is to extract computation graphs from Python code in a safe and sound way. Once we have the computation graphs, we can enter the world of computation graph optimization now.
 
@@ -185,4 +185,12 @@ AOTAutograd: generate backward computation graph from forward graph
 ------------------------------------------------------------------------
 
 The above code only deals with forward computation graph. One important missing piece is how to get the backward computation graph to compute the gradient.
+
+In plain PyTorch code, backward computation is triggered by the ``backward`` function call on some scalar loss value. Each PyTorch function stores what is required for backward during forward computation.
+
+The following computation graph shows the details:
+
+.. image:: _static/images/eager-joint-graph.svg
+  :width: 1200
+  :alt: Eager mode autograd
 
