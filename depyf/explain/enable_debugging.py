@@ -20,9 +20,9 @@ class DebuggableHook(object):
             src = Decompiler(new_code).decompile(overwite_fn_name=func_name)
             with open(filename, "w") as f:
                 f.write(src)
-            compiled_code = compile(src, filename=filename, mode="exec")
+            transformed_code = compile(src, filename=filename, mode="exec")
             scope = {}
-            exec(compiled_code, scope)
+            exec(transformed_code, scope)
             func = scope[func_name]
             return func.__code__
         except Exception:
@@ -76,7 +76,7 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True):
     data["unpatched__exec_with_source"] = torch.fx.graph_module._exec_with_source
     data["unpatched_load_by_key_path"] = torch._inductor.codecache.PyCodeCache.load_by_key_path
 
-    bytecode_hook = DebuggableHook(dump_src_dir, "compiled_code")
+    bytecode_hook = DebuggableHook(dump_src_dir, "transformed_code")
 
     # patch some functions
     with patch(torch.fx.graph_module, "_exec_with_source", patched__exec_with_source), \

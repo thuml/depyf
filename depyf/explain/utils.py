@@ -48,7 +48,7 @@ class CodeProxy:
     def decompile_with_name(code: CodeType, name: str):
         if hasattr(code, "__code__"):
             code = code.__code__
-        if code.co_name.startswith("compiled_code_"):
+        if code.co_name.startswith("transformed_code_"):
             src = open(code.co_filename).read()
             new_name = code.co_name
         else:
@@ -100,8 +100,8 @@ class CacheResult:
     guard: List[str]
     compiled_subgraph: Callable
     compiled_subgraph_proxy: CodeProxy
-    compiled_code: CodeType
-    compiled_code_proxy: CodeProxy
+    transformed_code: CodeType
+    transformed_code_proxy: CodeProxy
     referenced_global_functions: Dict[str, "DynamoOptimizationResult"]
 
     def __init__(self, fn, cache):
@@ -113,9 +113,9 @@ class CacheResult:
         # deal with compiled_subgraph
         self.compiled_subgraph = innermost_fn(getattr(module, compiled_subgraphs[0]))
         self.compiled_subgraph_proxy = CodeProxy.decompile_with_name(self.compiled_subgraph, compiled_subgraphs[0])
-        # deal with compiled_code
-        self.compiled_code = code
-        self.compiled_code_proxy = CodeProxy.decompile_with_name(self.compiled_code, "compiled_code:")
+        # deal with transformed_code
+        self.transformed_code = code
+        self.transformed_code_proxy = CodeProxy.decompile_with_name(self.transformed_code, "transformed_code:")
         resume_fns = [name for name in code.co_names if name.startswith("__resume")]
         self.referenced_global_functions = {name: DynamoOptimizationResult(getattr(module, name), name) for name in resume_fns}
         self.code = code
@@ -124,7 +124,7 @@ class CacheResult:
     def to_data(self):
         return {
             "guard": self.guard,
-            "compiled_code": str(self.compiled_code_proxy),
+            "transformed_code": str(self.transformed_code_proxy),
             "compiled_subgraph": str(self.compiled_subgraph_proxy),
             "referenced_global_functions": {name: fn.to_data() for name, fn in self.referenced_global_functions.items()}
         }
@@ -137,7 +137,7 @@ class DynamoOptimizationResult:
     fn: Callable
     code: CodeType
     source_code_proxy: CodeProxy
-    compiled_code_entries: List[CacheResult]
+    transformed_code_entries: List[CacheResult]
 
     def __init__(self, fn, name=None):
         self.fn = fn
@@ -146,7 +146,7 @@ class DynamoOptimizationResult:
         else:
             self.name = name
         caches = _debug_get_cache_entry_list(fn.__code__)
-        self.compiled_code_entries = [CacheResult(fn, cache) for cache in caches]
+        self.transformed_code_entries = [CacheResult(fn, cache) for cache in caches]
         self.code = fn.__code__
         self.source_code_proxy = CodeProxy.decompile_with_name(self.code, self.name)
     
@@ -154,7 +154,7 @@ class DynamoOptimizationResult:
         data = {
             "name": self.name,
             "source_code": str(self.source_code_proxy),
-            "compiled_code_entries": [entry.to_data() for entry in self.compiled_code_entries]
+            "transformed_code_entries": [entry.to_data() for entry in self.transformed_code_entries]
         }
         return data
 
@@ -174,7 +174,7 @@ class DynamoOptimizationResult:
 
         additional_code = ""
 
-        for entry in self.compiled_code_entries:
+        for entry in self.transformed_code_entries:
 
             # prepare guards, like `def guard_0(L):\n    return a > 0 and b > 0`
             guard = (" \\\n" + " " * 8 + "and ").join(["(" + x + ")" for x in entry.guard])
@@ -192,17 +192,17 @@ class DynamoOptimizationResult:
             additional_code += f"# AFTER XXX: graph processed by inductor (not debuggable).\n"
             additional_code += f"def {subgraph_name}(*args, **kwargs):\n    pass\n"
 
-            # prepare compiled code, like `compiled_code_0`
-            additional_code += "\n" + remove_indentation(entry.compiled_code_proxy.raw_code) + "\n"
+            # prepare transformed code, like `transformed_code_0`
+            additional_code += "\n" + remove_indentation(entry.transformed_code_proxy.raw_code) + "\n"
 
             for name, func in entry.referenced_global_functions.items():
                 additional_code = func.to_src() + additional_code
 
-            code += "\n" + " " * 4 + f"if {guard_func_name}(L):\n" + " " * 8 + f"return {entry.compiled_code_proxy.name}({', '.join(arg_names)})"
+            code += "\n" + " " * 4 + f"if {guard_func_name}(L):\n" + " " * 8 + f"return {entry.transformed_code_proxy.name}({', '.join(arg_names)})"
         
-        additional_code += "\n" + "# Note: if there is a compiled version below, this function might well not be executed directly. Please check the compiled version if possible.\n" + remove_indentation(self.source_code_proxy.raw_code) + "\n"
+        additional_code += "\n" + "# Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.\n" + remove_indentation(self.source_code_proxy.raw_code) + "\n"
 
-        code += "\n" + " " * 4 + "# Note: this function might well not be executed directly. It might well be compiled again, i.e. adding one more guards and compiled code.\n" + " " * 4 + f"return {self.source_code_proxy.name}({', '.join(arg_names)})"
+        code += "\n" + " " * 4 + "# Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.\n" + " " * 4 + f"return {self.source_code_proxy.name}({', '.join(arg_names)})"
         return additional_code + code + f"\n\n#============ end of {self.name} ============#\n"
 
     _ipython_display_ = display_func
