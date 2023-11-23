@@ -181,6 +181,12 @@ One important feature of ``Dynamo``, is that it can analyze all the functions ca
 
 The mission of ``Dynamo``, is to extract computation graphs from Python code in a safe and sound way. Once we have the computation graphs, we can enter the world of computation graph optimization now.
 
+Dynamic shape support from Dynamo
+---------------------------------------------------
+Deep learning compilers usually favor static shape inputs. That's why the guarding conditions above include shape guards. Our first function call uses input of shape ``[10]``, but the second function call uses input of shape ``[8]``. It will fail the shape guards, therefore trigger a new code transform.
+
+By default, Dynamo supports dynamic shapes. When the shape guards fail, it will analyze and compare the shapes, and try to generalize the shape. 
+
 AOTAutograd: generate backward computation graph from forward graph
 ------------------------------------------------------------------------
 

@@ -26,9 +26,9 @@ usage_type = os.environ.get("USAGE_TYPE", "debug")
 
 assert backend in ["eager", "aot_eager", "inductor"]
 
-input1 = torch.randn(10, requires_grad=requires_grad), torch.randn(10, requires_grad=requires_grad)
+input1 = torch.ones(10, requires_grad=requires_grad), torch.ones(10, requires_grad=requires_grad)
 
-input2 = torch.randn(8, requires_grad=requires_grad), torch.randn(8, requires_grad=requires_grad)
+input2 = torch.ones(8, requires_grad=requires_grad), - torch.ones(8, requires_grad=requires_grad)
 
 if compile_type == "function":
     target = toy_function
