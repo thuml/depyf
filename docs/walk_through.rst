@@ -194,3 +194,47 @@ The following computation graph shows the details:
   :width: 1200
   :alt: Eager mode autograd
 
+When we can get the computation graph from ``Dynamo`` before it is executed, we can also get its backward computation graph before any ``backward`` function is called.
+
+For any computation graph represented by a function:
+
+.. code-block:: python
+
+    def forward(inputs):
+        return outputs
+
+Its corresponding backward function signature is:
+
+.. code-block:: python
+
+    def backward(outputs_grad):
+        return inputs_grad
+
+And their joint computation graph is:
+
+.. code-block:: python
+
+    def joint_forward_and_backward(inputs, outputs_grad):
+        return outputs, inputs_grad
+
+For someone who is familiar with automatic differentiation, this is the ``vjp`` function (vector-jacobian product). For the rest who don't understand the terminology, please just ignore this paragraph.
+
+When we have the joint computation graph ahead-of-time (i.e. before calling any ``backward`` on some loss value), we have some control over what can be saved:
+
+.. code-block:: python
+
+    def partitioned_joint_graph(inputs, outputs_grad):
+        outputs, saved_values = modified_forward(inputs)
+        inputs_grad = modified_backward(saved_values, outputs_grad)
+        return outputs, inputs_grad
+
+In eager mode, from the computation graph above, we can observe that ``saved_values`` are xxx and xxx. Can we do better to save less values so that we can save memory footprint?
+
+Here is the answer from AOTAutograd:
+
+.. image:: _static/images/aot-joint-graph.svg
+  :width: 1200
+  :alt: AOT mode autograd
+
+We can only save one value, and recompute the first ``cos`` function to get another value for backward. That is basically how AOT Autograd works!
+
