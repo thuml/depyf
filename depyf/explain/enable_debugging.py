@@ -26,6 +26,8 @@ class DebuggableHook(object):
             scope = {}
             exec(transformed_code, scope)
             func = scope[func_name]
+            # TODO wait for pytorch fix
+            return
             return func.__code__
         except Exception as e:
             pass
