@@ -14,9 +14,11 @@ class DebuggableHook(object):
 
     def __call__(self, code, new_code):
         try:
+            import os
             n = next(self.code_counter)
             filename = os.path.join(self.dump_src_dir, f"{self.type_name}_{n}.py")
             func_name = f"{self.type_name}_{n}"
+            from depyf.decompiler import Decompiler
             src = Decompiler(new_code).decompile(overwite_fn_name=func_name)
             with open(filename, "w") as f:
                 f.write(src)
@@ -25,7 +27,7 @@ class DebuggableHook(object):
             exec(transformed_code, scope)
             func = scope[func_name]
             return func.__code__
-        except Exception:
+        except Exception as e:
             pass
 
 from .patched_boxed_run import patched_boxed_run
