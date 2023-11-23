@@ -161,8 +161,8 @@ class DynamoOptimizationResult:
     def to_src(self):
         raw_code = self.source_code_proxy.raw_code
 
-        # prepare function signature, from `def toy_example(a, b)` to `def compiled_toy_example(a, b)`
-        signature = raw_code.splitlines()[0].replace("def ", "def compiled_", 1)
+        # prepare function signature, from `def toy_example(a, b)` to `def transformed_toy_example(a, b)`
+        signature = raw_code.splitlines()[0].replace("def ", "def transformed_", 1)
         code = signature.strip()
 
         # prepare args for guards, like `L = {"a": a, "b": b}`
