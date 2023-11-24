@@ -26,6 +26,16 @@ from .utils import (
     get_function_signature,
 )
 
+class DecompilationError(Exception):
+    """Custom exception class for decompilation."""
+
+    def __init__(self, message=""):
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f'DecompilationError: {self.message}'
+
 
 @dataclasses.dataclass
 class DecompilerState:
@@ -925,15 +935,18 @@ class Decompiler:
 
     @functools.lru_cache(maxsize=None)
     def decompile(self, indentation=4, temp_prefix: str="__temp_", overwite_fn_name: Optional[str]=None) -> str:
-        self.indentation = indentation
-        self.temp_prefix = temp_prefix
-        self.decompile_range(0, len(self.instructions))
-        source_code = self.state.source_code
-        # the header might have invalid function name in torchdynamo. only optimize the function body.
-        source_code = remove_some_temp(source_code, self.temp_prefix, indentation)
-        header = get_function_signature(self.code, overwite_fn_name)
-        source_code = header + add_indentation(source_code, indentation)
-        return source_code
+        try:
+            self.indentation = indentation
+            self.temp_prefix = temp_prefix
+            self.decompile_range(0, len(self.instructions))
+            source_code = self.state.source_code
+            # the header might have invalid function name in torchdynamo. only optimize the function body.
+            source_code = remove_some_temp(source_code, self.temp_prefix, indentation)
+            header = get_function_signature(self.code, overwite_fn_name)
+            source_code = header + add_indentation(source_code, indentation)
+            return source_code
+        except Exception as e:
+            raise DecompilationError(f"Failed to decompile {self.code.co_name}") from e
 
     def __hash__(self):
         return hash(self.code)
