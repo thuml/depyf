@@ -1,5 +1,5 @@
 import types
-from depyf.decompiler import decompile
+from depyf.decompiler import decompile, DecompilationError
 
 def pytorch_bytecode_src_hook(code: types.CodeType, new_code: types.CodeType):
     import torch
@@ -13,7 +13,7 @@ def pytorch_bytecode_src_hook(code: types.CodeType, new_code: types.CodeType):
             decompiled_src = decompile(new_code)
             bytecode_log.debug("possible source code:")
             bytecode_log.debug(decompiled_src)
-        except Exception as e:
+        except DecompilationError as e:
             bytecode_log.debug("Decompilation fails due to: %s", str(e))
         finally:
             bytecode_log.debug(

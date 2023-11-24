@@ -11,11 +11,12 @@ from dataclasses import dataclass
 import contextlib
 
 import depyf
+from depyf.decompiler import DecompilationError
 
 def decompile_ensure(fn, overwite_fn_name=None):
     try:
         decompiled_source_code = depyf.Decompiler(fn).decompile(overwite_fn_name=overwite_fn_name)
-    except Exception as e:
+    except DecompilationError as e:
         print(str(e))
         decompiled_source_code = "'Failed to decompile.'\n"
     return decompiled_source_code

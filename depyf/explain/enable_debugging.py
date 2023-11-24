@@ -13,6 +13,7 @@ class DebuggableHook(object):
     code_counter: Any = dataclasses.field(default_factory=lambda: itertools.count(start=0))
 
     def __call__(self, code, new_code):
+        from depyf.decompiler import DecompilationError
         try:
             import os
             n = next(self.code_counter)
@@ -29,7 +30,8 @@ class DebuggableHook(object):
             # TODO wait for pytorch fix
             return
             return func.__code__
-        except Exception as e:
+        except DecompilationError as e:
+            # ignore the decompilation error
             pass
 
 from .patched_boxed_run import patched_boxed_run
