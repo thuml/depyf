@@ -10,5 +10,11 @@ def patched__exec_with_source(src: str, globals, co_fields=None):
     import os
     hash_value = hashlib.md5(src.encode()).hexdigest()
     src = "# " + key + src
-    filename = write_code_to_file_template(src, f"{dump_src_dir}/fx_graph_code_" + hash_value + "_" + "%s" + ".py")
+    filename = write_code_to_file_template(
+        src,
+        f"{dump_src_dir}/fx_graph_code_" +
+        hash_value +
+        "_" +
+        "%s" +
+        ".py")
     exec(compile(src, filename, "exec"), globals)
