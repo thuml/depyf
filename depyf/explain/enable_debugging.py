@@ -1,3 +1,7 @@
+from .patched_boxed_run import patched_boxed_run
+from .patched_lazy_format_graph_code import patched_lazy_format_graph_code
+from .patched_load_by_key_path import patched_load_by_key_path
+from .patched__exec_with_source import patched__exec_with_source
 from typing import List, Tuple, Dict, Union, Callable, Optional, Any
 
 import contextlib
@@ -6,18 +10,22 @@ import warnings
 import dataclasses
 import itertools
 
+
 @dataclasses.dataclass
 class DebuggableHook(object):
     dump_src_dir: str
     type_name: str
-    code_counter: Any = dataclasses.field(default_factory=lambda: itertools.count(start=0))
+    code_counter: Any = dataclasses.field(
+        default_factory=lambda: itertools.count(start=0))
 
     def __call__(self, code, new_code):
         from depyf.decompiler import DecompilationError
         try:
             import os
             n = next(self.code_counter)
-            filename = os.path.join(self.dump_src_dir, f"{self.type_name}_{n}.py")
+            filename = os.path.join(
+                self.dump_src_dir,
+                f"{self.type_name}_{n}.py")
             func_name = f"{self.type_name}_{n}"
             from depyf.decompiler import Decompiler
             src = Decompiler(new_code).decompile(overwite_fn_name=func_name)
@@ -34,11 +42,6 @@ class DebuggableHook(object):
             # ignore the decompilation error
             pass
 
-from .patched_boxed_run import patched_boxed_run
-from .patched__exec_with_source import patched__exec_with_source
-from .patched_load_by_key_path import patched_load_by_key_path
-from .patched_lazy_format_graph_code import patched_lazy_format_graph_code
-
 
 @contextlib.contextmanager
 def patch(parent, name, value):
@@ -49,6 +52,7 @@ def patch(parent, name, value):
     finally:
         setattr(parent, name, old_value)
 
+
 @contextlib.contextmanager
 def enable_bytecode_hook(hook):
     import torch
@@ -57,6 +61,7 @@ def enable_bytecode_hook(hook):
         yield
     finally:
         handle.remove()
+
 
 @contextlib.contextmanager
 def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True):
@@ -86,11 +91,13 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True):
 
     # patch some functions
     with patch(torch.fx.graph_module, "_exec_with_source", patched__exec_with_source), \
-        patch(torch._inductor.codecache.PyCodeCache, "load_by_key_path", patched_load_by_key_path), \
-        patch(torch._dynamo.utils.lazy_format_graph_code, "__code__", patched_lazy_format_graph_code.__code__):
+            patch(torch._inductor.codecache.PyCodeCache, "load_by_key_path", patched_load_by_key_path), \
+            patch(torch._dynamo.utils.lazy_format_graph_code, "__code__", patched_lazy_format_graph_code.__code__):
         # we have to directly manipulate the code object, since the function has been imported in many places.
         # simply replacing torch._dynamo.utils.lazy_format_graph_code does not work for those functions.
-        # Note: `unitest.mock.patch` does not work here, since it will not patch the code object. (it will try to delete the code object and then set a new code object. The `delattr` will raise an error.)
+        # Note: `unitest.mock.patch` does not work here, since it will not
+        # patch the code object. (it will try to delete the code object and
+        # then set a new code object. The `delattr` will raise an error.)
 
         # enable bytecode hook
         with enable_bytecode_hook(bytecode_hook):
@@ -104,9 +111,12 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True):
                     f.write(full_src)
                 if clean_wild_fx_code:
                     for file in os.listdir(dump_src_dir):
-                        if file.split(os.path.sep)[-1].startswith("fx_graph_code"):
+                        if file.split(
+                                os.path.sep)[-1].startswith("fx_graph_code"):
                             os.remove(os.path.join(dump_src_dir, file))
-                input(f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
+                input(
+                    f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the hash value. Then press enter to continue.")
+
 
 @contextlib.contextmanager
 def debug():

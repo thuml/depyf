@@ -26,6 +26,7 @@ from .utils import (
     get_function_signature,
 )
 
+
 class DecompilationError(Exception):
     """Custom exception class for decompilation."""
 
@@ -50,7 +51,9 @@ class Decompiler:
     code: CodeType
     temp_count: int = 0
     temp_prefix: str = "__temp_"
-    state: DecompilerState = dataclasses.field(default_factory=lambda: DecompilerState(source_code="", stack=[]))
+    state: DecompilerState = dataclasses.field(
+        default_factory=lambda: DecompilerState(
+            source_code="", stack=[]))
     indentation: int = 4
 
     @contextlib.contextmanager
@@ -71,13 +74,14 @@ class Decompiler:
         can_repr = False
         try:
             can_repr = eval(repr(inst.argval)) == inst.argval
-        except:
+        except BaseException:
             pass
         if can_repr:
             self.state.stack.append(repr(inst.argval))
         else:
             if isinstance(inst.argval, type):
-                # Don't know why a class type get here, support this corner case anyway.
+                # Don't know why a class type get here, support this corner
+                # case anyway.
                 module = inst.argval.__module__
                 name = inst.argval.__name__
                 self.state.source_code += "import importlib\n"
@@ -85,7 +89,8 @@ class Decompiler:
                 self.state.source_code += f'{temp_name} = importlib.import_module("{module}").{name}\n'
                 self.state.stack.append(temp_name)
             elif inst.argrepr.startswith("torch."):
-                # Don't know why torch.xxx get here, support this corner case anyway. This deals with something like `torch.float`.
+                # Don't know why torch.xxx get here, support this corner case
+                # anyway. This deals with something like `torch.float`.
                 self.state.source_code += "import torch\n"
                 temp_name = self.get_temp_name()
                 self.state.source_code += f'{temp_name} = {inst.argval}\n'
@@ -112,7 +117,8 @@ class Decompiler:
 
     def LOAD_FROM_DICT_OR_GLOBALS(self, inst: Instruction):
         tos = self.state.stack.pop()
-        self.state.stack.append(f"{tos}[{inst.argval}] if '{inst.argval}' in {tos} else {inst.argval}")
+        self.state.stack.append(
+            f"{tos}[{inst.argval}] if '{inst.argval}' in {tos} else {inst.argval}")
         self.replace_mutable_tos_with_temp()
 
     LOAD_FROM_DICT_OR_DEREF = LOAD_FROM_DICT_OR_GLOBALS
@@ -129,7 +135,8 @@ class Decompiler:
                 self.state.source_code += f'"original name {qual_name} is illegal, use a temp name."\n'
                 func_name = self.get_temp_name()
         else:
-            # Python 3.11 support, see https://docs.python.org/3.11/library/dis.html#opcode-MAKE_FUNCTION
+            # Python 3.11 support, see
+            # https://docs.python.org/3.11/library/dis.html#opcode-MAKE_FUNCTION
             func_name = self.get_temp_name()
         code = self.state.stack.pop()
         if inst.argval & 0x08:
@@ -141,11 +148,13 @@ class Decompiler:
         kw_defaults = self.state.stack.pop() if inst.argval & 0x02 else {}
         defaults = self.state.stack.pop() if inst.argval & 0x01 else ()
         if len(kw_defaults) or len(defaults):
-            print("Function with default arguments is not supported, ignore the default arguments")
+            print(
+                "Function with default arguments is not supported, ignore the default arguments")
         this_index = self.index_of(inst.offset)
         immediately_used = False
         if self.instructions[this_index + 1].opname == "STORE_FAST":
-            # the function is immediately stored in a variable, use that variable name
+            # the function is immediately stored in a variable, use that
+            # variable name
             func_name = self.instructions[this_index + 1].argval
             immediately_used = True
         inner_func = Decompiler(code).decompile(overwite_fn_name=func_name)
@@ -174,7 +183,8 @@ class Decompiler:
         self_obj = self.state.stack.pop()
         cls_obj = self.state.stack.pop()
         super_obj = self.state.stack.pop()
-        self.state.stack.append(f"{super_obj}({cls_obj}, {self_obj}).{inst.argval}")
+        self.state.stack.append(
+            f"{super_obj}({cls_obj}, {self_obj}).{inst.argval}")
         self.replace_mutable_tos_with_temp()
 
     def LOAD_METHOD(self, inst: Instruction):
@@ -210,7 +220,8 @@ class Decompiler:
         self.state.source_code += f"{x}[{index}] = {value}\n"
 
     def STORE_SLICE(self, inst: Instruction):
-        # not tested, code according to https://docs.python.org/3.12/library/dis.html#opcode-STORE_SLICE
+        # not tested, code according to
+        # https://docs.python.org/3.12/library/dis.html#opcode-STORE_SLICE
         end = self.state.stack.pop()
         start = self.state.stack.pop()
         container = self.state.stack.pop()
@@ -231,7 +242,7 @@ class Decompiler:
 
     def generic_delete(self, inst: Instruction):
         self.state.source_code += f"del {inst.argval}\n"
-    
+
     DELETE_NAME = DELETE_FAST = DELETE_GLOBAL = DELETE_DEREF = generic_delete
 
     def DELETE_ATTR(self, inst: Instruction):
@@ -246,7 +257,7 @@ class Decompiler:
         level = self.state.stack.pop()
         self.state.source_code += f"{name} = __import__({repr(inst.argval)}, fromlist={fromlist}, level={level})\n"
         self.state.stack.append(name)
-    
+
     def IMPORT_FROM(self, inst: Instruction):
         name = inst.argval
         module = self.state.stack[-1]
@@ -263,7 +274,7 @@ class Decompiler:
             "UNARY_NOT": "not",
         }[inst.opname]
         self.state.stack.append(f"({op} {self.state.stack.pop()})")
-    
+
     UNARY_NEGATIVE = UNARY_POSITIVE = UNARY_INVERT = UNARY_NOT = generic_unary
 
     def GET_LEN(self, inst: Instruction):
@@ -303,7 +314,7 @@ class Decompiler:
         container = self.state.stack.pop()
         self.state.stack.append(f"{container}[{start}:{end}]")
 
-# ==================== Binary Inplace Instructions =============================
+# ==================== Binary Inplace Instructions =======================
     def generic_inplace_binary(self, inst: Instruction):
         rhs = self.state.stack.pop()
         lhs = self.state.stack.pop()
@@ -324,7 +335,7 @@ class Decompiler:
         }[inst.opname]
         self.state.source_code += f"{lhs} {op}= {rhs}\n"
         self.state.stack.append(lhs)
-    
+
     INPLACE_MULTIPLY = INPLACE_ADD = INPLACE_SUBTRACT = INPLACE_TRUE_DIVIDE = INPLACE_FLOOR_DIVIDE = INPLACE_MODULO = INPLACE_POWER = INPLACE_AND = INPLACE_OR = INPLACE_XOR = INPLACE_LSHIFT = INPLACE_RSHIFT = INPLACE_MATRIX_MULTIPLY = generic_inplace_binary
 
     def BINARY_OP(self, inst: Instruction):
@@ -336,7 +347,7 @@ class Decompiler:
         else:
             self.state.stack.append(f"({lhs} {inst.argrepr} {rhs})")
 
-# ==================== Conditional Test Instructions =============================
+# ==================== Conditional Test Instructions =====================
     def COMPARE_OP(self, inst: Instruction):
         rhs = self.state.stack.pop()
         lhs = self.state.stack.pop()
@@ -358,14 +369,14 @@ class Decompiler:
 
     def BREAK_LOOP(self, inst: Instruction):
         self.state.source_code += "break\n"
-    
+
     def generic_abs_jump(self, inst: Instruction):
         jump_offset = inst.get_jump_target()
         if jump_offset > inst.offset:
             self.state.source_code += "break\n"
         else:
             self.state.source_code += "continue\n"
-    
+
     JUMP_ABSOLUTE = JUMP_FORWARD = JUMP_BACKWARD = JUMP_BACKWARD_NO_INTERRUPT = generic_abs_jump
 
     def RETURN_VALUE(self, inst: Instruction):
@@ -376,12 +387,14 @@ class Decompiler:
 
     def YIELD_VALUE(self, inst: Instruction):
         if sys.version_info >= (3, 12):
-            raise NotImplementedError("YIELD_VALUE is not supported in Python 3.12")
+            raise NotImplementedError(
+                "YIELD_VALUE is not supported in Python 3.12")
         self.state.source_code += f"yield {self.state.stack[-1]}\n"
 
     def RETURN_GENERATOR(self, inst: Instruction):
         # we don't handle generator/coroutine, add this to support simple yield
         self.state.stack.append(None)
+
     def GEN_START(self, inst: Instruction):
         # self.state.stack.pop()
         assert inst.argval == 0, "Only generator expression is supported"
@@ -410,7 +423,9 @@ class Decompiler:
         for _index in range(this_index, jump_index):
             _inst = self.instructions[_index]
             if "IF_FALSE" in _inst.opname or "IF_NOT_NONE" in _inst.opname or "IF_NONE" in _inst.opname:
-                # JUMP_IF_FALSE, followed by "and", short-circuit evaluation means we jump to the end of if-block if the condition is false
+                # JUMP_IF_FALSE, followed by "and", short-circuit evaluation
+                # means we jump to the end of if-block if the condition is
+                # false
                 if if_body_end_offset is None:
                     if_body_end_offset = _inst.get_jump_target()
                 if _inst.get_jump_target() == if_body_end_offset:
@@ -436,7 +451,9 @@ class Decompiler:
                         pass
 
             elif "IF_TRUE" in _inst.opname:
-                # JUMP_IF_TRUE, followed by "or", short-circuit evaluation means we jump to the start of if-block if the condition is true
+                # JUMP_IF_TRUE, followed by "or", short-circuit evaluation
+                # means we jump to the start of if-block if the condition is
+                # true
                 if if_body_start_offset is None:
                     if_body_start_offset = _inst.get_jump_target()
                 if _inst.get_jump_target() == if_body_start_offset:
@@ -461,13 +478,15 @@ class Decompiler:
 
         if if_body_start_offset is None:
             if_body_start_offset = self.instructions[last_index + 1].offset
-            
+
         if_body_start = self.index_of(if_body_start_offset)
 
         if if_body_end_offset is None:
-            # Don't know where the if body ends, so we have to find the next jump instruction
+            # Don't know where the if body ends, so we have to find the next
+            # jump instruction
             if_body_end = if_body_start + 1
-            while if_body_end < len(self.instructions) and not self.instructions[if_body_end].is_jump():
+            while if_body_end < len(
+                    self.instructions) and not self.instructions[if_body_end].is_jump():
                 if_body_end += 1
             if if_body_end == len(self.instructions):
                 if_body_end -= 1
@@ -475,10 +494,12 @@ class Decompiler:
         else:
             if_body_end = self.index_of(if_body_end_offset)
         if jump_index < if_body_start:
-            self.state.source_code += add_indentation("continue\n", self.indentation)
+            self.state.source_code += add_indentation(
+                "continue\n", self.indentation)
             return
 
-        jump_targets = [i.get_jump_target() for i in self.instructions[if_body_start + 1: if_body_end] if i.is_jump() and i.get_jump_target() > if_body_end_offset]
+        jump_targets = [i.get_jump_target() for i in self.instructions[if_body_start +
+                                                                       1: if_body_end] if i.is_jump() and i.get_jump_target() > if_body_end_offset]
         else_code = ""
         if jump_targets:
             # has "else" branch
@@ -494,12 +515,14 @@ class Decompiler:
 
         with self.new_state(fallthrough_stack):
             if else_code and self.instructions[if_body_end - 1].is_jump():
-                # the last instruction is a jump, so it is not part of the if body, but the jump out of the if-else block
+                # the last instruction is a jump, so it is not part of the if
+                # body, but the jump out of the if-else block
                 if_body_end -= 1
             self.decompile_range(if_body_start, if_body_end)
             if_code = "if " + " ".join(conditions) + ":\n"
-            if_code = if_code + add_indentation(self.state.source_code, self.indentation)
-        
+            if_code = if_code + \
+                add_indentation(self.state.source_code, self.indentation)
+
         self.state.source_code += if_code + else_code
         self.state.stack = fallthrough_stack
 
@@ -517,7 +540,8 @@ class Decompiler:
     def SETUP_FINALLY(self, inst: Instruction):
         start_index = self.index_of(inst.offset)
         end_index = self.index_of(inst.get_jump_target())
-        pop_block_index = [i for i, x in enumerate(self.instructions) if x.opname == "POP_BLOCK" and start_index <= i < end_index][-1]
+        pop_block_index = [i for i, x in enumerate(
+            self.instructions) if x.opname == "POP_BLOCK" and start_index <= i < end_index][-1]
 
         try_code = ""
         with self.new_state(self.state.stack):
@@ -525,10 +549,12 @@ class Decompiler:
             try_code = self.state.source_code
             try_code = add_indentation(try_code, self.indentation)
             try_code = "try:\n" + try_code
-        
+
         finally_code = ""
         with self.new_state(self.state.stack):
-            end_finally_index = [i for i, x in enumerate(self.instructions) if x.opname == "END_FINALLY" and start_index <= i]
+            end_finally_index = [
+                i for i, x in enumerate(
+                    self.instructions) if x.opname == "END_FINALLY" and start_index <= i]
             if end_finally_index:
                 end_index = end_finally_index[0]
             finally_end_index = end_index
@@ -538,7 +564,7 @@ class Decompiler:
             finally_code = self.state.source_code
             finally_code = add_indentation(finally_code, self.indentation)
             finally_code = "finally:\n" + finally_code
-        
+
         self.state.source_code += try_code + finally_code
         return end_index
 
@@ -557,7 +583,7 @@ class Decompiler:
         self.state.source_code += for_code
         return end_index
 
-# ==================== Stack Manipulation Instructions =============================
+# ==================== Stack Manipulation Instructions ===================
     def rot_n(self, inst: Instruction):
         if inst.opname == "ROT_N":
             n = inst.argval
@@ -570,7 +596,7 @@ class Decompiler:
         values = self.state.stack[-n:]
         values = [values[-1]] + values[:-1]
         self.state.stack[-n:] = values
-        
+
     ROT_N = ROT_TWO = ROT_THREE = ROT_FOUR = rot_n
 
     def SWAP(self, inst: Instruction):
@@ -580,20 +606,20 @@ class Decompiler:
         tos, value = value, tos
         self.state.stack[-1] = tos
         self.state.stack[- n] = value
-    
+
     def COPY(self, inst: Instruction):
         # not tested, don't know how to generate this instruction
         n = inst.argval
         value = self.state.stack[-1 - n]
         self.state.stack.append(value)
-    
+
     def POP_TOP(self, inst: Instruction):
         self.state.stack.pop()
 
     def DUP_TOP(self, inst: Instruction):
         # not tested
         self.state.stack.append(self.state.stack[-1])
-    
+
     def DUP_TOP_TWO(self, inst: Instruction):
         # not tested
         tos = self.state.stack[-1]
@@ -610,7 +636,8 @@ class Decompiler:
         last_inst = [x for x in self.instructions if x.offset < inst.offset]
         has_kw_names = False
         if last_inst:
-            if last_inst[-1].opname == "KW_NAMES" or (len(last_inst) > 1 and last_inst[-2].opname == "KW_NAMES" and last_inst[-1].opname == "PRECALL"):
+            if last_inst[-1].opname == "KW_NAMES" or (len(
+                    last_inst) > 1 and last_inst[-2].opname == "KW_NAMES" and last_inst[-1].opname == "PRECALL"):
                 has_kw_names = True
         kw_names = tuple()
         if has_kw_names:
@@ -626,7 +653,9 @@ class Decompiler:
         if self.state.stack and self.state.stack[-1] is None:
             self.state.stack.pop()
         if "iter(" in func:
-            # Why do we need this? Don't know. But sometimes CPython generates CALL with argval=0, but the function actually needs an arg (for list/set/map comprehension).
+            # Why do we need this? Don't know. But sometimes CPython generates
+            # CALL with argval=0, but the function actually needs an arg (for
+            # list/set/map comprehension).
             pos_args = [func]
             func = self.state.stack.pop()
         self.state.stack.append(f"{func}({', '.join(pos_args + kwcalls)})")
@@ -638,7 +667,7 @@ class Decompiler:
         func = self.state.stack.pop()
         self.state.stack.append(f"{func}({', '.join(args)})")
         self.replace_mutable_tos_with_temp()
-    
+
     CALL_FUNCTION = CALL_METHOD = generic_call
 
     def CALL_FUNCTION_KW(self, inst: Instruction):
@@ -648,7 +677,8 @@ class Decompiler:
         kwcalls = []
         for name, val in zip(kw_args, kw_vals):
             kwcalls.append(f"{name}={val}")
-        pos_args = [(self.state.stack.pop()) for _ in range(inst.argval - len(kw_args))]
+        pos_args = [(self.state.stack.pop())
+                    for _ in range(inst.argval - len(kw_args))]
         pos_args = pos_args[::-1]
         func = self.state.stack.pop()
         self.state.stack.append(f"{func}({', '.join(pos_args + kwcalls)})")
@@ -667,7 +697,11 @@ class Decompiler:
         self.replace_mutable_tos_with_temp()
 
     def CALL_INTRINSIC_1(self, inst: Instruction):
-        if inst.argrepr in ["INTRINSIC_1_INVALID", "INTRINSIC_IMPORT_STAR", "INTRINSIC_STOPITERATION_ERROR", "INTRINSIC_ASYNC_GEN_WRAP"]:
+        if inst.argrepr in [
+            "INTRINSIC_1_INVALID",
+            "INTRINSIC_IMPORT_STAR",
+            "INTRINSIC_STOPITERATION_ERROR",
+                "INTRINSIC_ASYNC_GEN_WRAP"]:
             # invalid intrinsic, skip
             pass
         elif inst.argrepr in ["INTRINSIC_TYPEVAR", "INTRINSIC_PARAMSPEC", "INTRINSIC_TYPEVARTUPLE", "INTRINSIC_SUBSCRIPT_GENERIC", "INTRINSIC_TYPEALIAS"]:
@@ -682,12 +716,13 @@ class Decompiler:
             return self.LIST_TO_TUPLE(inst)
 
 
-# ==================== Container Related Instructions (tuple, list, set, dict) =============================
+# ==================== Container Related Instructions (tuple, list, set, d
+
     def UNPACK_SEQUENCE(self, inst: Instruction):
         varname = self.state.stack.pop()
         for i in range(inst.argval):
             self.state.stack.append(f"{varname}[{inst.argval - 1 - i}]")
-    
+
     def UNPACK_EX(self, inst: Instruction):
         varname = self.state.stack.pop()
         self.state.stack.append(f"list({varname}[{inst.argval}:])")
@@ -712,7 +747,7 @@ class Decompiler:
             self.state.stack.append(f"({args[0]},)")
         else:
             self.state.stack.append(f"({', '.join(args)})")
-    
+
     BUILD_TUPLE = BUILD_TUPLE_UNPACK = BUILD_TUPLE_UNPACK_WITH_CALL = build_tuple
 
     def build_list(self, inst: Instruction):
@@ -722,7 +757,7 @@ class Decompiler:
             args = [f"*{arg}" for arg in args]
         self.state.stack.append(f"[{', '.join(args)}]")
         self.replace_mutable_tos_with_temp()
-    
+
     BUILD_LIST = BUILD_LIST_UNPACK = build_list
 
     def build_set(self, inst: Instruction):
@@ -737,7 +772,7 @@ class Decompiler:
             ans = f"{{{', '.join(args)}}}"
         self.state.stack.append(ans)
         self.replace_mutable_tos_with_temp()
-    
+
     BUILD_SET = BUILD_SET_UNPACK = build_set
 
     def build_map_unpack(self, inst: Instruction):
@@ -757,14 +792,16 @@ class Decompiler:
         args = args[::-1]
         keys = args[::2]
         values = args[1::2]
-        self.state.stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
+        self.state.stack.append(
+            f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
         self.replace_mutable_tos_with_temp()
 
     def BUILD_CONST_KEY_MAP(self, inst: Instruction):
         keys = eval(self.state.stack.pop())
         args = [self.state.stack.pop() for _ in range(inst.argval)]
         values = args[::-1]
-        self.state.stack.append(f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
+        self.state.stack.append(
+            f"{{{', '.join([f'{k}: {v}' for k, v in zip(keys, values)])}}}")
         self.replace_mutable_tos_with_temp()
 
     def BUILD_STRING(self, inst: Instruction):
@@ -796,7 +833,7 @@ class Decompiler:
         values = self.state.stack.pop()
         temp = self.replace_mutable_tos_with_temp()
         self.state.source_code += f"{temp}.update({values})\n"
-    
+
     SET_UPDATE = DICT_UPDATE = DICT_MERGE = generic_update
 
     def SET_ADD(self, inst: Instruction):
@@ -828,7 +865,7 @@ class Decompiler:
             tos = self.state.stack.pop()
             tos1 = self.state.stack.pop()
             self.state.source_code += f"raise {tos1} from {tos}\n"
-    
+
     def FORMAT_VALUE(self, inst: Instruction):
         func, spec = inst.argval
         if spec:
@@ -842,18 +879,22 @@ class Decompiler:
 
 
 # ==================== NOP Instructions =============================
+
     def generic_nop(self, inst: Instruction):
         pass
 
     # "EXTENDED_ARG" is treated as NOP here, because it has been handled by `dis.get_instructions`.
-    # The extended args are already merged into the following instruction's `inst.argval`.
+    # The extended args are already merged into the following instruction's
+    # `inst.argval`.
     EXTENDED_ARG = generic_nop
 
     NOP = RESUME = SETUP_LOOP = POP_BLOCK = PRECALL = BEGIN_FINALLY = END_FINALLY = generic_nop
 
     MAKE_CELL = generic_nop
 
-    # our FOR_ITER is different from CPython's FOR_ITER (as it does not need to explicitly consider the case of exhausted iterator), so we don't need to do anything here
+    # our FOR_ITER is different from CPython's FOR_ITER (as it does not need
+    # to explicitly consider the case of exhausted iterator), so we don't need
+    # to do anything here
     END_FOR = generic_nop
 
 # ==================== Unsupported Instructions =============================
@@ -869,13 +910,13 @@ class Decompiler:
     GET_AWAITABLE = GET_AITER = GET_ANEXT = END_ASYNC_FOR = BEFORE_ASYNC_WITH = SETUP_ASYNC_WITH = SEND = ASYNC_GEN_WRAP = unimplemented_instruction
 
     CACHE = unimplemented_instruction
-        
+
     # we don't know these instructions
     PRINT_EXPR = COPY_DICT_WITHOUT_KEYS = unimplemented_instruction
 
     # we only support bytecode for functions
     IMPORT_STAR = unimplemented_instruction
-    
+
     YIELD_FROM = SETUP_ANNOTATIONS = LOAD_BUILD_CLASS = SETUP_WITH = BEFORE_WITH = MATCH_MAPPING = MATCH_SEQUENCE = MATCH_KEYS = MATCH_CLASS = unimplemented_instruction
 
     # don't find any interesting use case for these instructions
@@ -885,7 +926,10 @@ class Decompiler:
         running_index = start
         while running_index < end:
             inst = self.instructions[running_index]
-            method = getattr(Decompiler, inst.opname, Decompiler.unimplemented_instruction)
+            method = getattr(
+                Decompiler,
+                inst.opname,
+                Decompiler.unimplemented_instruction)
             output = method(self, inst)
             if output:
                 running_index = output
@@ -909,7 +953,8 @@ class Decompiler:
         if callable(code):
             code = code.__code__
         self.code = code
-        instructions = list(convert_instruction(_) for _ in dis.get_instructions(code))
+        instructions = list(convert_instruction(_)
+                            for _ in dis.get_instructions(code))
         Decompiler.cleanup_instructions(instructions)
         self.instructions = instructions
         self.state = DecompilerState(source_code="", stack=[])
@@ -929,27 +974,38 @@ class Decompiler:
     def supported_opnames():
         opnames = []
         for x in dis.opname:
-            if getattr(Decompiler, x, Decompiler.unimplemented_instruction) is not Decompiler.unimplemented_instruction:
+            if getattr(
+                    Decompiler,
+                    x,
+                    Decompiler.unimplemented_instruction) is not Decompiler.unimplemented_instruction:
                 opnames.append(x)
         return opnames
 
     @functools.lru_cache(maxsize=None)
-    def decompile(self, indentation=4, temp_prefix: str="__temp_", overwite_fn_name: Optional[str]=None) -> str:
+    def decompile(
+            self,
+            indentation=4,
+            temp_prefix: str = "__temp_",
+            overwite_fn_name: Optional[str] = None) -> str:
         try:
             self.indentation = indentation
             self.temp_prefix = temp_prefix
             self.decompile_range(0, len(self.instructions))
             source_code = self.state.source_code
-            # the header might have invalid function name in torchdynamo. only optimize the function body.
-            source_code = remove_some_temp(source_code, self.temp_prefix, indentation)
+            # the header might have invalid function name in torchdynamo. only
+            # optimize the function body.
+            source_code = remove_some_temp(
+                source_code, self.temp_prefix, indentation)
             header = get_function_signature(self.code, overwite_fn_name)
             source_code = header + add_indentation(source_code, indentation)
             return source_code
         except Exception as e:
-            raise DecompilationError(f"Failed to decompile {self.code.co_name}") from e
+            raise DecompilationError(
+                f"Failed to decompile {self.code.co_name}") from e
 
     def __hash__(self):
         return hash(self.code)
+
 
 def decompile(code: Union[CodeType, Callable]):
     """Decompile a code object or a function."""

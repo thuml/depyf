@@ -1,6 +1,7 @@
 import types
 from depyf.decompiler import decompile, DecompilationError
 
+
 def pytorch_bytecode_src_hook(code: types.CodeType, new_code: types.CodeType):
     import torch
     bytecode_log = torch._logging.getArtifactLogger(
@@ -22,14 +23,17 @@ def pytorch_bytecode_src_hook(code: types.CodeType, new_code: types.CodeType):
                 "https://github.com/thuml/depyf/issues."
             )
 
+
 _handle = None
+
 
 def install():
     import torch
     global _handle
     if _handle is not None:
         return
-    _handle = torch._dynamo.convert_frame.register_bytecode_hook(pytorch_bytecode_src_hook)
+    _handle = torch._dynamo.convert_frame.register_bytecode_hook(
+        pytorch_bytecode_src_hook)
 
 
 def uninstall():

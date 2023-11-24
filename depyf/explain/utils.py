@@ -13,9 +13,11 @@ import contextlib
 import depyf
 from depyf.decompiler import DecompilationError
 
+
 def decompile_ensure(fn, overwite_fn_name=None):
     try:
-        decompiled_source_code = depyf.Decompiler(fn).decompile(overwite_fn_name=overwite_fn_name)
+        decompiled_source_code = depyf.Decompiler(
+            fn).decompile(overwite_fn_name=overwite_fn_name)
     except DecompilationError as e:
         print(str(e))
         decompiled_source_code = "'Failed to decompile.'\n"
@@ -70,7 +72,8 @@ class CodeProxy:
 
     def __init__(self, code: str):
         # Don't directly use this constructor. Use decompile_with_name instead.
-        self.raw_code = "".join(["  " + line + "\n" for line in code.splitlines() if line.strip() != ""])
+        self.raw_code = "".join(
+            ["  " + line + "\n" for line in code.splitlines() if line.strip() != ""])
 
     def __str__(self):
         CodeProxy.used_instances.add(self.name)
@@ -81,6 +84,7 @@ class CodeProxy:
     def record():
         CodeProxy.used_instances = set()
         yield CodeProxy.used_instances
+
 
 def display_func(self):
     from IPython.display import display, JSON, Markdown, Code
@@ -108,29 +112,43 @@ class CacheResult:
     def __init__(self, fn, cache):
         guard = cache.check_fn.code_parts
         code = cache.code
-        compiled_subgraphs = [name for name in code.co_names if name.startswith("__compiled")]
+        compiled_subgraphs = [
+            name for name in code.co_names if name.startswith("__compiled")]
         assert len(compiled_subgraphs) == 1
         module = import_module(fn.__module__)
         # deal with compiled_subgraph
-        self.compiled_subgraph = innermost_fn(getattr(module, compiled_subgraphs[0]))
-        self.compiled_subgraph_proxy = CodeProxy.decompile_with_name(self.compiled_subgraph, compiled_subgraphs[0])
+        self.compiled_subgraph = innermost_fn(
+            getattr(module, compiled_subgraphs[0]))
+        self.compiled_subgraph_proxy = CodeProxy.decompile_with_name(
+            self.compiled_subgraph, compiled_subgraphs[0])
         # deal with transformed_code
         self.transformed_code = code
-        self.transformed_code_proxy = CodeProxy.decompile_with_name(self.transformed_code, "transformed_code:")
-        resume_fns = [name for name in code.co_names if name.startswith("__resume")]
-        self.referenced_global_functions = {name: DynamoOptimizationResult(getattr(module, name), name) for name in resume_fns}
+        self.transformed_code_proxy = CodeProxy.decompile_with_name(
+            self.transformed_code, "transformed_code:")
+        resume_fns = [
+            name for name in code.co_names if name.startswith("__resume")]
+        self.referenced_global_functions = {
+            name: DynamoOptimizationResult(
+                getattr(
+                    module,
+                    name),
+                name) for name in resume_fns}
         self.code = code
         self.guard = guard
 
     def to_data(self):
         return {
             "guard": self.guard,
-            "transformed_code": str(self.transformed_code_proxy),
-            "compiled_subgraph": str(self.compiled_subgraph_proxy),
-            "referenced_global_functions": {name: fn.to_data() for name, fn in self.referenced_global_functions.items()}
-        }
+            "transformed_code": str(
+                self.transformed_code_proxy),
+            "compiled_subgraph": str(
+                self.compiled_subgraph_proxy),
+            "referenced_global_functions": {
+                name: fn.to_data() for name,
+                fn in self.referenced_global_functions.items()}}
 
     _ipython_display_ = display_func
+
 
 @dataclass
 class DynamoOptimizationResult:
@@ -147,40 +165,49 @@ class DynamoOptimizationResult:
         else:
             self.name = name
         caches = _debug_get_cache_entry_list(fn.__code__)
-        self.transformed_code_entries = [CacheResult(fn, cache) for cache in caches]
+        self.transformed_code_entries = [
+            CacheResult(fn, cache) for cache in caches]
         self.code = fn.__code__
-        self.source_code_proxy = CodeProxy.decompile_with_name(self.code, self.name)
-    
+        self.source_code_proxy = CodeProxy.decompile_with_name(
+            self.code, self.name)
+
     def to_data(self):
         data = {
             "name": self.name,
-            "source_code": str(self.source_code_proxy),
-            "transformed_code_entries": [entry.to_data() for entry in self.transformed_code_entries]
-        }
+            "source_code": str(
+                self.source_code_proxy),
+            "transformed_code_entries": [
+                entry.to_data() for entry in self.transformed_code_entries]}
         return data
 
     def to_src(self):
         raw_code = self.source_code_proxy.raw_code
 
-        # prepare function signature, from `def toy_example(a, b)` to `def transformed_toy_example(a, b)`
-        signature = raw_code.splitlines()[0].replace("def ", "def transformed_", 1)
+        # prepare function signature, from `def toy_example(a, b)` to `def
+        # transformed_toy_example(a, b)`
+        signature = raw_code.splitlines()[0].replace(
+            "def ", "def transformed_", 1)
         code = signature.strip()
 
         # prepare args for guards, like `L = {"a": a, "b": b}`
         code_obj = self.fn.__code__
         normal_arg_count = code_obj.co_argcount + code_obj.co_kwonlyargcount
         arg_names = code_obj.co_varnames[:normal_arg_count]
-        arg_dict = "L = {" + ", ".join([f'"{name}": {name}' for name in arg_names]) + "}"
+        arg_dict = "L = {" + \
+            ", ".join([f'"{name}": {name}' for name in arg_names]) + "}"
         code += "\n" + " " * 4 + arg_dict
 
         additional_code = ""
 
         for entry in self.transformed_code_entries:
 
-            # prepare guards, like `def guard_0(L):\n    return a > 0 and b > 0`
-            guard = (" \\\n" + " " * 8 + "and ").join(["(" + x + ")" for x in entry.guard])
+            # prepare guards, like `def guard_0(L):\n    return a > 0 and b >
+            # 0`
+            guard = (" \\\n" + " " * 8 +
+                     "and ").join(["(" + x + ")" for x in entry.guard])
             guard_func_name = CodeProxy.consume_new_name("guard:")
-            additional_code += f"\ndef {guard_func_name}(L):\n" + " " * 4 + "return " + guard + "\n"
+            additional_code += f"\ndef {guard_func_name}(L):\n" + \
+                " " * 4 + "return " + guard + "\n"
 
             # prepare compiled subgraph, like `__compiled_fn_0`
             subgraph_name = entry.compiled_subgraph_proxy.name
@@ -194,24 +221,31 @@ class DynamoOptimizationResult:
             additional_code += f"def {subgraph_name}(*args, **kwargs):\n    pass\n"
 
             # prepare transformed code, like `transformed_code_0`
-            additional_code += "\n" + remove_indentation(entry.transformed_code_proxy.raw_code) + "\n"
+            additional_code += "\n" + \
+                remove_indentation(entry.transformed_code_proxy.raw_code) + "\n"
 
             for name, func in entry.referenced_global_functions.items():
                 additional_code = func.to_src() + additional_code
 
-            code += "\n" + " " * 4 + f"if {guard_func_name}(L):\n" + " " * 8 + f"return {entry.transformed_code_proxy.name}({', '.join(arg_names)})"
-        
-        additional_code += "\n" + "# Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.\n" + remove_indentation(self.source_code_proxy.raw_code) + "\n"
+            code += "\n" + " " * 4 + \
+                f"if {guard_func_name}(L):\n" + " " * 8 + f"return {entry.transformed_code_proxy.name}({', '.join(arg_names)})"
 
-        code += "\n" + " " * 4 + "# Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.\n" + " " * 4 + f"return {self.source_code_proxy.name}({', '.join(arg_names)})"
-        return additional_code + code + f"\n\n#============ end of {self.name} ============#\n"
+        additional_code += "\n" + "# Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.\n" + \
+            remove_indentation(self.source_code_proxy.raw_code) + "\n"
+
+        code += "\n" + " " * 4 + "# Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.\n" + \
+            " " * 4 + f"return {self.source_code_proxy.name}({', '.join(arg_names)})"
+        return additional_code + code + \
+            f"\n\n#============ end of {self.name} ============#\n"
 
     _ipython_display_ = display_func
+
 
 def remove_indentation(code: str):
     lines = code.splitlines()
     indent = len(lines[0]) - len(lines[0].lstrip())
     return "".join([line[indent:] + "\n" for line in lines])
+
 
 def write_code_to_file_template(src, path_template):
     import os
@@ -228,6 +262,7 @@ def write_code_to_file_template(src, path_template):
             break
         count += 1
     return new_filepath
+
 
 def get_code_owner(fn):
     """A callable object `fn` might have a __code__ attribute, which is a code object.
@@ -259,10 +294,12 @@ def get_code_owner(fn):
             break
     return fn
 
+
 def get_current_compiled_fn_name():
     import torch
     from torch._dynamo.bytecode_transformation import _unique_id_counter
     from copy import copy
-    # torch.compile already called the next, we should add minus 1 to get the correct name
+    # torch.compile already called the next, we should add minus 1 to get the
+    # correct name
     current_count = next(copy(_unique_id_counter)) - 1
     return "__compiled_fn_" + str(current_count)
