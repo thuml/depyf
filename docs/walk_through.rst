@@ -194,57 +194,164 @@ The above code only deals with forward computation graph. One important missing 
 
 In plain PyTorch code, backward computation is triggered by the ``backward`` function call on some scalar loss value. Each PyTorch function stores what is required for backward during forward computation.
 
-The following computation graph shows the details:
+To explain what happens in eager mode during backward, we have the following implementation mimicing the builtin behavior of ``cos`` function:
+
+.. code-block:: python
+
+    import torch
+    class Cosine(torch.autograd.Function):
+        @staticmethod
+        def forward(x0):
+            x1 = torch.cos(x0)
+            return x1
+
+        @staticmethod
+        def setup_context(ctx, inputs, output):
+            x, = inputs
+            print(f"saving tensor of size {x.shape}")
+            ctx.save_for_backward(x)
+
+        @staticmethod
+        def backward(ctx, grad_output):
+            x, = ctx.saved_tensors
+            result = (-torch.sin(x)) * grad_output
+            return result
+
+    # Wrap Cosine in a function so that it is clearer what the output is
+    def cosine(x):
+        y = Cosine.apply(x)
+        return y
+
+    def naive_two_cosine(x0):
+        x1 = cosine(x0)
+        x2 = cosine(x1)
+        return x2
+
+Running the above function with an input that requires grad, we can see that two tensors are saved:
+
+.. code-block:: python
+
+    input = torch.randn((5, 5, 5), requires_grad=True)
+    output = naive_two_cosine(input)
+
+The output:
+
+.. code-block:: text
+
+    saving tensor of size torch.Size([5, 5, 5])
+    saving tensor of size torch.Size([5, 5, 5])
+
+If we have the computation graph ahead-of-time, we can optimize the computation as follows:
+
+.. code-block:: python
+
+    class OptimizedTwoCosine(torch.autograd.Function):
+        @staticmethod
+        def forward(x0):
+            x1 = torch.cos(x0)
+            x2 = torch.cos(x1)
+            return x2
+
+        @staticmethod
+        def setup_context(ctx, inputs, output):
+            x, = inputs
+            print(f"saving tensor of size {x.shape}")
+            ctx.save_for_backward(x)
+
+        @staticmethod
+        def backward(ctx, grad_x2):
+            x0, = ctx.saved_tensors
+            # re-compute in backward
+            x1 = torch.cos(x0)
+            grad_x1 = (-torch.sin(x1)) * grad_x2
+            grad_x0 = (-torch.sin(x0)) * grad_x1
+            return grad_x0
+
+    def optimized_two_cosine(x):
+        y = OptimizedTwoCosine.apply(x)
+        return y
+
+Running the above function with an input that requires grad, we can see that only one tensor is saved:
+
+.. code-block:: python
+
+    input = torch.randn((5, 5, 5), requires_grad=True)
+    output = optimized_two_cosine(input)
+
+The output:
+
+.. code-block:: text
+
+    saving tensor of size torch.Size([5, 5, 5])
+
+And we can check the correctness of two implementations against native PyTorch implementation:
+
+.. code-block:: python
+
+    input = torch.randn((5, 5, 5), requires_grad=True)
+    grad_output = torch.randn((5, 5, 5), requires_grad=True)
+
+    output1 = torch.cos(torch.cos(input))
+    (output1 * grad_output).sum().backward()
+    grad_input1 = input.grad; input.grad = None
+
+    output2 = naive_two_cosine(input)
+    (output2 * grad_output).sum().backward()
+    grad_input2 = input.grad; input.grad = None
+
+    output3 = optimized_two_cosine(input)
+    (output3 * grad_output).sum().backward()
+    grad_input3 = input.grad; input.grad = None
+
+    assert torch.allclose(output1, output2)
+    assert torch.allclose(output1, output3)
+    assert torch.allclose(grad_input1, grad_input2)
+    assert torch.allclose(grad_input1, grad_input3)
+
+The following computation graph shows the details of a naive implementation:
 
 .. image:: _static/images/eager-joint-graph.svg
   :width: 1200
   :alt: Eager mode autograd
 
-When we can get the computation graph from ``Dynamo`` before it is executed, we can also get its backward computation graph before any ``backward`` function is called.
-
-For any computation graph represented by a function:
-
-.. code-block:: python
-
-    def forward(inputs):
-        return outputs
-
-Its corresponding backward function signature is:
-
-.. code-block:: python
-
-    def backward(outputs_grad):
-        return inputs_grad
-
-And their joint computation graph is:
-
-.. code-block:: python
-
-    def joint_forward_and_backward(inputs, outputs_grad):
-        return outputs, inputs_grad
-
-For someone who is familiar with automatic differentiation, this is the ``vjp`` function (vector-jacobian product). For the rest who don't understand the terminology, please just ignore this paragraph.
-
-When we have the joint computation graph ahead-of-time (i.e. before calling any ``backward`` on some loss value), we have some control over what can be saved:
-
-.. code-block:: python
-
-    def partitioned_joint_graph(inputs, outputs_grad):
-        outputs, saved_values = modified_forward(inputs)
-        inputs_grad = modified_backward(saved_values, outputs_grad)
-        return outputs, inputs_grad
-
-In eager mode, from the computation graph above, we can observe that ``saved_values`` are xxx and xxx. Can we do better to save less values so that we can save memory footprint?
-
-Here is the answer from AOTAutograd:
+And the following computation graph shows the details of an optimized implementation:
 
 .. image:: _static/images/aot-joint-graph.svg
   :width: 1200
   :alt: AOT mode autograd
 
-We can only save one value, and recompute the first ``cos`` function to get another value for backward. That is basically how AOT Autograd works!
+We can only save one value, and recompute the first ``cos`` function to get another value for backward.
 
-Backend: compile and optimize computation graph 
+AOTAutograd does the above optimization automatically. In essense, it dynamically generates a function like the following:
+
+.. code-block:: python
+
+    class OptimizedFunction(torch.autograd.Function):
+        @staticmethod
+        def forward(inputs):
+            outputs, saved_tensors = forward_graph(inputs)
+            return outputs, saved_tensors
+
+        @staticmethod
+        def setup_context(ctx, inputs, output):
+            outputs, saved_tensors = output
+            ctx.save_for_backward(saved_tensors)
+
+        @staticmethod
+        def backward(ctx, grad_outputs):
+            saved_tensors = ctx.saved_tensors
+            grad_inputs = backward_graph(grad_outputs, saved_tensors)
+            return grad_inputs
+
+    def optimized_function(inputs):
+        outputs, saved_tensors = OptimizedFunction.apply(inputs)
+        return outputs
+
+This way, the saved tensors are made explicit, and the ``optimized_function`` accepts exactly the same inputs as the original function, while the producing exactly the same output as the original function and having exactly the same backward behavior as the original function.
+
+That is basically how AOT Autograd works!
+
+Backend: compile and optimize computation graph
 --------------------------------------------------
 
 Finally, after ``Dynamo`` separates PyTorch code from Python code, and after ``AOTAutograd`` generates the backward computation graph from the forward computation graph, we entered the world of pure computation graphs.
