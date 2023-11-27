@@ -33,3 +33,5 @@ html_logo = "_static/images/depyf-logo.svg"
 html_css_files = [
     'css/style.css',
 ]
+
+highlight_language = 'python3'
