@@ -6,7 +6,7 @@ Have you ever felt overwhelmed by the complexities of `torch.compile`? Diving in
 
 If you also face the problem, then you might be interested in `depyf`. As the logo suggests, `depyf` is a software tool to leverage advanced Python features (the Python snake symbol) to open up internal details (the internal gears symbol) of PyTorch's compiler `torch.compile` (the PyTorch logo), so that users can understand it, adapt to it, and tune their code (the debugger symbol) to get maximum performance benefit out of it.
 
-:warning: This project is developed under close collaborations with the PyTorch team. We frequently require new features from PyTorch to support better understanding of `torch.compile`. Therefore, **please use this project along with PyTorch nightly**. Visit the [PyTorch website](https://pytorch.org/) for how to install nightly version of PyTorch. We recommend updating your PyTorch nightly installation every week or so.
+:warning: This project is developed under close collaborations with the PyTorch team. We frequently require new features from PyTorch to support better understanding of `torch.compile`. Therefore, **please use this project along with PyTorch nightly**. Visit the [PyTorch website](https://pytorch.org/) for how to install nightly version of PyTorch. **We recommend updating your PyTorch nightly installation every week or so**.
 
 :warning: During development, we seek suggestions from the community quite a lot. You may find some early usage examples from some discussion forums or social media platforms. **Please follow the latest documentation for how to use this tool.**
 
