@@ -30,9 +30,10 @@ The code tries to implement an activation function :math:`\text{cos}(\text{cos}(
 
 The tutorial intends to cover the following aspects of PyTorch compiler:
 
-- Dynamo (graph capture)
-- AOTAutograd (forward graph and backward graph)
-- Inductor (compile graph to kernel)
+- Basic concepts (Just-In-Time compilers, Ahead-of-time compilers)
+- Dynamo (graph capture, separate users' code into pure Python code and pure PyTorch-related code)
+- AOTAutograd (generate backward computation graph from forward computation graph)
+- Inductor/Other backends (given a computation graph, how to run it faster in different devices)
 
 PyTorch compiler is a Just-In-Time compiler
 --------------------------------------------
