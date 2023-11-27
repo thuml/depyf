@@ -222,6 +222,7 @@ To explain what happens in eager mode during backward, we have the following imp
 
     # Wrap Cosine in a function so that it is clearer what the output is
     def cosine(x):
+        # `apply` will call `forward` and `setup_context`
         y, x= Cosine.apply(x)
         return y
 
@@ -271,6 +272,7 @@ If we have the computation graph ahead-of-time, we can transform the computation
             return grad_x0
 
     def AOT_transformed_two_cosine(x):
+        # `apply` will call `forward` and `setup_context`
         x2, x0 = AOTTransformedTwoCosine.apply(x)
         return x2
 
