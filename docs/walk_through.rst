@@ -97,7 +97,7 @@ The above example is an Ahead-of-time compiler: we inspect all the available sou
 
 Another category of compiler is just-in-time compiler: right before the function is executed, it analyzes if the execution can be optimized, and what is the condition under which the function execution can be optimized. Hopefully, the condition is general enough for new inputs, so that the benfit outweights the cost of Just-In-Time compilation. If all conditions fail, it will try to optimize the code under the new condition.
 
-The basic workflow of a Just-In-Time compiler should looks like the following:
+The basic workflow of a Just-In-Time compiler should look like the following:
 
 .. code-block:: python
 
@@ -162,7 +162,7 @@ That's basically how ``torch.compile`` works as a Just-In-Time compiler. We can 
 How does Dynamo transform and modify the function?
 ---------------------------------------------------
 
-As we understand the global picture of ``torch.compile`` as a Just-In-Time compiler, we can diver deeper in how it works. Unlike general purpose compilers like ``gcc`` or ``llvm``, ``torch.compile`` is a domain-specific compiler: it only focuses on PyTorch related computation graph. Therefore, we need a tool to separate users code into two parts: plain python code and computation graph code.
+As we understand the global picture of ``torch.compile`` as a Just-In-Time compiler, we can dive deeper in how it works. Unlike general purpose compilers like ``gcc`` or ``llvm``, ``torch.compile`` is a domain-specific compiler: it only focuses on PyTorch related computation graph. Therefore, we need a tool to separate users code into two parts: plain python code and computation graph code.
 
 ``Dynamo``, living inside the module ``torch._dynamo``, is the tool for doing this. Normally we don't interact with this module directly. It is called inside the ``torch.compile`` function.
 
