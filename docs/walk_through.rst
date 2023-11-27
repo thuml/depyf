@@ -145,15 +145,19 @@ Let's explain the state of compiler (in terms of guards and transfromed code) st
     a = A()
     b = B()
     x = torch.randn((5, 5, 5))
+
     # before executing f(x, a), f.compiled_entries == [] is empty.
-    # after executing f(x, a), f.compiled_entries == [Guard("isinstance(x, torch.Tensor) and isinstance(mod, A)"), TransformedCode("return 2 * x")]
     f(x, a)
+    # after executing f(x, a), f.compiled_entries == [Guard("isinstance(x, torch.Tensor) and isinstance(mod, A)"), TransformedCode("return 2 * x")]
+
     # the second call of f(x, a) hit a condition, so we can just execute the transformed code
     f(x, a)
+
     # f(x, b) will trigger compilation and add a new compiled entry
     # before executing f(x, b), f.compiled_entries == [Guard("isinstance(x, torch.Tensor) and isinstance(mod, A)"), TransformedCode("return 2 * x")]
-    # after executing f(x, b), f.compiled_entries == [Guard("isinstance(x, torch.Tensor) and isinstance(mod, A)"), TransformedCode("return 2 * x"), Guard("isinstance(x, torch.Tensor) and isinstance(mod, B)"), TransformedCode("return -x")]
     f(x, b)
+    # after executing f(x, b), f.compiled_entries == [Guard("isinstance(x, torch.Tensor) and isinstance(mod, A)"), TransformedCode("return 2 * x"), Guard("isinstance(x, torch.Tensor) and isinstance(mod, B)"), TransformedCode("return -x")]
+
     # the second call of f(x, b) hit a condition, so we can just execute the transformed code
     f(x, b)
 
