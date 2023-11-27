@@ -16,8 +16,39 @@ Take the workflow from the walk-through example:
 
 ``depyf`` helps to:
 
+- Give a source code description of the above workflow, so that users can easily understand it.
 - Generate source code for transformed bytecode and resume functions.
-- 
+- Link graph computation functions with on-disk code, so that debuggers can step through the code.
+
+The main usage of ``depyf`` involves two context managers:
+
+.. code-block:: python
+
+    import torch
+
+    @torch.compile
+    def function(inputs):
+        x = inputs["x"]
+        y = inputs["y"]
+        x = x.cos().cos()
+        if x.mean() > 0.5:
+            x = x / 1.1
+        return x * y
+
+    shape_10_inputs = {"x": torch.randn(10, requires_grad=True), "y": torch.randn(10, requires_grad=True)}
+    shape_8_inputs = {"x": torch.randn(8, requires_grad=True), "y": torch.randn(8, requires_grad=True)}
+
+    import depyf
+    with depyf.prepare_debug(function, "./debug_dir"):
+        # warmup
+        for i in range(100):
+            output = function(shape_10_inputs)
+            output = function(shape_8_inputs)
+    # the program will pause here for you to set breakpoints
+    # then you can hit breakpoints when running the function
+    with depyf.debug():
+        output = function(shape_10_inputs)
+
 
 .. toctree::
    :maxdepth: 1
