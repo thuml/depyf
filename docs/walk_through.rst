@@ -241,11 +241,11 @@ The output:
     saving tensor of size torch.Size([5, 5, 5])
     saving tensor of size torch.Size([5, 5, 5])
 
-If we have the computation graph ahead-of-time, we can optimize the computation as follows:
+If we have the computation graph ahead-of-time, we can transform the computation as follows:
 
 .. code-block:: python
 
-    class OptimizedTwoCosine(torch.autograd.Function):
+    class AOTTransformedTwoCosine(torch.autograd.Function):
         @staticmethod
         def forward(x0):
             x1 = torch.cos(x0)
@@ -267,8 +267,8 @@ If we have the computation graph ahead-of-time, we can optimize the computation 
             grad_x0 = (-torch.sin(x0)) * grad_x1
             return grad_x0
 
-    def optimized_two_cosine(x):
-        x2, x0 = OptimizedTwoCosine.apply(x)
+    def AOT_transformed_two_cosine(x):
+        x2, x0 = AOTTransformedTwoCosine.apply(x)
         return x2
 
 Running the above function with an input that requires grad, we can see that only one tensor is saved:
@@ -276,7 +276,7 @@ Running the above function with an input that requires grad, we can see that onl
 .. code-block:: python
 
     input = torch.randn((5, 5, 5), requires_grad=True)
-    output = optimized_two_cosine(input)
+    output = AOT_transformed_two_cosine(input)
 
 The output:
 
@@ -299,7 +299,7 @@ And we can check the correctness of two implementations against native PyTorch i
     (output2 * grad_output).sum().backward()
     grad_input2 = input.grad; input.grad = None
 
-    output3 = optimized_two_cosine(input)
+    output3 = AOT_transformed_two_cosine(input)
     (output3 * grad_output).sum().backward()
     grad_input3 = input.grad; input.grad = None
 
@@ -314,7 +314,7 @@ The following computation graph shows the details of a naive implementation:
   :width: 1200
   :alt: Eager mode autograd
 
-And the following computation graph shows the details of an optimized implementation:
+And the following computation graph shows the details of a transformed implementation:
 
 .. image:: _static/images/aot-joint-graph.png
   :width: 1200
@@ -322,7 +322,7 @@ And the following computation graph shows the details of an optimized implementa
 
 We can only save one value, and recompute the first ``cos`` function to get another value for backward.
 
-AOTAutograd does the above optimization automatically. In essense, it dynamically generates a function like the following:
+AOTAutograd does the above transformation automatically. In essense, it dynamically generates a function like the following:
 
 .. code-block:: python
 
