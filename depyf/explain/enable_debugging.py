@@ -48,9 +48,14 @@ class DebuggableHook(object):
 
             return func.__code__
         except (DecompilationError, SyntaxError) as e:
-            # ignore the decompilation error and compile error
-            pass
-
+            from io import StringIO
+            string_io = StringIO()
+            import dis
+            print("There is a problem when decompiling and compiling the following code:", file=string_io)
+            dis.dis(new_code, file=string_io)
+            print("Please consider submitting an issue to https://github.com/thuml/depyf .", file=string_io)
+            # do not stop the program for decompilation error and compile error
+            warnings.warn(string_io.getvalue())
 
 @contextlib.contextmanager
 def patch(parent, name, value):
