@@ -5,7 +5,7 @@ Before learning the usage of ``depyf``, we recommend reading :doc:`walk_through`
 
 ``depyf`` aims to address two pain points of ``torch.compile``:
 
-- ``torch.compile`` transforms Python bytecode, but very few developers can understand Python bytecode. ``depyf`` helps to decompile the transformed bytecode back into Python source code, so that developers can understand how ``torch.compile`` transforms their code. This greatly helps users to adapt their code to ``torch.compile``, so that they can write code friendly to ``torch.compile``.
+- ``torch.compile`` transforms Python bytecode, but very few developers can read Python bytecode (unless you have a stack machine inside your brain ...) to understand what is going on. ``depyf`` helps to decompile the transformed bytecode back into Python source code, so that developers can understand how ``torch.compile`` transforms their code. This greatly helps users to adapt their code to ``torch.compile``, so that they can write code friendly to ``torch.compile``.
 - Many functions in ``torch.compile`` are dynamically generated, which can only be run as a black box. ``depyf`` helps to dump the source code to files, and to link these functions with the source code files, so that users can use debuggers to step through these functions. This greatly helps users to understand ``torch.compile`` and debug issues like ``NaN`` during training.
 
 Take the workflow from the walk-through example:
@@ -49,7 +49,7 @@ The main usage of ``depyf`` involves two context managers, and it is recommended
     with depyf.debug():
         output = function(shape_10_inputs)
 
-The first context manager ``depyf.prepare_debug()`` accpets whatever you give to ``torch.compile``, and one directory path to dump all source code to. Inside this context manager, all function call of the compiled function ``function`` will be hooked by ``depyf``, which dumps necessarry source code for you.
+The first context manager ``depyf.prepare_debug()`` accepts whatever you give to ``torch.compile``, and one directory path to dump all source code to. Inside this context manager, all function call of the compiled function ``function`` will be hooked by ``depyf``, which dumps necessarry source code for you.
 
 Upon exiting the context manager, the program will pause, and you can browse all source code under the directory you specify (``"./debug_dir"`` in this example). The entry file is ``full_code.py``. You can set breakpoints inside these files.
 
