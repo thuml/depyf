@@ -354,7 +354,7 @@ By varying the amount of ``saved_tensors``, we can:
 - Save more tensors for backward, so that backward computation is less heavy.
 - Save less tensors for backward, so that the memory footprint of forward is less heavy.
 
-Usually people goes the second way, i.e., saving memory by having more computation in the backward pass. And AOTAutograd will automatically select the optimal way to save memory.
+Usually people goes the second way, i.e., saving memory by having more computation in the backward pass. And AOTAutograd will automatically select the optimal way to save memory. To be specific, it uses a `max flow mini cut <https://en.wikipedia.org/wiki/Minimum_cut>`_ algorithm to cut the joint graph into a forward graph and a backward graph. More discussions can be found `at this thread <https://dev-discuss.pytorch.org/t/min-cut-optimal-recomputation-i-e-activation-checkpointing-with-aotautograd/467>`_.
 
 That is basically how AOT Autograd works!
 
