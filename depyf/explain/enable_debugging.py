@@ -22,11 +22,15 @@ class DebuggableHook(object):
         from depyf.decompiler import DecompilationError
         try:
             import os
-            n = next(self.code_counter)
+            # replace " "/"<"/">"/"." with "_"
+            func_name = code.co_name.replace(".", "_").replace("<", "_").replace(">", "_").replace(" ", "_")
             filename = os.path.join(
                 self.dump_src_dir,
-                f"{self.type_name}_{n}.py")
-            func_name = f"{self.type_name}_{n}"
+                f"__transformed_code_%s_for_{func_name}.py")
+            from depyf.explain.utils import write_code_to_file_template
+            filename = write_code_to_file_template("", filename)
+
+            func_name = filename.split(os.path.sep)[-1].split(".")[0]
             from depyf.decompiler import Decompiler
             src = Decompiler(new_code).decompile(overwite_fn_name=func_name)
             with open(filename, "w") as f:
@@ -35,8 +39,13 @@ class DebuggableHook(object):
             scope = {}
             exec(transformed_code, scope)
             func = scope[func_name]
-            # TODO wait for pytorch fix
-            return
+
+            # this fix is used for PyTorch prior to PR https://github.com/pytorch/pytorch/pull/114487
+            from torch._dynamo.utils import orig_code_map
+            from torch._dynamo.convert_frame import output_codes
+            output_codes.add(func.__code__)
+            orig_code_map[func.__code__] = code
+
             return func.__code__
         except DecompilationError as e:
             # ignore the decompilation error
