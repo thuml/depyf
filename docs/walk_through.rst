@@ -326,7 +326,7 @@ AOTAutograd does the above optimization automatically. In essense, it dynamicall
 
 .. code-block:: python
 
-    class OptimizedFunction(torch.autograd.Function):
+    class AOTTransformedFunction(torch.autograd.Function):
         @staticmethod
         def forward(inputs):
             outputs, saved_tensors = forward_graph(inputs)
@@ -343,11 +343,11 @@ AOTAutograd does the above optimization automatically. In essense, it dynamicall
             grad_inputs = backward_graph(grad_outputs, saved_tensors)
             return grad_inputs
 
-    def optimized_function(inputs):
-        outputs, saved_tensors = OptimizedFunction.apply(inputs)
+    def AOT_transformed_function(inputs):
+        outputs, saved_tensors = AOTTransformedFunction.apply(inputs)
         return outputs
 
-This way, the saved tensors are made explicit, and the ``optimized_function`` accepts exactly the same inputs as the original function, while the producing exactly the same output as the original function and having exactly the same backward behavior as the original function.
+This way, the saved tensors are made explicit, and the ``AOT_transformed_function`` accepts exactly the same inputs as the original function, while the producing exactly the same output as the original function and having exactly the same backward behavior as the original function.
 
 By varying the amount of ``saved_tensors``, we can:
 
