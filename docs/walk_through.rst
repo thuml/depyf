@@ -173,7 +173,7 @@ To enable such a fine-grained manipulation of functions, ``Dynamo`` operates on 
 
 The following procedure describes what Dynamo does to our function ``function``.
 
-.. image:: _static/images/dynamo-workflow.svg
+.. image:: _static/images/dynamo-workflow.png
   :width: 1200
   :alt: Dynamo workflow
 
@@ -310,13 +310,13 @@ And we can check the correctness of two implementations against native PyTorch i
 
 The following computation graph shows the details of a naive implementation:
 
-.. image:: _static/images/eager-joint-graph.svg
+.. image:: _static/images/eager-joint-graph.png
   :width: 1200
   :alt: Eager mode autograd
 
 And the following computation graph shows the details of an optimized implementation:
 
-.. image:: _static/images/aot-joint-graph.svg
+.. image:: _static/images/aot-joint-graph.png
   :width: 1200
   :alt: AOT mode autograd
 
