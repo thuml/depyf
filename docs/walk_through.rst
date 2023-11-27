@@ -387,13 +387,13 @@ Note: if you are curious about how to get the joint graph of a function, here is
         joint_graph = wrapped_function(inputs, grad_outputs)
         print(joint_graph._graph.python_code(root_module="self", verbose=True).src)
     
-    def f(x):
-        x = torch.cos(x)
-        x = torch.cos(x)
-        return x
+    def f(x0):
+        x1 = torch.cos(x0)
+        x2 = torch.cos(x1)
+        return x2
     
     input = torch.randn((5, 5, 5), requires_grad=True)
-    grad_output = torch.randn((5, 5, 5))
+    grad_output = torch.randn((5, 5, 5)) # the same shape as output
     run_autograd_ahead_of_time(f, [input], [grad_output])
 
 This function will create some fake tensors from real inputs, and just use the metadata (shapes, devices, dtypes) to do the computation. Therefore, the component AOTAutograd is run ahead-of-time. That's why it gets the name: AOTAutograd is to run autograd engine ahead-of-time.
