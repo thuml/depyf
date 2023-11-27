@@ -26,7 +26,7 @@ In this tutorial, we will learn how does PyTorch compiler work for the following
     # execution of compiled functions
     output = function(shape_10_inputs)
 
-The code tries to implement a strange activation function :math:`\text{cos}(\text{cos}(x))`, and scales the output according to its activation value, then multiplies the output with another tensor ``y``.
+The code tries to implement an activation function :math:`\text{cos}(\text{cos}(x))`, and scales the output according to its activation value, then multiplies the output with another tensor ``y``.
 
 The tutorial intends to cover the following aspects of PyTorch compiler:
 
@@ -76,7 +76,7 @@ That's it! We can call it our fist Just-In-Time compiler, although it is `compil
 
 The basic workflow of a Just-In-Time compiler is: right before the function is executed, it analyzes if the execution can be optimized, and what is the condition under which the function execution can be optimized. Hopefully, the condition is general enough for new inputs, so that the benfit outweights the cost of Just-In-Time compilation.
 
-This leads to two basic concepts in Just-In-Time compilers: guards, and compiled code. Guards are conditions when the functions can be optimized, and compiled code is the optimized version of functions. In the above simple Just-In-Time compiler example, ``isinstance(mod, A)`` is a guard, and ``return 2 * x`` is the corresponding compiled code that is equivalent to the original code under the guarding condition, but is significantly faster.
+This leads to two basic concepts in Just-In-Time compilers: guards, and transformed code. Guards are conditions when the functions can be optimized, and transformed code is the optimized version of functions. In the above simple Just-In-Time compiler example, ``isinstance(mod, A)`` is a guard, and ``return 2 * x`` is the corresponding transformed code that is equivalent to the original code under the guarding condition, but is significantly faster.
 
 And if we want to be rigorous, our Just-In-Time example should be updated as follows:
 
@@ -94,24 +94,24 @@ And if we want to be rigorous, our Just-In-Time example should be updated as fol
 
 We have to check each parameter so that our guards are sound, and also fallback to the original code if we fail to optimize the code.
 
-Going more rigorous, the above example is actually an Ahead-of-time compiler: we inspect all the available source code, and before running any function, we write the optimized function in terms of guards and compiled code. A real Just-In-Time procedure should be:
+Going more rigorous, the above example is actually an Ahead-of-time compiler: we inspect all the available source code, and before running any function, we write the optimized function in terms of guards and transformed code. A real Just-In-Time procedure should be:
 
 .. code-block:: python
 
     def f(x, mod):
-        for guard, compiled_code in f.compiled_entries:
+        for guard, transformed_code in f.compiled_entries:
             if guard(x, mod):
-                return compiled_code(x, mod)
+                return transformed_code(x, mod)
         try:
-            guard, compiled_code = compile_and_optimize(x, mod)
-            f.compiled_entries.append([guard, compiled_code])
-            return compiled_code(x, mod)
+            guard, transformed_code = compile_and_optimize(x, mod)
+            f.compiled_entries.append([guard, transformed_code])
+            return transformed_code(x, mod)
         except FailToCompileError:
             y = mod(x)
             z = torch.log(y)
             return z
 
-A Just-In-Time compiler just optimizes for what it has seen. Everytime it sees a new input that does not satisfy any guarding condition, it compiles a new guard and compiled code for the new input.
+A Just-In-Time compiler just optimizes for what it has seen. Everytime it sees a new input that does not satisfy any guarding condition, it compiles a new guard and transformed code for the new input.
 
 Let's explain it step-by-step:
 
@@ -133,7 +133,7 @@ Let's explain it step-by-step:
         def forward(self, x):
             return torch.exp(-x)
 
-    @just_in_time_compile
+    @just_in_time_compile # an imaginary compiler function
     def f(x, mod):
         y = mod(x)
         z = torch.log(y)
@@ -142,16 +142,16 @@ Let's explain it step-by-step:
     a = A()
     b = B()
     x = torch.randn((5, 5, 5))
-    # before executing f(x, a), f.compiled_entries == []
-    # after executing f(x, a), f.compiled_entries == [Guard("isinstance(x, torch.Tensor) and isinstance(mod, A)"), CompiledCode("return 2 * x")]
+    # before executing f(x, a), f.compiled_entries == [] is empty.
+    # after executing f(x, a), f.compiled_entries == [Guard("isinstance(x, torch.Tensor) and isinstance(mod, A)"), TransformedCode("return 2 * x")]
     f(x, a)
-    # the second call of f(x, a) hit a condition, so we can just execute the compiled code
+    # the second call of f(x, a) hit a condition, so we can just execute the transformed code
     f(x, a)
     # f(x, b) will trigger compilation and add a new compiled entry
-    # before executing f(x, b), f.compiled_entries == [Guard("isinstance(x, torch.Tensor) and isinstance(mod, A)"), CompiledCode("return 2 * x")]
-    # after executing f(x, b), f.compiled_entries == [Guard("isinstance(x, torch.Tensor) and isinstance(mod, A)"), CompiledCode("return 2 * x"), Guard("isinstance(x, torch.Tensor) and isinstance(mod, B)"), CompiledCode("return -x")]
+    # before executing f(x, b), f.compiled_entries == [Guard("isinstance(x, torch.Tensor) and isinstance(mod, A)"), TransformedCode("return 2 * x")]
+    # after executing f(x, b), f.compiled_entries == [Guard("isinstance(x, torch.Tensor) and isinstance(mod, A)"), TransformedCode("return 2 * x"), Guard("isinstance(x, torch.Tensor) and isinstance(mod, B)"), TransformedCode("return -x")]
     f(x, b)
-    # the second call of f(x, b) hit a condition, so we can just execute the compiled code
+    # the second call of f(x, b) hit a condition, so we can just execute the transformed code
     f(x, b)
 
 That's basically how ``torch.compile`` works as a Just-In-Time compiler. We can even extract those compiled entries from functions, see the `PyTorch documentation <https://pytorch.org/docs/main/torch.compiler_deepdive.html#how-to-inspect-artifacts-generated-by-torchdynamo>`_ for more details.
@@ -185,7 +185,7 @@ Dynamic shape support from Dynamo
 ---------------------------------------------------
 Deep learning compilers usually favor static shape inputs. That's why the guarding conditions above include shape guards. Our first function call uses input of shape ``[10]``, but the second function call uses input of shape ``[8]``. It will fail the shape guards, therefore trigger a new code transform.
 
-By default, Dynamo supports dynamic shapes. When the shape guards fail, it will analyze and compare the shapes, and try to generalize the shape. 
+By default, Dynamo supports dynamic shapes. When the shape guards fail, it will analyze and compare the shapes, and try to generalize the shape. In this case, after seeing input of shape ``[8]``, it will try to generalize to arbitary one-dimensional shape ``[s0]``, known as dynamic shape or symbolic shape.
 
 AOTAutograd: generate backward computation graph from forward graph
 ------------------------------------------------------------------------
@@ -194,7 +194,7 @@ The above code only deals with forward computation graph. One important missing 
 
 In plain PyTorch code, backward computation is triggered by the ``backward`` function call on some scalar loss value. Each PyTorch function stores what is required for backward during forward computation.
 
-To explain what happens in eager mode during backward, we have the following implementation mimicing the builtin behavior of ``cos`` function:
+To explain what happens in eager mode during backward, we have the following implementation mimicing the builtin behavior of ``torch.cos`` function:
 
 .. code-block:: python
 
