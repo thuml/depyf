@@ -1,7 +1,7 @@
 Welcome to the documentation of ``depyf``
 ==========================================
 
-Before learning the usage of ``depyf``, we recommend reading the :doc:`walk_through` example of ``torch.compile``, so that you can understand how ``depyf`` would help you.
+Before learning the usage of ``depyf``, we recommend reading :doc:`walk_through`, so that you can understand how ``depyf`` would help you.
 
 ``depyf`` aims to address two pain points of ``torch.compile``:
 
