@@ -194,7 +194,7 @@ The above code only deals with forward computation graph. One important missing 
 
 In plain PyTorch code, backward computation is triggered by the ``backward`` function call on some scalar loss value. Each PyTorch function stores what is required for backward during forward computation.
 
-To explain what happens in eager mode during backward, we have the following implementation mimicing the builtin behavior of ``torch.cos`` function:
+To explain what happens in eager mode during backward, we have the following implementation mimicing the builtin behavior of ``torch.cos`` function (some `background knowledge <https://pytorch.org/docs/main/notes/extending.html#extending-torch-autograd>`_ about how to write custom function with autograd support in PyTorch is required):
 
 .. code-block:: python
 
