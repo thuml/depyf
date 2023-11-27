@@ -35,6 +35,8 @@ The tutorial intends to cover the following aspects of PyTorch compiler:
 - AOTAutograd (generate backward computation graph from forward computation graph)
 - Inductor/Other backends (given a computation graph, how to run it faster in different devices)
 
+These components will be called with different backend options: ``torch.compile(backend="eager")`` for only using Dynamo, ``torch.compile(backend="aot_eager")`` for using Dynamo and AOTAutograd, and ``torch.compile(backend="inductor")`` (the default argument) for using Dynamo and AOTAutograd and PyTorch's builtin graph optimization backend named ``Inductor``.
+
 PyTorch compiler is a Just-In-Time compiler
 --------------------------------------------
 
