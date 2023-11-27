@@ -309,7 +309,7 @@ And we can check the correctness of two implementations against native PyTorch i
 .. code-block:: python
 
     input = torch.randn((5, 5, 5), requires_grad=True)
-    grad_output = torch.randn((5, 5, 5), requires_grad=True)
+    grad_output = torch.randn((5, 5, 5))
 
     output1 = torch.cos(torch.cos(input))
     (output1 * grad_output).sum().backward()
@@ -372,6 +372,31 @@ This way, the saved tensors are made explicit, and the ``AOT_transformed_functio
 By varying the amount of ``saved_tensors``, we can save less tensors for backward, so that the memory footprint of forward is less heavy. And AOTAutograd will automatically select the optimal way to save memory. To be specific, it uses a `max flow mini cut <https://en.wikipedia.org/wiki/Minimum_cut>`_ algorithm to cut the joint graph into a forward graph and a backward graph. More discussions can be found `at this thread <https://dev-discuss.pytorch.org/t/min-cut-optimal-recomputation-i-e-activation-checkpointing-with-aotautograd/467>`_.
 
 That is basically how AOT Autograd works!
+
+Note: if you are curious about how to get the joint graph of a function, here is the code:
+
+.. code-block:: python
+
+    def run_autograd_ahead_of_time(function, inputs, grad_outputs):
+        def forward_and_backward(inputs, grad_outputs):
+            outputs = function(*inputs)
+            grad_inputs = torch.autograd.grad(outputs, inputs, grad_outputs)
+            return grad_inputs
+        from torch.fx.experimental.proxy_tensor import make_fx
+        wrapped_function = make_fx(forward_and_backward, tracing_mode="fake")
+        joint_graph = wrapped_function(inputs, grad_outputs)
+        print(joint_graph._graph.python_code(root_module="self", verbose=True).src)
+    
+    def f(x):
+        x = torch.cos(x)
+        x = torch.cos(x)
+        return x
+    
+    input = torch.randn((5, 5, 5), requires_grad=True)
+    grad_output = torch.randn((5, 5, 5))
+    run_autograd_ahead_of_time(f, [input], [grad_output])
+
+This function will create some fake tensors from real inputs, and just use the metadata (shapes, devices, dtypes) to do the computation. Therefore, the component AOTAutograd is run ahead-of-time. That's why it gets the name: AOTAutograd is to run autograd engine ahead-of-time.
 
 Backend: compile and optimize computation graph
 --------------------------------------------------
