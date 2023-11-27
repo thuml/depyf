@@ -6,7 +6,7 @@ Before learning the usage of ``depyf``, we recommend reading :doc:`walk_through`
 ``depyf`` aims to address two pain points of ``torch.compile``:
 
 - ``torch.compile`` transforms Python bytecode, but very few developers can read Python bytecode (unless you have a stack machine inside your brain ...) to understand what is going on. ``depyf`` helps to decompile the transformed bytecode back into Python source code, so that developers can understand how ``torch.compile`` transforms their code. This greatly helps users to adapt their code to ``torch.compile``, so that they can write code friendly to ``torch.compile``.
-- Many functions in ``torch.compile`` are dynamically generated, which can only be run as a black box. ``depyf`` helps to dump the source code to files, and to link these functions with the source code files, so that users can use debuggers to step through these functions. This greatly helps users to understand ``torch.compile`` and debug issues like ``NaN`` during training.
+- ``torch.compile`` dynamically generate many functions, which can only be run as a black box. Users cannot step through the code line by line. ``depyf`` helps to dump the source code to files, and to link these functions with the source code files, so that users can use debuggers to step through these functions. This greatly helps users to understand ``torch.compile`` and debug issues like ``NaN`` during training.
 
 Take the workflow from the walk-through example:
 
@@ -16,7 +16,7 @@ Take the workflow from the walk-through example:
 
 ``depyf`` helps to:
 
-- Give a source code description of the above workflow, so that users can easily understand it.
+- Give a source code description of the above workflow, so that users can easily understand it. (The actual workflow happens in C and inside the CPython interpreter, we give a Python source code description of the workflow, so that users can easily understand it.)
 - Generate source code for transformed bytecode and resume functions.
 - Link graph computation functions with on-disk code, so that debuggers can step through the code.
 
