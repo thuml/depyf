@@ -47,8 +47,8 @@ class DebuggableHook(object):
             orig_code_map[func.__code__] = code
 
             return func.__code__
-        except DecompilationError as e:
-            # ignore the decompilation error
+        except (DecompilationError, SyntaxError) as e:
+            # ignore the decompilation error and compile error
             pass
 
 
