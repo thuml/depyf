@@ -63,7 +63,12 @@ The first concept we have to know is that PyTorch compiler is a Just-In-Time com
         z = torch.log(y)
         return z
 
-We write this funny function ``f``, that contains a module call, and a ``torch.log`` call. Anyone with elementary math knowledge cannot wait to optimize the code as follows:
+    # users might use
+    # mod = A()
+    # x = torch.randn(5, 5, 5)
+    # output = f(x, mod)
+
+We write this funny function ``f``, that contains a module call that will call the ``mod.forward``, and a ``torch.log`` call. Anyone with elementary math knowledge cannot wait to optimize the code as follows:
 
 .. code-block:: python
 
