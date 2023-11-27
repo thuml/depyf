@@ -20,7 +20,7 @@ Take the workflow from the walk-through example:
 - Generate source code for transformed bytecode and resume functions.
 - Link graph computation functions with on-disk code, so that debuggers can step through the code.
 
-The main usage of ``depyf`` involves two context managers:
+The main usage of ``depyf`` involves two context managers, and it is recommended to launched the script with a debugger:
 
 .. code-block:: python
 
@@ -49,6 +49,11 @@ The main usage of ``depyf`` involves two context managers:
     with depyf.debug():
         output = function(shape_10_inputs)
 
+The first context manager ``depyf.prepare_debug()`` accpets whatever you give to ``torch.compile``, and one directory path to dump all source code to. Inside this context manager, all function call of the compiled function ``function`` will be hooked by ``depyf``, which dumps necessarry source code for you.
+
+Upon exiting the context manager, the program will pause, and you can browse all source code under the directory you specify (``"./debug_dir"`` in this example). The entry file is ``full_code.py``. You can set breakpoints inside these files.
+
+The second context manager ``depyf.debug()`` has no arguments, it just disables new compiled entries. And the most important thing is, those breakpoints you set, can be hit under this context manager. And you can step through the code line by line, to debug possible ``NaN`` values or to understand what happens to your code.
 
 .. toctree::
    :maxdepth: 1
