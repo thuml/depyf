@@ -72,13 +72,9 @@ We write this funny function ``f``, that contains a module call, and a ``torch.l
         elif isinstance(mod, B):
             return -x
 
-That's it! We can call it our fist Just-In-Time compiler, although it is `compiled` by our brain rather than an automated program.
+We can call it our fist compiler, although it is `compiled` by our brain rather than an automated program.
 
-The basic workflow of a Just-In-Time compiler is: right before the function is executed, it analyzes if the execution can be optimized, and what is the condition under which the function execution can be optimized. Hopefully, the condition is general enough for new inputs, so that the benfit outweights the cost of Just-In-Time compilation.
-
-This leads to two basic concepts in Just-In-Time compilers: guards, and transformed code. Guards are conditions when the functions can be optimized, and transformed code is the optimized version of functions. In the above simple Just-In-Time compiler example, ``isinstance(mod, A)`` is a guard, and ``return 2 * x`` is the corresponding transformed code that is equivalent to the original code under the guarding condition, but is significantly faster.
-
-And if we want to be rigorous, our Just-In-Time example should be updated as follows:
+And if we want to be rigorous, our compiler example should be updated as follows:
 
 .. code-block:: python
 
@@ -92,9 +88,15 @@ And if we want to be rigorous, our Just-In-Time example should be updated as fol
             z = torch.log(y)
             return z
 
-We have to check each parameter so that our guards are sound, and also fallback to the original code if we fail to optimize the code.
+We have to check each parameter so that our optimization conditions are sound, and also fallback to the original code if we fail to optimize the code.
 
-Going more rigorous, the above example is actually an Ahead-of-time compiler: we inspect all the available source code, and before running any function, we write the optimized function in terms of guards and transformed code. A real Just-In-Time procedure should be:
+This leads to two basic concepts in compilers: guards, and transformed code. Guards are conditions when the functions can be optimized, and transformed code is the optimized version of functions. In the above simple compiler example, ``isinstance(mod, A)`` is a guard, and ``return 2 * x`` is the corresponding transformed code that is equivalent to the original code under the guarding condition, but is significantly faster.
+
+The above example is an Ahead-of-time compiler: we inspect all the available source code, and before running any function (i.e. ahead-of-time), we write the optimized function in terms of all possible guards and transformed code.
+
+Another category of compiler is just-in-time compiler: right before the function is executed, it analyzes if the execution can be optimized, and what is the condition under which the function execution can be optimized. Hopefully, the condition is general enough for new inputs, so that the benfit outweights the cost of Just-In-Time compilation. If all conditions fail, it will try to optimize the code under the new condition.
+
+The basic workflow of a Just-In-Time compiler should looks like the following:
 
 .. code-block:: python
 
@@ -113,7 +115,7 @@ Going more rigorous, the above example is actually an Ahead-of-time compiler: we
 
 A Just-In-Time compiler just optimizes for what it has seen. Everytime it sees a new input that does not satisfy any guarding condition, it compiles a new guard and transformed code for the new input.
 
-Let's explain it step-by-step:
+Let's explain the state of compiler (in terms of guards and transfromed code) step-by-step:
 
 .. code-block:: python
 
