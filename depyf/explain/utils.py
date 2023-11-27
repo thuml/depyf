@@ -205,7 +205,10 @@ class DynamoOptimizationResult:
             # 0`
             guard = (" \\\n" + " " * 8 +
                      "and ").join(["(" + x + ")" for x in entry.guard])
-            guard_func_name = CodeProxy.consume_new_name("guard:")
+            if entry.transformed_code_proxy.name.startswith("__transformed_code_"):
+                guard_func_name = entry.transformed_code_proxy.name.replace("__transformed_code_", "__guard_")
+            else:
+                guard_func_name = CodeProxy.consume_new_name("guard:")
             additional_code += f"\ndef {guard_func_name}(L):\n" + \
                 " " * 4 + "return " + guard + "\n"
 
