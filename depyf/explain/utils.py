@@ -51,7 +51,7 @@ class CodeProxy:
     def decompile_with_name(code: CodeType, name: str):
         if hasattr(code, "__code__"):
             code = code.__code__
-        if code.co_name.startswith("transformed_code_"):
+        if code.co_name.startswith("transformed_code_") or code.co_name.startswith("__transformed_code_"):
             src = open(code.co_filename).read()
             new_name = code.co_name
         else:
