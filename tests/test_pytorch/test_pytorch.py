@@ -49,7 +49,7 @@ def call():
     target(*input1)
 
 description = f"{usage_type}_{compile_type}_{backend}"
-description += "_dynamic_shape" if dynamic_shape else "_without_dynamic_shape"
+description += "_with_dynamic_shape" if dynamic_shape else "_without_dynamic_shape"
 description += "_with_grad" if requires_grad else "_without_grad"
 
 if usage_type == "dump":
