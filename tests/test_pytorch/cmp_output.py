@@ -21,4 +21,4 @@ for output_file, expected_file in zip(output_files, expected_files):
                 expected_lines.append(line.strip())
     assert len(output_lines) == len(expected_lines), f"len(output_lines)={len(output_lines)}, len(expected_lines)={len(expected_lines)}"
     for output_line, expected_line in zip(output_lines, expected_lines):
-        assert output_line == expected_line, f"output_line={output_line}, expected_line={expected_line}"
+        assert output_line == expected_line, f"output_file={output_file}\nexpected_file={expected_file}\noutput_line={output_line}\nexpected_line={expected_line}\n"
