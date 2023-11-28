@@ -1,9 +1,9 @@
 import glob
 
-output_files = glob.glob("depyf_output/*/__*.py")
+output_files = glob.glob("depyf_output/*/__compiled_fn_*.py") + glob.glob("depyf_output/*/__transformed_code_*.py")
 output_files.sort()
 
-expected_files = glob.glob("tests/depyf_output/*/__*.py")
+expected_files = glob.glob("tests/depyf_output/*/__compiled_fn_*.py") + glob.glob("tests/depyf_output/*/__transformed_code_*.py")
 expected_files.sort()
 
 assert len(output_files) == len(expected_files), f"len(output_files)={len(output_files)}, len(expected_files)={len(expected_files)}"
@@ -19,7 +19,7 @@ for output_file, expected_file in zip(output_files, expected_files):
         for line in f:
             if line.strip() and not line.strip().startswith("#"):
                 expected_lines.append(line.strip())
-    assert len(output_lines) == len(expected_lines), f"len(output_lines)={len(output_lines)}, len(expected_lines)={len(expected_lines)}"
+    assert len(output_lines) == len(expected_lines), f"output_file={output_file}\nlen(output_lines)={len(output_lines)}\noutput_lines:\n{output_lines}\nexpected_file={expected_file}\nlen(expected_lines)={len(expected_lines)}\noutput_lines:\n{output_lines}\n"
     # sometimes the lines are not in the same order, some lines are switched without changing the behavior of the code.
     output_lines.sort()
     expected_lines.sort()
