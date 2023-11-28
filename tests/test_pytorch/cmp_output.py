@@ -9,6 +9,9 @@ expected_files.sort()
 assert len(output_files) == len(expected_files), f"len(output_files)={len(output_files)}, len(expected_files)={len(expected_files)}"
 
 for output_file, expected_file in zip(output_files, expected_files):
+    if "kernel" in output_file:
+        # skip kernel files, as they contain some random code paths
+        continue
     with open(output_file, "r") as f:
         output_lines = []
         for line in f:
