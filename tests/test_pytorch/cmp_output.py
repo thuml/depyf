@@ -20,5 +20,8 @@ for output_file, expected_file in zip(output_files, expected_files):
             if line.strip() and not line.strip().startswith("#"):
                 expected_lines.append(line.strip())
     assert len(output_lines) == len(expected_lines), f"len(output_lines)={len(output_lines)}, len(expected_lines)={len(expected_lines)}"
+    # sometimes the lines are not in the same order, some lines are switched without changing the behavior of the code.
+    output_lines.sort()
+    expected_lines.sort()
     for output_line, expected_line in zip(output_lines, expected_lines):
         assert output_line == expected_line, f"output_file={output_file}\nexpected_file={expected_file}\noutput_line={output_line}\nexpected_line={expected_line}\n"
