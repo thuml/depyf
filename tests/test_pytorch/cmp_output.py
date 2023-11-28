@@ -1,9 +1,9 @@
 import glob
 
-output_files = glob.glob("depyf_output/*/*.py")
+output_files = glob.glob("depyf_output/*/__*.py")
 output_files.sort()
 
-expected_files = glob.glob("tests/depyf_output/*/*.py")
+expected_files = glob.glob("tests/depyf_output/*/__*.py")
 expected_files.sort()
 
 assert len(output_files) == len(expected_files), f"len(output_files)={len(output_files)}, len(expected_files)={len(expected_files)}"
