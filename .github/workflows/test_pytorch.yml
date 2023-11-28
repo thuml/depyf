@@ -42,3 +42,4 @@ jobs:
     - name: Test with pytest
       run: |
         for TORCH_COMPILE_BACKEND in eager aot_eager inductor; do for REQUIRES_GRAD in 0 1; do for DYNAMIC_SHAPE in 0 1; do for COMPILE_TYPE in function module; do for USAGE_TYPE in debug dump; do export TORCH_COMPILE_BACKEND REQUIRES_GRAD DYNAMIC_SHAPE COMPILE_TYPE USAGE_TYPE; echo input | python tests/test_pytorch/test_pytorch.py; done; done; done; done; done;
+        python tests/test_pytorch/cmp_output.py
