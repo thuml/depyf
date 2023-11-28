@@ -48,16 +48,19 @@ def warmup():
 def call():
     target(*input1)
 
+description = f"{usage_type}_{compile_type}_{backend}"
+description += "_dynamic_shape" if dynamic_shape else "_without_dynamic_shape"
+description += "_with_grad" if requires_grad else "_without_grad"
 
 if usage_type == "dump":
     from depyf.explain import dump_src
     warmup()
     src = dump_src(target)
-    with open(f"./depyf_output/{usage_type}_{compile_type}_{backend}.py", "w") as f:
+    with open(f"./depyf_output/{description}.py", "w") as f:
         f.write(src)
 elif usage_type == "debug":
     import depyf
-    with depyf.prepare_debug(target, f"./depyf_output/{usage_type}_{compile_type}_{backend}"):
+    with depyf.prepare_debug(target, f"./depyf_output/{description}"):
         warmup()
 
     with depyf.debug():
