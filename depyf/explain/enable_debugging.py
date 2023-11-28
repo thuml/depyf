@@ -14,9 +14,6 @@ import itertools
 @dataclasses.dataclass
 class DebuggableHook(object):
     dump_src_dir: str
-    type_name: str
-    code_counter: Any = dataclasses.field(
-        default_factory=lambda: itertools.count(start=0))
 
     def __call__(self, code, new_code):
         from depyf.decompiler import DecompilationError
@@ -101,7 +98,7 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True):
     data["unpatched__exec_with_source"] = torch.fx.graph_module._exec_with_source
     data["unpatched_load_by_key_path"] = torch._inductor.codecache.PyCodeCache.load_by_key_path
 
-    bytecode_hook = DebuggableHook(dump_src_dir, "transformed_code")
+    bytecode_hook = DebuggableHook(dump_src_dir)
 
     # patch some functions
     with patch(torch.fx.graph_module, "_exec_with_source", patched__exec_with_source), \
