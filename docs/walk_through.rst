@@ -172,7 +172,7 @@ Let's explain the state of compiler (in terms of guards and transfromed code) st
     # the second call of f(x, b) hit a condition, so we can just execute the transformed code
     f(x, b)
 
-That's basically how ``torch.compile`` works as a Just-In-Time compiler. We can even extract those compiled entries from functions, see the `PyTorch documentation <https://pytorch.org/docs/main/torch.compiler_deepdive.html#how-to-inspect-artifacts-generated-by-torchdynamo>`_ for more details.
+In this example, we guard on class types such as ``isinstance(mod, A)``, and the ``TransformedCode`` is also Python code; for ``torch.compile``, it guards on much more conditions like the devices (CPU/GPU), data types (int32, float32), shapes (``[10]``, ``[8]``), and its ``TransformedCode`` is Python bytecode. We can extract those compiled entries from functions, see the `PyTorch documentation <https://pytorch.org/docs/main/torch.compiler_deepdive.html#how-to-inspect-artifacts-generated-by-torchdynamo>`_ for more details. Despite the difference on guards and transformed code, the basic workflow of ``torch.compile`` is the same as this example, i.e., it works as a Just-In-Time compiler.
 
 How does Dynamo transform and modify the function?
 ---------------------------------------------------
