@@ -29,7 +29,7 @@ class DebuggableHook(object):
             from depyf.decompiler import Decompiler
 
             # function name and file name are related.
-            with lock_on_file(filepath_template % "lock"):
+            with lock_on_file(filepath_template):
                 # we first try to find an existing file with the same code body.
                 src = Decompiler(new_code).decompile(overwite_fn_name="place_holder")
                 src_body = src[src.find("("):]
@@ -140,11 +140,11 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True, pause=True):
             try:
                 yield
             finally:
-                if clean_wild_fx_code:
-                    for file in os.listdir(dump_src_dir):
-                        if file.split(
-                                os.path.sep)[-1].startswith("fx_graph_code"):
-                            os.remove(os.path.join(dump_src_dir, file))
+                for file in os.listdir(dump_src_dir):
+                    filename = file.split(os.path.sep)[-1]
+                    # remove *.lock file and possibly fx_graph_code* file
+                    if (clean_wild_fx_code and filename.startswith("fx_graph_code")) or filename.endswith(".lock"):
+                        os.remove(os.path.join(dump_src_dir, file))
 
                 if func is None:
                     if pause:
