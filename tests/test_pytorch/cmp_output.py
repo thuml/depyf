@@ -9,7 +9,7 @@ output_files = [x for x in output_files if not x.endswith(".lock")]
 expected_files = glob.glob("tests/depyf_output/*/__compiled_fn_*.py") + glob.glob("tests/depyf_output/*/__transformed_code_*.py")
 expected_files.sort()
 
-assert len(output_files) == len(expected_files), f"len(output_files)={len(output_files)}, len(expected_files)={len(expected_files)}"
+assert len(output_files) == len(expected_files), f"len(output_files)={len(output_files)}, len(expected_files)={len(expected_files)}.\n" + "Unexpected files:" + "".join([x for x in set(output_files) - set(expected_files)]) + "\n" + "Missing files:" + "".join([x for x in set(expected_files) - set(output_files)]) + "\n"
 
 for output_file, expected_file in zip(output_files, expected_files):
     if "kernel" in output_file:
