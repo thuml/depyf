@@ -8,6 +8,7 @@ output_files = [x for x in output_files if not x.endswith(".lock")]
 
 expected_files = glob.glob("tests/depyf_output/*/__compiled_fn_*.py") + glob.glob("tests/depyf_output/*/__transformed_code_*.py")
 expected_files.sort()
+expected_files = [x[len("tests/"):] for x in expected_files]
 
 msg = f"len(output_files)={len(output_files)}, len(expected_files)={len(expected_files)}.\n"
 msg += "Unexpected files:\n"
