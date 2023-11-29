@@ -130,10 +130,12 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True, pause=True):
                             f"Please set breakpoints in {dump_src_dir}. Then press enter to continue.")
                 else:
                     from depyf.explain import dump_src
+                    from depyf.explain.utils import write_code_to_file_template
+                    from torch._dynamo.eval_frame import innermost_fn
+                    func = innermost_fn(func)
                     full_src = dump_src(func)
-                    filename = os.path.join(dump_src_dir, f"full_code.py")
-                    with open(filename, "w") as f:
-                        f.write(full_src)
+                    filename_template = os.path.join(dump_src_dir, f"full_code_for_{func.__code__.co_name}_%s.py")
+                    filename = write_code_to_file_template(full_src, filename_template)
 
                     if pause:
                         input(
