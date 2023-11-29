@@ -252,7 +252,8 @@ def remove_indentation(code: str):
 from contextlib import contextmanager
 
 @contextmanager
-def lock_on_file(lock_path):
+def lock_on_file(path_template):
+    lock_path = path_template + ".lock"
     from filelock import FileLock
     import os
     lock = FileLock(lock_path)
@@ -264,9 +265,7 @@ def lock_on_file(lock_path):
 
 
 def write_code_to_file_template(src, path_template):
-    lock_path = path_template + ".lock"
-
-    with lock_on_file(lock_path):
+    with lock_on_file(path_template):
         import os
         count = 0
         while True:
