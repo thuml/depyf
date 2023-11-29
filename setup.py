@@ -15,6 +15,7 @@ setup(
     python_requires=">=3.7",
     install_requires=[
         "astor",
+        # "filelock", # filelock is required by torch. If you use torch, you should have filelock.
     ],
     extras_require={
         "dev": [
