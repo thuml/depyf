@@ -5,7 +5,7 @@ name: Python Decompilation Tests
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "test*" ]
   pull_request:
     branches: [ "master" ]
 
