@@ -9,7 +9,15 @@ output_files = [x for x in output_files if not x.endswith(".lock")]
 expected_files = glob.glob("tests/depyf_output/*/__compiled_fn_*.py") + glob.glob("tests/depyf_output/*/__transformed_code_*.py")
 expected_files.sort()
 
-assert len(output_files) == len(expected_files), f"len(output_files)={len(output_files)}, len(expected_files)={len(expected_files)}.\n" + "Unexpected files:" + "".join([x for x in set(output_files) - set(expected_files)]) + "\n" + "Missing files:" + "".join([x for x in set(expected_files) - set(output_files)]) + "\n"
+msg = f"len(output_files)={len(output_files)}, len(expected_files)={len(expected_files)}.\n"
+msg += "Unexpected files:\n"
+for x in set(output_files) - set(expected_files):
+    msg += x + "\n"
+msg += "Missing files:\n"
+for x in set(expected_files) - set(output_files):
+    msg += x + "\n"
+
+assert len(output_files) == len(expected_files), msg
 
 for output_file, expected_file in zip(output_files, expected_files):
     if "kernel" in output_file:
@@ -25,9 +33,21 @@ for output_file, expected_file in zip(output_files, expected_files):
         for line in f:
             if line.strip() and not line.strip().startswith("#"):
                 expected_lines.append(line.strip())
-    assert len(output_lines) == len(expected_lines), f"output_file={output_file}\nlen(output_lines)={len(output_lines)}\noutput_lines:\n{output_lines}\nexpected_file={expected_file}\nlen(expected_lines)={len(expected_lines)}\noutput_lines:\n{output_lines}\n"
+    msg = ""
+    msg += f"output_file={output_file}\n"
+    msg += f"expected_file={expected_file}\n"
+    msg += f"len(output_lines)={len(output_lines)}\n"
+    msg += f"len(expected_lines)={len(expected_lines)}\n"
+    msg += f"output_lines:\n{output_lines}\n"
+    msg += f"expected_lines:\n{expected_lines}\n"
+    assert len(output_lines) == len(expected_lines), msg
     # sometimes the lines are not in the same order, some lines are switched without changing the behavior of the code.
     output_lines.sort()
     expected_lines.sort()
     for output_line, expected_line in zip(output_lines, expected_lines):
-        assert output_line == expected_line, f"output_file={output_file}\nexpected_file={expected_file}\noutput_line={output_line}\nexpected_line={expected_line}\n"
+        msg = ""
+        msg += f"output_file={output_file}\n"
+        msg += f"expected_file={expected_file}\n"
+        msg += f"output_line={output_line}\n"
+        msg += f"expected_line={expected_line}\n"
+        assert output_line == expected_line, msg
