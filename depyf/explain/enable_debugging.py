@@ -21,20 +21,40 @@ class DebuggableHook(object):
             import os
             # replace " "/"<"/">"/"." with "_"
             func_name = code.co_name.replace(".", "_").replace("<", "_").replace(">", "_").replace(" ", "_")
-            filename = os.path.join(
+            filepath_template = os.path.join(
                 self.dump_src_dir,
                 f"__transformed_code_%s_for_{func_name}.py")
-            from depyf.explain.utils import write_code_to_file_template
-            filename = write_code_to_file_template("", filename)
 
-            func_name = filename.split(os.path.sep)[-1].split(".")[0]
+            from depyf.explain.utils import lock_on_file
             from depyf.decompiler import Decompiler
-            src = Decompiler(new_code).decompile(overwite_fn_name=func_name)
-            with open(filename, "w") as f:
-                f.write(src)
+
+            # function name and file name are related.
+            with lock_on_file(filepath_template % "lock"):
+                # we first try to find an existing file with the same code body.
+                src = Decompiler(new_code).decompile(overwite_fn_name="place_holder")
+                src_body = src[src.find("("):]
+
+                count = 0
+                while True:
+                    filename = filepath_template % count
+                    if os.path.exists(filename):
+                        existing_code = open(filename, "r").read()
+                        existing_code_body = existing_code[existing_code.find("("):]
+                        if src_body == existing_code_body:
+                            # the same code body is found, we do not need to dump the code again.
+                            src = existing_code
+                            break
+                        else:
+                            count += 1
+                    else:
+                        func_name = filename.split(os.path.sep)[-1].split(".")[0]
+                        src = f"def {func_name}" + src_body
+                        break
+
             transformed_code = compile(src, filename=filename, mode="exec")
             scope = {}
             exec(transformed_code, scope)
+            func_name = filename.split(os.path.sep)[-1].split(".")[0]
             func = scope[func_name]
 
             # this fix is used for PyTorch prior to PR https://github.com/pytorch/pytorch/pull/114487
@@ -134,8 +154,8 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True, pause=True):
                     from torch._dynamo.eval_frame import innermost_fn
                     func = innermost_fn(func)
                     full_src = dump_src(func)
-                    filename_template = os.path.join(dump_src_dir, f"full_code_for_{func.__code__.co_name}_%s.py")
-                    filename = write_code_to_file_template(full_src, filename_template)
+                    filepath_template = os.path.join(dump_src_dir, f"full_code_for_{func.__code__.co_name}_%s.py")
+                    filename = write_code_to_file_template(full_src, filepath_template)
 
                     if pause:
                         input(
