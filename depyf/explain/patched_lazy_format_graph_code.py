@@ -26,7 +26,8 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None):
         commented_src += "".join(["# " + line +
                                  "\n" for line in src.splitlines()])
         src = simple_code + commented_src
-    os.remove(filepath)
+    if os.path.exists(filepath):
+        os.remove(filepath)
     new_filepath = write_code_to_file_template(
         src, os.path.dirname(filepath) + "/" + file_name + " " + "%s" + ".py")
     scope = fn.__globals__
