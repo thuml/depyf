@@ -264,7 +264,7 @@ def lock_on_file(lock_path):
 
 
 def write_code_to_file_template(src, path_template):
-    lock_path = path_template % "lock"
+    lock_path = path_template + ".lock"
 
     with lock_on_file(lock_path):
         import os

@@ -4,7 +4,7 @@ output_files = glob.glob("depyf_output/*/__compiled_fn_*.py") + glob.glob("depyf
 output_files.sort()
 
 # ignore lock files
-output_files = [x for x in output_files if "lock" not in x]
+output_files = [x for x in output_files if not x.endswith(".lock")]
 
 expected_files = glob.glob("tests/depyf_output/*/__compiled_fn_*.py") + glob.glob("tests/depyf_output/*/__transformed_code_*.py")
 expected_files.sort()
