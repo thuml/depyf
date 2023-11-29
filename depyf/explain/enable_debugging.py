@@ -49,6 +49,8 @@ class DebuggableHook(object):
                     else:
                         func_name = filename.split(os.path.sep)[-1].split(".")[0]
                         src = f"def {func_name}" + src_body
+                        with open(filename, "w") as f:
+                            f.write(src)
                         break
 
             transformed_code = compile(src, filename=filename, mode="exec")
