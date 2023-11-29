@@ -260,7 +260,8 @@ def lock_on_file(lock_path):
         with lock:
             yield
     finally:
-        os.remove(lock_path)
+        if os.path.exists(lock_path):
+            os.remove(lock_path)
 
 
 def write_code_to_file_template(src, path_template):
