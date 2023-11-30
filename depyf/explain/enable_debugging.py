@@ -140,28 +140,28 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True, pause=True):
             try:
                 yield
             finally:
-                for file in os.listdir(dump_src_dir):
-                    filename = file.split(os.path.sep)[-1]
-                    # remove *.lock file and possibly fx_graph_code* file
-                    if (clean_wild_fx_code and filename.startswith("fx_graph_code")) or filename.endswith(".lock"):
-                        os.remove(os.path.join(dump_src_dir, file))
 
-                if func is None:
-                    if pause:
-                        input(
-                            f"Please set breakpoints in {dump_src_dir}. Then press enter to continue.")
-                else:
+                full_code_path = None
+                if func is not None:
                     from depyf.explain import dump_src
                     from depyf.explain.utils import write_code_to_file_template
                     from torch._dynamo.eval_frame import innermost_fn
                     func = innermost_fn(func)
                     full_src = dump_src(func)
                     filepath_template = os.path.join(dump_src_dir, f"full_code_for_{func.__code__.co_name}_%s.py")
-                    filename = write_code_to_file_template(full_src, filepath_template)
+                    full_code_path = write_code_to_file_template(full_src, filepath_template)
 
-                    if pause:
-                        input(
-                            f"Please check the full source code in {filename}, and set breakpoints for functions in {dump_src_dir} according to the function name. Then press enter to continue.")
+                for file in os.listdir(dump_src_dir):
+                    name = file.split(os.path.sep)[-1]
+                    # remove *.lock file and possibly fx_graph_code* file
+                    if (clean_wild_fx_code and name.startswith("fx_graph_code")) or name.endswith(".lock"):
+                        os.remove(os.path.join(dump_src_dir, file))
+
+                msg = f"Please set breakpoints in {dump_src_dir}. Then press enter to continue."
+                if full_code_path is not None:
+                    msg = f"Please check the full source code in {full_code_path}, and set breakpoints for functions in {dump_src_dir} according to the function name. Then press enter to continue."
+                if pause:
+                    input(msg)
 
 
 @contextlib.contextmanager
