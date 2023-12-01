@@ -26,13 +26,16 @@ class DebuggableHook(object):
                 f"__transformed_code_%s_for_{func_name}.py")
 
             from depyf.explain.utils import lock_on_file
-            from depyf.decompiler import Decompiler
+            from depyf.decompiler import Decompiler, prepare_freevars_for_compile, collect_all_code_objects
 
             # function name and file name are related.
             with lock_on_file(filepath_template):
                 # we first try to find an existing file with the same code body.
-                src = Decompiler(new_code).decompile(overwite_fn_name="place_holder")
+                src = Decompiler(new_code).decompile(overwite_fn_name="__place_holder__")
+                src = prepare_freevars_for_compile(new_code, src)
                 src_body = src[src.find("("):]
+                if new_code.co_freevars:
+                    src_body = src_body[src_body.find("("):]
 
                 count = 0
                 while True:
@@ -40,6 +43,8 @@ class DebuggableHook(object):
                     if os.path.exists(filename):
                         existing_code = open(filename, "r").read()
                         existing_code_body = existing_code[existing_code.find("("):]
+                        if new_code.co_freevars:
+                            existing_code_body = existing_code_body[existing_code_body.find("("):]
                         if src_body == existing_code_body:
                             # the same code body is found, we do not need to dump the code again.
                             src = existing_code
@@ -48,24 +53,23 @@ class DebuggableHook(object):
                             count += 1
                     else:
                         func_name = filename.split(os.path.sep)[-1].split(".")[0]
-                        src = f"def {func_name}" + src_body
+                        src = src.replace("__place_holder__", func_name)
                         with open(filename, "w") as f:
                             f.write(src)
                         break
 
             transformed_code = compile(src, filename=filename, mode="exec")
-            scope = {}
-            exec(transformed_code, scope)
+            transformed_codes = collect_all_code_objects(transformed_code)
             func_name = filename.split(os.path.sep)[-1].split(".")[0]
-            func = scope[func_name]
+            decompiled_and_compiled_back_code = [x for x in transformed_codes if x.co_name == func_name][0]
 
             # this fix is used for PyTorch prior to PR https://github.com/pytorch/pytorch/pull/114487
             from torch._dynamo.utils import orig_code_map
             from torch._dynamo.convert_frame import output_codes
-            output_codes.add(func.__code__)
-            orig_code_map[func.__code__] = code
+            output_codes.add(decompiled_and_compiled_back_code)
+            orig_code_map[decompiled_and_compiled_back_code] = code
 
-            return func.__code__
+            return decompiled_and_compiled_back_code
         except (DecompilationError, SyntaxError) as e:
             from io import StringIO
             string_io = StringIO()
