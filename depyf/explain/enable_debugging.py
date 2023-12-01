@@ -118,8 +118,10 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True, pause=True):
         "runs multiple times to cover all the possible branches."
     ))
 
+    from depyf.utils import safe_create_directory
+
     if not os.path.exists(dump_src_dir):
-        os.makedirs(dump_src_dir)
+        safe_create_directory(dump_src_dir)
 
     dump_src_dir = os.path.abspath(dump_src_dir)
 

@@ -77,3 +77,12 @@ def collect_all_code_objects(code: CodeType) -> List[CodeType]:
             code_objects.extend(collect_all_code_objects(const))
     return code_objects
 
+
+def safe_create_directory(path):
+    # allow multiple processes to create the same directory
+    import os
+    try:
+        os.makedirs(path, exist_ok=True)
+    except OSError as e:
+        if not os.path.isdir(path):
+            raise
