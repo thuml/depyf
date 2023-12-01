@@ -369,10 +369,9 @@ def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str, add_loca
         lines = src_code.splitlines()
         header = lines[0]
         body = lines[1:]
-        added_lines = []
-        for x in add_local_variables:
-            added_lines.append(f"    {x} = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function\n")
-        new_code = "".join([x + "\n" for x in [header] + added_lines + body])
+        added_line = "; ".join(f"{x} = None" for x in add_local_variables)
+        added_line = "    " + added_line + " # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function\n"
+        new_code = "".join([x + "\n" for x in [header, added_line] + body])
 
     freevars = old_bytecode.co_freevars
     if freevars:
