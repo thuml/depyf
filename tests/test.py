@@ -634,11 +634,11 @@ def test_function_signature():
 def test_var_args():
     def func(*args, **kwargs):
         return (args, kwargs)
-    scope = {}
-    exec(decompile(func), scope)
     a = [1, 2, 3]
     b = {'a': 4}
-    assert scope['func'](1, a, b, d=5) == func(1, a, b, d=5)
+    ans = func(1, a, b, d=5)
+    with replace_code_by_decompile_and_compile(func):
+        assert func(1, a, b, d=5) == ans
 
 
 def test_complex_signature():
