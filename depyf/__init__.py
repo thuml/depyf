@@ -15,7 +15,8 @@ try:
 
     from depyf.explain.enhance_logging import install, uninstall
     from depyf.explain.enable_debugging import prepare_debug, debug
-except ImportError:
+except ImportError as e:
+    # print(e)
     pass
 
 import os
