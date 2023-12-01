@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10",] # , "3.11"] Python 3.11 bug waits for fix https://github.com/thuml/depyf/actions/runs/7004325219/job/19051829613 .
+        python-version: ["3.8", "3.9", "3.10", "3.11"] # Python 3.11 bug waits for fix https://github.com/thuml/depyf/actions/runs/7004325219/job/19051829613 .
 
     steps:
     - uses: actions/checkout@v3
