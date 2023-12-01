@@ -997,6 +997,11 @@ class Decompiler:
             source_code = remove_some_temp(
                 source_code, self.temp_prefix, indentation)
             header = get_function_signature(self.code, overwite_fn_name)
+            global_statements = "global " + ", ".join(
+                self.code.co_names) + "\n" if self.code.co_names else ""
+            nonlocal_statement = "nonlocal " + ", ".join(
+                self.code.co_freevars) + "\n" if self.code.co_freevars else ""
+            source_code = global_statements + nonlocal_statement + source_code
             source_code = header + add_indentation(source_code, indentation)
             return source_code
         except Exception as e:
@@ -1010,3 +1015,17 @@ class Decompiler:
 def decompile(code: Union[CodeType, Callable]):
     """Decompile a code object or a function."""
     return Decompiler(code).decompile()
+
+def fix_freevars_in_code(old_bytecode: CodeType, src_code: str):
+    function_name = src_code.split("(")[0].split()[-1]
+    freevars = old_bytecode.co_freevars
+    if freevars:
+        new_code = (
+            "def __helper_outer_function():\n"
+            "    # this is a helper function to help compilers generate bytecode to read capture variables from closures, rather than reading values from global scope. The value of these variables does not matter, and will be determined in runtime.\n"
+        )
+        for freevar in freevars:
+            new_code += f"    {freevar} = 1\n"
+        new_code += add_indentation(src_code, 4)
+        src_code = new_code
+    return src_code
