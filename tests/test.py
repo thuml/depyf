@@ -8,6 +8,12 @@ from copy import deepcopy
 
 from contextlib import contextmanager
 
+def collect_all_code_objects(code):
+    code_objects = [code]
+    for const in code.co_consts:
+        if isinstance(const, type(code)):
+            code_objects.extend(collect_all_code_objects(const))
+    return code_objects
 
 @contextmanager
 def replace_code_by_decompile_and_compile(func):
@@ -19,8 +25,7 @@ def replace_code_by_decompile_and_compile(func):
 
     # second step, compile the code
     tmp_code = compile(new_src, filename=old_code.co_filename, mode="exec")
-    new_code = [x for x in tmp_code.co_consts if isinstance(
-        x, type(tmp_code)) and x.co_name == old_code.co_name][0]
+    new_code = [x for x in collect_all_code_objects(tmp_code) if x.co_name == old_code.co_name][0]
 
     # third step, replace the code
     func.__code__ = new_code
@@ -597,21 +602,20 @@ def test_DICT_MERGE():
         assert f() == ans
 
 
-# def test_CALL_FUNCTION_NORMAL():
-#     def func(a, b, c=1):
-#         return (a, b, c)
-#     def f():
-#         a = [1, 2, 3]
-#         b = {'a': 4}
-#         ans1 = func(1, a, b)
-#         ans2 = func(b, 1, a)
-#         ans3 = func(a=a, b=b)
-#         ans4 = func(a=b, b=a)
-#         return ans1, ans2, ans3, ans4
-#     ans = f()
-#     scope = {'func': func}
-#     exec(decompile(f), scope)
-#     assert scope['f']() == ans
+def test_CALL_FUNCTION_NORMAL():
+    def func(a, b, c=1):
+        return (a, b, c)
+    def f():
+        a = [1, 2, 3]
+        b = {'a': 4}
+        ans1 = func(1, a, b)
+        ans2 = func(b, 1, a)
+        ans3 = func(a=a, b=b)
+        ans4 = func(a=b, b=a)
+        return ans1, ans2, ans3, ans4
+    ans = f()
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_function_signature():
