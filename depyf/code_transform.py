@@ -362,16 +362,36 @@ def structure_hash(source_code: str) -> str:
     return hash_value
 
 
-def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str) -> str:
+def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str, add_local_variables: Optional[List[str]]=None) -> str:
     function_name = src_code.split("(")[0].split()[-1]
+    new_code = src_code
+    if add_local_variables is not None:
+        lines = src_code.splitlines()
+        header = lines[0]
+        body = lines[1:]
+        added_lines = []
+        for x in add_local_variables:
+            added_lines.append(f"    {x} = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function\n")
+        new_code = "".join([x + "\n" for x in [header] + added_lines + body])
+
     freevars = old_bytecode.co_freevars
     if freevars:
-        new_code = (
+        tmp_code = (
             "def __helper_outer_function():\n"
             "    # this is a helper function to help compilers generate bytecode to read capture variables from closures, rather than reading values from global scope. The value of these variables does not matter, and will be determined in runtime.\n"
         )
         for freevar in freevars:
-            new_code += f"    {freevar} = 1\n"
-        new_code += add_indentation(src_code, 4)
-        src_code = new_code
-    return src_code
+            tmp_code += f"    {freevar} = None\n"
+        tmp_code += add_indentation(new_code, 4)
+        new_code = tmp_code
+    
+    compiled_code = compile(new_code, "noname", "exec")
+    from .utils import collect_all_code_objects
+    code_objects = collect_all_code_objects(compiled_code)
+    target_code = [x for x in code_objects if x.co_name == function_name][0]
+
+    missing_local_variables = set(old_bytecode.co_varnames) - set(target_code.co_varnames)
+
+    if missing_local_variables:
+        return prepare_freevars_for_compile(old_bytecode, src_code, add_local_variables=list(missing_local_variables))
+    return new_code
