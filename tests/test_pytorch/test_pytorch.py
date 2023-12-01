@@ -52,9 +52,11 @@ description = f"{usage_type}_{compile_type}_{backend}"
 description += "_with_dynamic_shape" if dynamic_shape else "_without_dynamic_shape"
 description += "_with_grad" if requires_grad else "_without_grad"
 
+from depyf.utils import safe_create_directory
+
 import os
 if not os.path.exists("./depyf_output/"):
-    os.makedirs("./depyf_output/")
+    safe_create_directory("./depyf_output/")
 
 if usage_type == "dump":
     from depyf.explain import dump_src
