@@ -1,5 +1,5 @@
 from depyf import decompile
-from depyf.decompiler import fix_freevars_in_code, collect_all_code_objects
+from depyf.decompiler import prepare_freevars_for_compile, collect_all_code_objects
 import unittest
 import dis
 import sys
@@ -15,7 +15,7 @@ def replace_code_by_decompile_and_compile(func):
 
     # first step, decompile the code
     src = decompile(func)
-    new_src = fix_freevars_in_code(old_code, src)
+    new_src = prepare_freevars_for_compile(old_code, src)
 
     # second step, compile the code
     tmp_code = compile(new_src, filename=old_code.co_filename, mode="exec")

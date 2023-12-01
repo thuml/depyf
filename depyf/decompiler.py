@@ -1017,7 +1017,7 @@ def decompile(code: Union[CodeType, Callable]):
     return Decompiler(code).decompile()
 
 
-def fix_freevars_in_code(old_bytecode: CodeType, src_code: str) -> str:
+def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str) -> str:
     function_name = src_code.split("(")[0].split()[-1]
     freevars = old_bytecode.co_freevars
     if freevars:
