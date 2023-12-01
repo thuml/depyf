@@ -67,9 +67,7 @@ def test_UNARY_NEGATIVE():
         x = 1
         return -x
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -78,9 +76,7 @@ def test_UNARY_NOT():
         x = 1
         return not x
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -89,9 +85,7 @@ def test_UNARY_INVERT():
         x = 1
         return ~x
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -101,9 +95,7 @@ def test_BINARY_POWER():
         b = 3
         return (a ** b) ** a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -113,9 +105,7 @@ def test_BINARY_MULTIPLY():
         b = 3
         return (a ** b) ** a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -123,9 +113,7 @@ def test_BINARY_MATRIX_MULTIPLY():
     def f():
         return point @ point
     ans = f()
-    scope = {'point': point}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -135,9 +123,7 @@ def test_BINARY_FLOOR_DIVIDE():
         b = 3
         return (a // b) // a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -147,9 +133,7 @@ def test_BINARY_TRUE_DIVIDE():
         b = 3
         return (a / b) / a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -159,9 +143,7 @@ def test_BINARY_MODULO():
         b = 3
         return (a % b) % a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -171,9 +153,7 @@ def test_BINARY_ADD():
         b = 3
         return (a + b) + a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -183,9 +163,7 @@ def test_BINARY_SUBTRACT():
         b = 3
         return (a - b) - a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -194,9 +172,7 @@ def test_BINARY_SUBSCR():
         a = (1, 2, 3)
         return a[0]
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -206,9 +182,7 @@ def test_BINARY_LSHIFT():
         b = 3
         return (a << b) << a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -218,9 +192,7 @@ def test_BINARY_RSHIFT():
         b = 3
         return (a >> b) >> a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -230,9 +202,7 @@ def test_BINARY_AND():
         b = 3
         return (a & b) & a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -242,9 +212,7 @@ def test_BINARY_XOR():
         b = 3
         return (a ^ b) ^ a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -254,9 +222,7 @@ def test_BINARY_OR():
         b = 3
         return (a | b) | a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -266,9 +232,7 @@ def test_INPLACE_POWER():
         a **= 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -278,9 +242,7 @@ def test_INPLACE_MULTIPLY():
         a *= 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -290,9 +252,7 @@ def test_INPLACE_MATRIX_MULTIPLY():
         point @= point
         return point
     ans = f()
-    scope = {'Point': Point}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -302,9 +262,7 @@ def test_INPLACE_FLOOR_DIVIDE():
         a //= 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -314,9 +272,7 @@ def test_INPLACE_TRUE_DIVIDE():
         a /= 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -326,9 +282,7 @@ def test_INPLACE_MODULO():
         a %= 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -338,9 +292,7 @@ def test_INPLACE_ADD():
         a += 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -350,9 +302,7 @@ def test_INPLACE_SUBTRACT():
         a -= 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -362,9 +312,7 @@ def test_INPLACE_LSHIFT():
         a <<= 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -374,9 +322,7 @@ def test_INPLACE_RSHIFT():
         a >>= 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -386,9 +332,7 @@ def test_INPLACE_AND():
         a &= 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -398,9 +342,7 @@ def test_INPLACE_XOR():
         a ^= 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -410,9 +352,7 @@ def test_INPLACE_OR():
         a |= 3
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -422,9 +362,7 @@ def test_STORE_SUBSCR():
         point[0] = 3
         return point
     ans = f()
-    scope = {'Point': Point}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -434,9 +372,7 @@ def test_DELETE_SUBSCR():
         del a[1]
         return a
     ans = f()
-    scope = {'data_map': data_map, 'deepcopy': deepcopy}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -444,9 +380,7 @@ def test_GET_LEN():
     def f():
         return len((1, 2, 3))
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    with replace_code_by_decompile_and_compile(f, scope['f'].__code__):
+    with replace_code_by_decompile_and_compile(f):
         assert f() == ans
 
 
@@ -455,10 +389,13 @@ def test_STORE_GLOBAL():
         global len
         len = 1
         return len
-    ans = f()
-    scope = {'len': len}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        # test side effects
+        global len
+        original_len = len
+        f()
+        assert len == 1
+        len = original_len
 
 
 def test_DELETE_NAME():
