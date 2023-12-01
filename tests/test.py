@@ -658,36 +658,36 @@ def test_LOAD_ATTR():
         point = Point(1, 2)
         return point.x
     ans = f()
-    scope = {'Point': Point}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
+
 
 
 def test_COMPARE_OP():
     def f():
         return (3 == 3) + (1 < 2) + (2 > 1) + (2 >= 2) + (1 <= 2) + (1 != 2)
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
+
 
 
 def test_IS_OP():
     def f():
         return (int is int), (int is not float)
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
+
 
 
 def test_CONTAINS_OP():
     def f():
         return (1 in [1, 2, 3]), (5 not in (6, 7, 4))
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
+
 
 
 def test_IMPORT_NAME():
@@ -696,9 +696,9 @@ def test_IMPORT_NAME():
         import functools
         return functools.partial(sqrt, 0.3)()
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
+
 
 
 def test_BUILD_SLICE():
@@ -706,9 +706,9 @@ def test_BUILD_SLICE():
         a = [1, 2, 3]
         return a[:] + a[1:] + a[:2] + a[1:2] + a[::-1]
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
+
 
 def test_LIST_COMP():
     def f(a):
