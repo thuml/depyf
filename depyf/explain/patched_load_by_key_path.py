@@ -11,7 +11,8 @@ def patched_load_by_key_path(
     import os
     # hack the path to our dump_src_dir
     src = open(path).read()
-    os.remove(path)
+    # do not remove. remove in multi-processes will cause error.
+    # os.remove(path)
 
     func_name = get_current_compiled_fn_name()
     new_filepath = write_code_to_file_template(src, os.path.join(
