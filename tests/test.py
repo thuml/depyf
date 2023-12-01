@@ -603,14 +603,13 @@ def test_function_signature():
     def func(a, b, c=1, *, d=2):
         return (a, b, c, d)
 
-    scope = {}
     a = [1, 2, 3]
     b = {'a': 4}
-    exec(decompile(func), scope)
-    assert scope['func'](1, a, b, d=5) == func(1, a, b, d=5)
-    assert scope['func'](b, 1, a, d=5) == func(b, 1, a, d=5)
-    # assert scope['func'](a=a, b=b, d=5) == func(a=a, b=b, d=5)
-    # assert scope['func'](a=b, b=a, d=5) == func(a=b, b=a, d=5)
+    ans1 = func(1, a, b, d=5)
+    ans2 = func(b, 1, a, d=5)
+    with replace_code_by_decompile_and_compile(func):
+        assert func(1, a, b, d=5) == ans1
+        assert func(b, 1, a, d=5) == ans2
 
 
 # def test_CALL_FUNCTION_EX():
