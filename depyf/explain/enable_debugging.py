@@ -172,7 +172,11 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True, pause=True):
                     name = file.split(os.path.sep)[-1]
                     # remove *.lock file and possibly fx_graph_code* file
                     if (clean_wild_fx_code and name.startswith("fx_graph_code")) or name.endswith(".lock"):
-                        os.remove(os.path.join(dump_src_dir, file))
+                        try:
+                            # multiple processes may try to remove the same file.
+                            os.remove(os.path.join(dump_src_dir, file))
+                        except OSError:
+                            pass
 
                 msg = f"You can check the full source code in files with prefix `full_code_for_` in {dump_src_dir} first, and set breakpoints in their separate files according to the function name. Then press enter to continue."
                 if pause:
