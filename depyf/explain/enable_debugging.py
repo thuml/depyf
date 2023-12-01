@@ -2,6 +2,7 @@ from .patched_boxed_run import patched_boxed_run
 from .patched_lazy_format_graph_code import patched_lazy_format_graph_code
 from .patched_load_by_key_path import patched_load_by_key_path
 from .patched__exec_with_source import patched__exec_with_source
+from .patched___call__ import patched___call__
 from typing import List, Tuple, Dict, Union, Callable, Optional, Any
 
 import contextlib
@@ -130,12 +131,15 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True, pause=True):
     data["dump_src_dir"] = dump_src_dir
     data["unpatched__exec_with_source"] = torch.fx.graph_module._exec_with_source
     data["unpatched_load_by_key_path"] = torch._inductor.codecache.PyCodeCache.load_by_key_path
+    data["unpatched___call__"] = torch._dynamo.eval_frame.OptimizeContext.__call__
+    data["optimized_functions"] = set()
 
     bytecode_hook = DebuggableHook(dump_src_dir)
 
     # patch some functions
     with patch(torch.fx.graph_module, "_exec_with_source", patched__exec_with_source), \
             patch(torch._inductor.codecache.PyCodeCache, "load_by_key_path", patched_load_by_key_path), \
+            patch(torch._dynamo.eval_frame.OptimizeContext, "__call__", patched___call__), \
             patch(torch._dynamo.utils.lazy_format_graph_code, "__code__", patched_lazy_format_graph_code.__code__):
         # we have to directly manipulate the code object, since the function has been imported in many places.
         # simply replacing torch._dynamo.utils.lazy_format_graph_code does not work for those functions.
@@ -149,8 +153,13 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True, pause=True):
                 yield
             finally:
 
-                full_code_path = None
-                if func is not None:
+                if func is None:
+                    funcs = data["optimized_functions"]
+                else:
+                    funcs = [func]
+
+                for func in funcs:
+                    full_code_path = None
                     from depyf.explain import dump_src
                     from depyf.explain.utils import write_code_to_file_template
                     from torch._dynamo.eval_frame import innermost_fn
@@ -165,9 +174,7 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True, pause=True):
                     if (clean_wild_fx_code and name.startswith("fx_graph_code")) or name.endswith(".lock"):
                         os.remove(os.path.join(dump_src_dir, file))
 
-                msg = f"Please set breakpoints in {dump_src_dir}. Then press enter to continue."
-                if full_code_path is not None:
-                    msg = f"Please check the full source code in {full_code_path}, and set breakpoints for functions in {dump_src_dir} according to the function name. Then press enter to continue."
+                msg = f"You can check the full source code in files with prefix `full_code_for_` in {dump_src_dir} first, and set breakpoints in their separate files according to the function name. Then press enter to continue."
                 if pause:
                     input(msg)
 
