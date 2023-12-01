@@ -393,5 +393,5 @@ def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str, add_loca
     missing_local_variables = set(old_bytecode.co_varnames) - set(target_code.co_varnames)
 
     if missing_local_variables:
-        return prepare_freevars_for_compile(old_bytecode, src_code, add_local_variables=list(missing_local_variables))
+        return prepare_freevars_for_compile(old_bytecode, src_code, add_local_variables=sorted(list(missing_local_variables)))
     return new_code
