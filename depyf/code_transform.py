@@ -360,3 +360,18 @@ def structure_hash(source_code: str) -> str:
     modified_code = astor.to_source(tree)
     hash_value = hashlib.md5(modified_code.encode()).hexdigest()
     return hash_value
+
+
+def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str) -> str:
+    function_name = src_code.split("(")[0].split()[-1]
+    freevars = old_bytecode.co_freevars
+    if freevars:
+        new_code = (
+            "def __helper_outer_function():\n"
+            "    # this is a helper function to help compilers generate bytecode to read capture variables from closures, rather than reading values from global scope. The value of these variables does not matter, and will be determined in runtime.\n"
+        )
+        for freevar in freevars:
+            new_code += f"    {freevar} = 1\n"
+        new_code += add_indentation(src_code, 4)
+        src_code = new_code
+    return src_code

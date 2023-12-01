@@ -1,5 +1,6 @@
 from depyf import decompile
-from depyf.decompiler import prepare_freevars_for_compile, collect_all_code_objects
+from depyf.utils import collect_all_code_objects
+from depyf.code_transform import prepare_freevars_for_compile
 import unittest
 import dis
 import sys
