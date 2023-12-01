@@ -5,8 +5,8 @@ def guard_1(L):
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(4737340928))) \
-        and (___compile_config_hash() == '17ad8d7c0e5524b2c540822a4a78a04b') \
+        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(5782754768))) \
+        and (___compile_config_hash() == 'a88224e48b85338b8cf4a3f13a14b2c0') \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_3*.py.
@@ -53,8 +53,8 @@ def guard_0(L):
         and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(4737340928))) \
-        and (___compile_config_hash() == '17ad8d7c0e5524b2c540822a4a78a04b') \
+        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(5782754768))) \
+        and (___compile_config_hash() == 'a88224e48b85338b8cf4a3f13a14b2c0') \
         and (not ___needs_nopython()) \
         and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names))
 

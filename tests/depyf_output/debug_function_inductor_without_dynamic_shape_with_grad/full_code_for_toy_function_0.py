@@ -1,12 +1,12 @@
 
-def __guard_0_for_resume_in_forward(L):
+def __guard_0_for_resume_in_toy_function(L):
     return (___guarded_code.valid) \
         and (___check_global_state()) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(5177726512))) \
-        and (___compile_config_hash() == 'c45aa0e688ddc05e22e391f4a021584b') \
+        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(4965930448))) \
+        and (___compile_config_hash() == '0350e1a8fde694aaf0e4187c955aa9a0') \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_3*.py.
@@ -18,7 +18,8 @@ def __guard_0_for_resume_in_forward(L):
 def __compiled_fn_3(*args, **kwargs):
     pass
 
-def __transformed_code_0_for_resume_in_forward(b, x):
+def __transformed_code_0_for_resume_in_toy_function(b, x):
+    a = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
     return __compiled_fn_3(x, b)[0]
 
 
@@ -28,8 +29,8 @@ def __resume_at_38_2(b, x):
 
 def transformed___resume_at_38_2(b, x):
     L = {"b": b, "x": x}
-    if __guard_0_for_resume_in_forward(L):
-        return __transformed_code_0_for_resume_in_forward(b, x)
+    if __guard_0_for_resume_in_toy_function(L):
+        return __transformed_code_0_for_resume_in_toy_function(b, x)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return __resume_at_38_2(b, x)
 
@@ -47,14 +48,14 @@ def transformed___resume_at_30_1(b, x):
 
 #============ end of __resume_at_30_1 ============#
 
-def __guard_0_for_forward(L):
+def __guard_0_for_toy_function(L):
     return (___guarded_code.valid) \
         and (___check_global_state()) \
         and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(5177726512))) \
-        and (___compile_config_hash() == 'c45aa0e688ddc05e22e391f4a021584b') \
+        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(4965930448))) \
+        and (___compile_config_hash() == '0350e1a8fde694aaf0e4187c955aa9a0') \
         and (not ___needs_nopython()) \
         and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names))
 
@@ -67,7 +68,8 @@ def __guard_0_for_forward(L):
 def __compiled_fn_0(*args, **kwargs):
     pass
 
-def __transformed_code_0_for_forward(self, a, b):
+def __transformed_code_0_for_toy_function(a, b):
+    x_0 = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
     __temp_1 = __compiled_fn_0(a, b)
     x = __temp_1[0]
     if __temp_1[1]:
@@ -76,17 +78,17 @@ def __transformed_code_0_for_forward(self, a, b):
 
 
 # Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.
-def forward(self, a, b):
+def toy_function(a, b):
     x = a / (torch.abs(a) + 1)
     if b.sum() < 0:
         b = b * -1
     return x * b
 
-def transformed_forward(self, a, b):
-    L = {"self": self, "a": a, "b": b}
-    if __guard_0_for_forward(L):
-        return __transformed_code_0_for_forward(self, a, b)
+def transformed_toy_function(a, b):
+    L = {"a": a, "b": b}
+    if __guard_0_for_toy_function(L):
+        return __transformed_code_0_for_toy_function(a, b)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
-    return forward(self, a, b)
+    return toy_function(a, b)
 
-#============ end of forward ============#
+#============ end of toy_function ============#
