@@ -1,5 +1,5 @@
 from depyf import decompile
-from depyf.decompiler import fix_freevars_in_code
+from depyf.decompiler import fix_freevars_in_code, collect_all_code_objects
 import unittest
 import dis
 import sys
@@ -8,12 +8,6 @@ from copy import deepcopy
 
 from contextlib import contextmanager
 
-def collect_all_code_objects(code):
-    code_objects = [code]
-    for const in code.co_consts:
-        if isinstance(const, type(code)):
-            code_objects.extend(collect_all_code_objects(const))
-    return code_objects
 
 @contextmanager
 def replace_code_by_decompile_and_compile(func):
