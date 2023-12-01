@@ -5,6 +5,17 @@ import sys
 from dataclasses import dataclass
 from copy import deepcopy
 
+from contextlib import contextmanager
+
+@contextmanager
+def switch_code(func, code):
+    old_code = func.__code__
+    func.__code__ = code
+    try:
+        yield
+    finally:
+        func.__code__ = old_code
+
 @dataclass
 class Point:
     x: int
@@ -37,7 +48,8 @@ def test_UNARY_POSITIVE():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_UNARY_NEGATIVE():
@@ -47,7 +59,8 @@ def test_UNARY_NEGATIVE():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_UNARY_NOT():
@@ -57,7 +70,8 @@ def test_UNARY_NOT():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_UNARY_INVERT():
@@ -67,7 +81,8 @@ def test_UNARY_INVERT():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_POWER():
@@ -78,7 +93,8 @@ def test_BINARY_POWER():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_MULTIPLY():
@@ -89,7 +105,8 @@ def test_BINARY_MULTIPLY():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_MATRIX_MULTIPLY():
