@@ -1016,26 +1016,3 @@ def decompile(code: Union[CodeType, Callable]):
     """Decompile a code object or a function."""
     return Decompiler(code).decompile()
 
-
-def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str) -> str:
-    function_name = src_code.split("(")[0].split()[-1]
-    freevars = old_bytecode.co_freevars
-    if freevars:
-        new_code = (
-            "def __helper_outer_function():\n"
-            "    # this is a helper function to help compilers generate bytecode to read capture variables from closures, rather than reading values from global scope. The value of these variables does not matter, and will be determined in runtime.\n"
-        )
-        for freevar in freevars:
-            new_code += f"    {freevar} = 1\n"
-        new_code += add_indentation(src_code, 4)
-        src_code = new_code
-    return src_code
-
-
-def collect_all_code_objects(code: CodeType) -> List[CodeType]:
-    code_objects = [code]
-    for const in code.co_consts:
-        if isinstance(const, type(code)):
-            code_objects.extend(collect_all_code_objects(const))
-    return code_objects
-

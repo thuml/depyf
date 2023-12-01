@@ -26,7 +26,9 @@ class DebuggableHook(object):
                 f"__transformed_code_%s_for_{func_name}.py")
 
             from depyf.explain.utils import lock_on_file
-            from depyf.decompiler import Decompiler, prepare_freevars_for_compile, collect_all_code_objects
+            from depyf.code_transform import prepare_freevars_for_compile
+            from depyf.utils import collect_all_code_objects
+            from depyf.decompiler import Decompiler
 
             # function name and file name are related.
             with lock_on_file(filepath_template):

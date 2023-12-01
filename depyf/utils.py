@@ -68,3 +68,12 @@ def get_function_signature(code_obj: CodeType,
     fn_name = overwite_fn_name if overwite_fn_name is not None else code_obj.co_name
     header = f"def {fn_name}({args_str}):\n"
     return header
+
+
+def collect_all_code_objects(code: CodeType) -> List[CodeType]:
+    code_objects = [code]
+    for const in code.co_consts:
+        if isinstance(const, type(code)):
+            code_objects.extend(collect_all_code_objects(const))
+    return code_objects
+
