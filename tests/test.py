@@ -827,10 +827,11 @@ def test_IF_NONE():
             return 0
         elif a is not None:
             return 1
-    scope = {}
-    exec(decompile(f), scope)
-    for a in range(10):
-        assert scope['f'](a) == f(a)
+
+    ans = [f(i) for i in range(10)]
+    with replace_code_by_decompile_and_compile(f):
+        assert [f(i) for i in range(10)] == ans
+
 
 def test_MAKE_FUNCTION():
     def f(a):
