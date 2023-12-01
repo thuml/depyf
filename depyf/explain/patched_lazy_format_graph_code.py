@@ -21,19 +21,18 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None):
         # Verbose code contains syntax error, it is recommended to use new
         # version of PyTorch to get runnable code with shape and type
         # annotations.
-        simple_code = open(filepath).read()
+        simple_code = gm._graph.python_code(root_module="self", verbose=False).src
         commented_src = "\n# code below is commented out due to syntax error. You can refer to the code for shape and dtype annotation.\n"
         commented_src += "".join(["# " + line +
                                  "\n" for line in src.splitlines()])
         src = simple_code + commented_src
-    if filepath and os.path.exists(filepath):
-        os.remove(filepath)
-    new_filepath = write_code_to_file_template(
-        src, os.path.dirname(filepath) + "/" + file_name + " " + "%s" + ".py")
-    scope = fn.__globals__
-    exec(compile(src, filename=new_filepath, mode="exec"), scope)
-    fn.__code__ = scope[fn.__name__].__code__
-    del scope[fn.__name__]
+    if filepath is not None:
+        new_filepath = write_code_to_file_template(
+            src, os.path.dirname(filepath) + "/" + file_name + " " + "%s" + ".py")
+        scope = fn.__globals__
+        exec(compile(src, filename=new_filepath, mode="exec"), scope)
+        fn.__code__ = scope[fn.__name__].__code__
+        del scope[fn.__name__]
 
     # =========================================
     # original code of `lazy_format_graph_code`
