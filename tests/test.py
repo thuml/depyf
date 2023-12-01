@@ -695,6 +695,7 @@ def test_IMPORT_NAME():
         from math import sqrt
         import functools
         return functools.partial(sqrt, 0.3)()
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -705,6 +706,7 @@ def test_BUILD_SLICE():
     def f():
         a = [1, 2, 3]
         return a[:] + a[1:] + a[:2] + a[1:2] + a[::-1]
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -752,10 +754,10 @@ def test_FORMAT_VALUE():
         b = 2
         c = 3
         return f"{a} {b!r} {b!s} {b!a} {c:.2f}"
+
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_ROT_TWO():
@@ -770,10 +772,10 @@ def test_ROT_TWO():
         a, b, c, d = d, c, b, a
         a, b, c, d, e = e, d, c, b, a
         return a
+
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_IF():
@@ -784,10 +786,11 @@ def test_IF():
             return 1
         else:
             return 2
-    scope = {}
-    exec(decompile(f), scope)
-    for a in range(10):
-        assert scope['f'](a) == f(a)
+
+    ans = [f(i) for i in range(10)]
+    with replace_code_by_decompile_and_compile(f):
+        assert [f(i) for i in range(10)] == ans
+
 
 def test_compound_IF_and():
     def f(a, b):
