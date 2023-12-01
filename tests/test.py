@@ -801,11 +801,10 @@ def test_compound_IF_and():
             c += 2
         c += 3
         return c
-    scope = {}
-    exec(decompile(f), scope)
-    for a in range(-3, 3):
-        for b in range(-3, 3):
-            assert scope['f'](a, b) == f(a, b)
+    
+    ans = [f(a, b) for a in range(-3, 3) for b in range(-3, 3)]
+    with replace_code_by_decompile_and_compile(f):
+        assert [f(a, b) for a in range(-3, 3) for b in range(-3, 3)] == ans
 
 def test_compound_IF_or():
     def f(a, b):
@@ -816,11 +815,11 @@ def test_compound_IF_or():
             c += 2
         c += 3
         return c
-    scope = {}
-    exec(decompile(f), scope)
-    for a in range(-3, 3):
-        for b in range(-3, 3):
-            assert scope['f'](a, b) == f(a, b)
+
+    ans = [f(a, b) for a in range(-3, 3) for b in range(-3, 3)]
+    with replace_code_by_decompile_and_compile(f):
+        assert [f(a, b) for a in range(-3, 3) for b in range(-3, 3)] == ans
+
 
 def test_IF_NONE():
     def f(a):
