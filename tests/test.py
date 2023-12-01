@@ -57,6 +57,7 @@ def test_UNARY_POSITIVE():
     def f():
         x = 1
         return +x
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -66,6 +67,7 @@ def test_UNARY_NEGATIVE():
     def f():
         x = 1
         return -x
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -75,6 +77,7 @@ def test_UNARY_NOT():
     def f():
         x = 1
         return not x
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -84,6 +87,7 @@ def test_UNARY_INVERT():
     def f():
         x = 1
         return ~x
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -94,6 +98,7 @@ def test_BINARY_POWER():
         a = 2
         b = 3
         return (a ** b) ** a
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -104,6 +109,7 @@ def test_BINARY_MULTIPLY():
         a = 2
         b = 3
         return (a ** b) ** a
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -112,6 +118,7 @@ def test_BINARY_MULTIPLY():
 def test_BINARY_MATRIX_MULTIPLY():
     def f():
         return point @ point
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -122,6 +129,7 @@ def test_BINARY_FLOOR_DIVIDE():
         a = 2
         b = 3
         return (a // b) // a
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -132,6 +140,7 @@ def test_BINARY_TRUE_DIVIDE():
         a = 2
         b = 3
         return (a / b) / a
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -142,6 +151,7 @@ def test_BINARY_MODULO():
         a = 2
         b = 3
         return (a % b) % a
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
@@ -152,6 +162,7 @@ def test_BINARY_ADD():
         a = 2
         b = 3
         return (a + b) + a
+
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
