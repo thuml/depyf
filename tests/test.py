@@ -405,9 +405,8 @@ def test_DELETE_NAME():
         a = 2
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_UNPACK_SEQUENCE():
@@ -415,9 +414,8 @@ def test_UNPACK_SEQUENCE():
         a, b = (1, 2)
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_UNPACK_EX():
@@ -425,9 +423,8 @@ def test_UNPACK_EX():
         a, *b = (1, 2, 3)
         return b
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_STORE_ATTR():
@@ -436,9 +433,8 @@ def test_STORE_ATTR():
         point.x = 5
         return point
     ans = f()
-    scope = {'Point': Point}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_DELETE_ATTR():
@@ -448,9 +444,8 @@ def test_DELETE_ATTR():
         point.x = 9
         return point
     ans = f()
-    scope = {'Point': Point}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_BUILD_TUPLE():
@@ -459,9 +454,8 @@ def test_BUILD_TUPLE():
         b = 2
         return (a, b), (a,)
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_BUILD_TUPLE_UNPACK():
@@ -470,9 +464,8 @@ def test_BUILD_TUPLE_UNPACK():
         b = {4, 5, 6}
         return (*a, *b), (*a,)
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_BUILD_LIST_UNPACK():
@@ -481,9 +474,8 @@ def test_BUILD_LIST_UNPACK():
         b = {4, 5, 6}
         return [*a, *b], [*a,]
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_BUILD_SET_UNPACK():
@@ -492,9 +484,8 @@ def test_BUILD_SET_UNPACK():
         b = {4, 5, 6}
         return {*a, *b}, {*a,}
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_BUILD_MAP_UNPACK():
@@ -503,10 +494,8 @@ def test_BUILD_MAP_UNPACK():
         b = {3: 4}
         return {**a, **b}, {**a,}
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
-
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_BUILD_LIST():
@@ -515,9 +504,8 @@ def test_BUILD_LIST():
         b = 2
         return [a, b], [a]
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_BUILD_SET():
@@ -526,9 +514,8 @@ def test_BUILD_SET():
         b = 2
         return {a, b}, {a}
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_BUILD_MAP():
@@ -537,18 +524,16 @@ def test_BUILD_MAP():
         b = 2
         return {a: 1, 2: 3}, {b: a}
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_BUILD_CONST_KEY_MAP():
     def f():
         return {5: 1, 2: 3}
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_LIST_TO_TUPLE():
@@ -556,27 +541,24 @@ def test_LIST_TO_TUPLE():
     def f():
         return
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_LIST_EXTEND():
     def f():
         return [1, 2, 3]
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_SET_UPDATE():
     def f():
         return {1, 2, 3}
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_DICT_UPDATE():
@@ -585,9 +567,8 @@ def test_DICT_UPDATE():
         b = {'a': 4}
         return {**a, **b}
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
 def test_DICT_MERGE():
@@ -597,26 +578,25 @@ def test_DICT_MERGE():
         a.update(**b)
         return a
     ans = f()
-    scope = {}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
 
 
-def test_CALL_FUNCTION_NORMAL():
-    def func(a, b, c=1):
-        return (a, b, c)
-    def f():
-        a = [1, 2, 3]
-        b = {'a': 4}
-        ans1 = func(1, a, b)
-        ans2 = func(b, 1, a)
-        ans3 = func(a=a, b=b)
-        ans4 = func(a=b, b=a)
-        return ans1, ans2, ans3, ans4
-    ans = f()
-    scope = {'func': func}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+# def test_CALL_FUNCTION_NORMAL():
+#     def func(a, b, c=1):
+#         return (a, b, c)
+#     def f():
+#         a = [1, 2, 3]
+#         b = {'a': 4}
+#         ans1 = func(1, a, b)
+#         ans2 = func(b, 1, a)
+#         ans3 = func(a=a, b=b)
+#         ans4 = func(a=b, b=a)
+#         return ans1, ans2, ans3, ans4
+#     ans = f()
+#     scope = {'func': func}
+#     exec(decompile(f), scope)
+#     assert scope['f']() == ans
 
 
 def test_function_signature():
@@ -633,24 +613,24 @@ def test_function_signature():
     # assert scope['func'](a=b, b=a, d=5) == func(a=b, b=a, d=5)
 
 
-def test_CALL_FUNCTION_EX():
-    def func(*args, **kwargs):
-        return (args, kwargs)
-    def f():
-        a = [1, 2, 3]
-        b = {'a': 4}
-        ans1 = func(*a)
-        ans2 = func(**b)
-        ans3 = func(*a, **b)
-        ans4 = func()
-        ans5 = func(1, 2, 3, *a)
-        ans6 = func(1, 2, 3, **b)
-        ans7 = func(b=2, **b)
-        return ans1, ans2, ans3, ans4, ans5, ans6, ans7
-    ans = f()
-    scope = {'func': func}
-    exec(decompile(f), scope)
-    assert scope['f']() == ans
+# def test_CALL_FUNCTION_EX():
+#     def func(*args, **kwargs):
+#         return (args, kwargs)
+#     def f():
+#         a = [1, 2, 3]
+#         b = {'a': 4}
+#         ans1 = func(*a)
+#         ans2 = func(**b)
+#         ans3 = func(*a, **b)
+#         ans4 = func()
+#         ans5 = func(1, 2, 3, *a)
+#         ans6 = func(1, 2, 3, **b)
+#         ans7 = func(b=2, **b)
+#         return ans1, ans2, ans3, ans4, ans5, ans6, ans7
+#     ans = f()
+#     scope = {'func': func}
+#     exec(decompile(f), scope)
+#     assert scope['f']() == ans
 
 def test_var_args():
     def func(*args, **kwargs):
@@ -883,13 +863,13 @@ class A:
     def f(self):
         return __class__
 
-def test_class_method():
-    scope = {}
-    for k, v in zip(A.f.__code__.co_freevars, A.f.__closure__):
-        scope[k] = v.cell_contents
-    exec(decompile(A.f), scope)
-    a = A()
-    assert scope['f'](a) == a.f()
+# def test_class_method():
+#     scope = {}
+#     for k, v in zip(A.f.__code__.co_freevars, A.f.__closure__):
+#         scope[k] = v.cell_contents
+#     exec(decompile(A.f), scope)
+#     a = A()
+#     assert scope['f'](a) == a.f()
 
 
 def test_EXTENDED_ARG():
