@@ -631,24 +631,24 @@ def test_function_signature():
         assert func(b, 1, a, d=5) == ans2
 
 
-# def test_CALL_FUNCTION_EX():
-#     def func(*args, **kwargs):
-#         return (args, kwargs)
-#     def f():
-#         a = [1, 2, 3]
-#         b = {'a': 4}
-#         ans1 = func(*a)
-#         ans2 = func(**b)
-#         ans3 = func(*a, **b)
-#         ans4 = func()
-#         ans5 = func(1, 2, 3, *a)
-#         ans6 = func(1, 2, 3, **b)
-#         ans7 = func(b=2, **b)
-#         return ans1, ans2, ans3, ans4, ans5, ans6, ans7
-#     ans = f()
-#     scope = {'func': func}
-#     exec(decompile(f), scope)
-#     assert scope['f']() == ans
+def test_CALL_FUNCTION_EX():
+    def func(*args, **kwargs):
+        return (args, kwargs)
+    def f():
+        a = [1, 2, 3]
+        b = {'a': 4}
+        ans1 = func(*a)
+        ans2 = func(**b)
+        ans3 = func(*a, **b)
+        ans4 = func()
+        ans5 = func(1, 2, 3, *a)
+        ans6 = func(1, 2, 3, **b)
+        ans7 = func(b=2, **b)
+        return ans1, ans2, ans3, ans4, ans5, ans6, ans7
+    ans = f()
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
+
 
 def test_var_args():
     def func(*args, **kwargs):
@@ -888,13 +888,11 @@ class A:
     def f(self):
         return __class__
 
-# def test_class_method():
-#     scope = {}
-#     for k, v in zip(A.f.__code__.co_freevars, A.f.__closure__):
-#         scope[k] = v.cell_contents
-#     exec(decompile(A.f), scope)
-#     a = A()
-#     assert scope['f'](a) == a.f()
+def test_class_method():
+    a = A()
+    ans = a.f()
+    with replace_code_by_decompile_and_compile(A.f):
+        assert a.f() == ans
 
 
 def test_EXTENDED_ARG():
