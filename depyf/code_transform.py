@@ -384,6 +384,8 @@ def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str, add_loca
         tmp_code += add_indentation(new_code, 4)
         new_code = tmp_code
     
+    # make sure the new bytecode has at least the same number of local variables as the original bytecode
+    # this seems to fix the test failure in https://github.com/thuml/depyf/actions/runs/7004325219/job/19051829613 , and might be related with the discussion in  https://github.com/pytorch/pytorch/pull/111883 
     compiled_code = compile(new_code, "noname", "exec")
     from .utils import collect_all_code_objects
     code_objects = collect_all_code_objects(compiled_code)
