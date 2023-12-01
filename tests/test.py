@@ -115,7 +115,8 @@ def test_BINARY_MATRIX_MULTIPLY():
     ans = f()
     scope = {'point': point}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_FLOOR_DIVIDE():
@@ -126,7 +127,8 @@ def test_BINARY_FLOOR_DIVIDE():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_TRUE_DIVIDE():
@@ -137,7 +139,8 @@ def test_BINARY_TRUE_DIVIDE():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_MODULO():
@@ -148,7 +151,8 @@ def test_BINARY_MODULO():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_ADD():
@@ -159,7 +163,8 @@ def test_BINARY_ADD():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_SUBTRACT():
@@ -170,7 +175,8 @@ def test_BINARY_SUBTRACT():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_SUBSCR():
@@ -180,7 +186,8 @@ def test_BINARY_SUBSCR():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_LSHIFT():
@@ -191,7 +198,8 @@ def test_BINARY_LSHIFT():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_RSHIFT():
@@ -202,7 +210,8 @@ def test_BINARY_RSHIFT():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_AND():
@@ -213,7 +222,8 @@ def test_BINARY_AND():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_XOR():
@@ -224,7 +234,8 @@ def test_BINARY_XOR():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_BINARY_OR():
@@ -235,7 +246,8 @@ def test_BINARY_OR():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_POWER():
@@ -246,7 +258,8 @@ def test_INPLACE_POWER():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_MULTIPLY():
@@ -257,7 +270,8 @@ def test_INPLACE_MULTIPLY():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_MATRIX_MULTIPLY():
@@ -268,7 +282,8 @@ def test_INPLACE_MATRIX_MULTIPLY():
     ans = f()
     scope = {'Point': Point}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_FLOOR_DIVIDE():
@@ -279,7 +294,8 @@ def test_INPLACE_FLOOR_DIVIDE():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_TRUE_DIVIDE():
@@ -290,7 +306,8 @@ def test_INPLACE_TRUE_DIVIDE():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_MODULO():
@@ -301,7 +318,8 @@ def test_INPLACE_MODULO():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_ADD():
@@ -312,7 +330,8 @@ def test_INPLACE_ADD():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_SUBTRACT():
@@ -323,7 +342,8 @@ def test_INPLACE_SUBTRACT():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_LSHIFT():
@@ -334,7 +354,8 @@ def test_INPLACE_LSHIFT():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_RSHIFT():
@@ -345,7 +366,8 @@ def test_INPLACE_RSHIFT():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_AND():
@@ -356,7 +378,8 @@ def test_INPLACE_AND():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_XOR():
@@ -367,7 +390,8 @@ def test_INPLACE_XOR():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_INPLACE_OR():
@@ -378,7 +402,8 @@ def test_INPLACE_OR():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_STORE_SUBSCR():
@@ -389,7 +414,8 @@ def test_STORE_SUBSCR():
     ans = f()
     scope = {'Point': Point}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_DELETE_SUBSCR():
@@ -400,7 +426,8 @@ def test_DELETE_SUBSCR():
     ans = f()
     scope = {'data_map': data_map, 'deepcopy': deepcopy}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_GET_LEN():
@@ -409,7 +436,8 @@ def test_GET_LEN():
     ans = f()
     scope = {}
     exec(decompile(f), scope)
-    assert scope['f']() == ans
+    with switch_code(f, scope['f'].__code__):
+        assert f() == ans
 
 
 def test_STORE_GLOBAL():
