@@ -997,8 +997,10 @@ class Decompiler:
             source_code = remove_some_temp(
                 source_code, self.temp_prefix, indentation)
             header = get_function_signature(self.code, overwite_fn_name)
+            # we cannot rely on `co_names`. For example, `from math import sqrt` will make `math` and `sqrt` in `co_names`.
+            global_names = set(inst.argval for inst in dis.get_instructions(self.code) if inst.opname == "LOAD_GLOBAL")
             global_statements = "global " + ", ".join(
-                self.code.co_names) + "\n" if self.code.co_names else ""
+                global_names) + "\n" if global_names else ""
             nonlocal_statement = "nonlocal " + ", ".join(
                 self.code.co_freevars) + "\n" if self.code.co_freevars else ""
             source_code = global_statements + nonlocal_statement + source_code
