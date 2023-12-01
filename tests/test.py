@@ -713,34 +713,37 @@ def test_BUILD_SLICE():
 def test_LIST_COMP():
     def f(a):
         return [i ** 2 for i in range(a)]
-    scope = {}
-    exec(decompile(f), scope)
-    for a in range(10):
-        assert scope['f'](a) == f(a)
+    
+    ans = [f(i) for i in range(10)]
+    with replace_code_by_decompile_and_compile(f):
+        assert [f(i) for i in range(10)] == ans
 
 def test_SET_COMP():
     def f(a):
         return {i ** 2 for i in range(a)}
-    scope = {}
-    exec(decompile(f), scope)
-    for a in range(10):
-        assert scope['f'](a) == f(a)
+
+    ans = [f(i) for i in range(10)]
+    with replace_code_by_decompile_and_compile(f):
+        assert [f(i) for i in range(10)] == ans
+
 
 def test_MAP_COMP():
     def f(a):
         return {i: i ** 2 for i in range(a)}
-    scope = {}
-    exec(decompile(f), scope)
-    for a in range(10):
-        assert scope['f'](a) == f(a)
+
+    ans = [f(i) for i in range(10)]
+    with replace_code_by_decompile_and_compile(f):
+        assert [f(i) for i in range(10)] == ans
+
 
 def test_NESTED_COMP():
     def f(a):
         return [{x: {_ for _ in range(x)} for x in range(i)} for i in range(a)]
-    scope = {}
-    exec(decompile(f), scope)
-    for a in range(10):
-        assert scope['f'](a) == f(a)
+
+    ans = [f(i) for i in range(10)]
+    with replace_code_by_decompile_and_compile(f):
+        assert [f(i) for i in range(10)] == ans
+
 
 
 def test_FORMAT_VALUE():
