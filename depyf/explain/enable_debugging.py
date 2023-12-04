@@ -35,9 +35,10 @@ class DebuggableHook(object):
             with lock_on_file(filepath_template):
                 # we first try to find an existing file with the same code body.
                 src = Decompiler(new_code).decompile(overwite_fn_name="__place_holder__")
-                src = prepare_freevars_for_compile(new_code, src)
+                # check https://dev-discuss.pytorch.org/t/what-is-the-relationship-requirement-among-original-bytecode-transformed-bytecode-and-bytecode-returned-by-hooks-in-dynamo/1693/4 for why we need to prepare freevars like `code` rather than `new_code`
+                src = prepare_freevars_for_compile(code, src)
                 src_body = src[src.find("("):]
-                if new_code.co_freevars:
+                if code.co_freevars:
                     src_body = src_body[src_body.find("("):]
 
                 count = 0
@@ -46,7 +47,7 @@ class DebuggableHook(object):
                     if os.path.exists(filename):
                         existing_code = open(filename, "r").read()
                         existing_code_body = existing_code[existing_code.find("("):]
-                        if new_code.co_freevars:
+                        if code.co_freevars:
                             existing_code_body = existing_code_body[existing_code_body.find("("):]
                         if src_body == existing_code_body:
                             # the same code body is found, we do not need to dump the code again.
