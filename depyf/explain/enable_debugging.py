@@ -68,6 +68,13 @@ class DebuggableHook(object):
             func_name = filename.split(os.path.sep)[-1].split(".")[0]
             decompiled_and_compiled_back_code = [x for x in transformed_codes if x.co_name == func_name][0]
 
+            if self.log_bytecode:
+                with lock_on_file(filename):
+                    import dis
+                    dis.dis(code, file=open(filename + ".original_bytecode", "w"))
+                    dis.dis(new_code, file=open(filename + ".transformed_bytecode", "w"))
+                    dis.dis(decompiled_and_compiled_back_code, file=open(filename + ".decompiled_and_compiled_back_bytecode", "w"))
+
             # this fix is used for PyTorch prior to PR https://github.com/pytorch/pytorch/pull/114487
             from torch._dynamo.utils import orig_code_map
             from torch._dynamo.convert_frame import output_codes
@@ -106,12 +113,13 @@ def enable_bytecode_hook(hook):
 
 
 @contextlib.contextmanager
-def prepare_debug(dump_src_dir, clean_wild_fx_code=True, pause=False):
+def prepare_debug(dump_src_dir, clean_wild_fx_code=True, pause=False, log_bytecode=False):
     """
     Args:
         dump_src_dir: the directory to dump the source code.
         clean_wild_fx_code: whether to clean the wild fx code that are not recognized for parts of compiled functions. They are usually used by PyTorch internally.
         pause: whether to pause the program after the source code is dumped.
+        log_bytecode: whether to log bytecode (original bytecode, transformed bytecode from Dynamo, and decompiled_and_compiled_back_code).
     """
     if not isinstance(dump_src_dir, str):
         raise RuntimeError('''You are using an obsolete usage style`depyf.prepare_debug(func=function, dump_src_dir="/path")`. Please use `depyf.prepare_debug(dump_src_dir="/path")` instead, which will automatically capture all compiled functions.''')
@@ -140,7 +148,7 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, pause=False):
     data["optimized_functions"] = set()
     data["is_inside_prepare_debug"] = True
 
-    bytecode_hook = DebuggableHook(dump_src_dir)
+    bytecode_hook = DebuggableHook(dump_src_dir, log_bytecode)
 
     # patch some functions
     with patch(torch.fx.graph_module, "_exec_with_source", patched__exec_with_source), \
