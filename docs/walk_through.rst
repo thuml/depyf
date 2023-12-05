@@ -74,7 +74,7 @@ The first concept we have to know is that PyTorch compiler is a Just-In-Time com
     # x = torch.randn(5, 5, 5)
     # output = f(x, mod)
 
-We write this funny function ``f``, that contains a module call that will call the ``mod.forward``, and a ``torch.log`` call. Anyone with elementary math knowledge cannot wait to optimize the code as follows:
+We write this funny function ``f``, that contains a module call that will call the ``mod.forward``, and a ``torch.log`` call. Because of the well-known algebraic simplification identity :math:`\log(\exp(a\times x))=a\times x`, we cannot wait to optimize the code as follows:
 
 .. code-block:: python
 
