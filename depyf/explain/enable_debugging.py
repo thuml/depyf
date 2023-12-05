@@ -105,13 +105,16 @@ def enable_bytecode_hook(hook):
 
 
 @contextlib.contextmanager
-def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True, pause=True):
+def prepare_debug(dump_src_dir, clean_wild_fx_code=True, pause=True):
     """
     Args:
-        func: the function to debug, can be `None`. If it is `None`, do not dump all the source code in `full_code.py`.
+        dump_src_dir: the directory to dump the source code.
         clean_wild_fx_code: whether to clean the wild fx code that are not recognized for parts of compiled functions. They are usually used by PyTorch internally.
         pause: whether to pause the program after the source code is dumped.
     """
+    if not isinstance(dump_src_dir, str):
+        raise RuntimeError('''You are using an obsolete usage style`depyf.prepare_debug(func=function, dump_src_dir="/path")`. Please use `depyf.prepare_debug(dump_src_dir="/path")` instead, which will automatically capture all compiled functions.''')
+
     import os
     import torch
 
@@ -154,10 +157,7 @@ def prepare_debug(func, dump_src_dir, clean_wild_fx_code=True, pause=True):
                 yield
             finally:
 
-                if func is None:
-                    funcs = data["optimized_functions"]
-                else:
-                    funcs = [func]
+                funcs = data["optimized_functions"]
 
                 for func in funcs:
                     full_code_path = None

@@ -66,7 +66,7 @@ if usage_type == "dump":
         f.write(src)
 elif usage_type == "debug":
     import depyf
-    with depyf.prepare_debug(None, f"./depyf_output/{description}"):
+    with depyf.prepare_debug(f"./depyf_output/{description}"):
         warmup()
 
     with depyf.debug():
