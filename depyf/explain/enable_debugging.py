@@ -15,6 +15,7 @@ import itertools
 @dataclasses.dataclass
 class DebuggableHook(object):
     dump_src_dir: str
+    log_bytecode: bool
 
     def __call__(self, code, new_code):
         from depyf.decompiler import DecompilationError
@@ -105,7 +106,7 @@ def enable_bytecode_hook(hook):
 
 
 @contextlib.contextmanager
-def prepare_debug(dump_src_dir, clean_wild_fx_code=True, pause=True):
+def prepare_debug(dump_src_dir, clean_wild_fx_code=True, pause=False):
     """
     Args:
         dump_src_dir: the directory to dump the source code.
