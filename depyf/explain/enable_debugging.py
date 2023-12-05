@@ -137,6 +137,7 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, pause=True):
     data["unpatched_load_by_key_path"] = torch._inductor.codecache.PyCodeCache.load_by_key_path
     data["unpatched___call__"] = torch._dynamo.eval_frame.OptimizeContext.__call__
     data["optimized_functions"] = set()
+    data["is_inside_prepare_debug"] = True
 
     bytecode_hook = DebuggableHook(dump_src_dir)
 
@@ -183,6 +184,7 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, pause=True):
                 if pause:
                     input(msg)
 
+                data["is_inside_prepare_debug"] = True
 
 @contextlib.contextmanager
 def debug():

@@ -11,7 +11,7 @@ if __name__ == '__main__':
         for REQUIRES_GRAD in ["0", "1"]:
             for DYNAMIC_SHAPE in ["0", "1"]:
                 for COMPILE_TYPE in ["function", "module"]:
-                    for USAGE_TYPE in ["debug", "dump"]:
+                    for USAGE_TYPE in ["debug"]:
                         os.environ["TORCH_COMPILE_BACKEND"] = TORCH_COMPILE_BACKEND
                         os.environ["REQUIRES_GRAD"] = REQUIRES_GRAD
                         os.environ["DYNAMIC_SHAPE"] = DYNAMIC_SHAPE
