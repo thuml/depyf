@@ -10,4 +10,5 @@ data = {
     "unpatched_load_by_key_path": PyCodeCache.load_by_key_path,
     "unpatched___call__": torch._dynamo.eval_frame.OptimizeContext.__call__,
     "optimized_functions": set(),
+    "is_inside_prepare_debug": False,
 }

@@ -32,5 +32,7 @@ def interactive_explain(fn: Callable):
 
 
 def dump_src(fn: Callable):
+    from depyf.explain.global_variables import data
+    assert data["is_inside_prepare_debug"], "`dump_src` must be used inside `depyf.prepare_debug`."
     artifacts = _extract_artifacts(fn)
     return artifacts.to_src()

@@ -58,16 +58,9 @@ import os
 if not os.path.exists("./depyf_output/"):
     safe_create_directory("./depyf_output/")
 
-if usage_type == "dump":
-    from depyf.explain import dump_src
+import depyf
+with depyf.prepare_debug(f"./depyf_output/{description}"):
     warmup()
-    src = dump_src(target)
-    with open(f"./depyf_output/{description}.py", "w") as f:
-        f.write(src)
-elif usage_type == "debug":
-    import depyf
-    with depyf.prepare_debug(f"./depyf_output/{description}"):
-        warmup()
 
-    with depyf.debug():
-        call()
+with depyf.debug():
+    call()
