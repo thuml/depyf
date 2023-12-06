@@ -59,3 +59,4 @@ The second context manager ``depyf.debug()`` has no arguments, it just disables 
    :maxdepth: 1
 
    walk_through
+   faq
