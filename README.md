@@ -54,7 +54,7 @@ Then you can see all the details of `torch.compile` inside the directory `./dump
   - `Backward Graph`: backward graph from `AOTAutograd`
   - `kernel xxx`: compiled CPU/GPU kernel wrapper from Inductor.
 
-If you want to use debugger to step through the above code, just add another context manager:
+If you want to use debugger to step through the above code, just add another context manager (and launch the script through debuggers):
 
 ```diff
 import torch
@@ -84,4 +84,4 @@ Calling `depyf.debug()` will pause the program for you to set breakpoints, and t
 
 # Contact
 
-If you find any error in the decompilation, or you have any question about `depyf`, feel free to open issues to reach out! Any discussion/issue report/PR is welcome. Or contact youkaichao@gmail.com if you have any other questions.
+If you have any question about `depyf`, feel free to open issues to reach out! Any discussion/issue report/PR is welcome. Or contact youkaichao@gmail.com if you have any other questions.
