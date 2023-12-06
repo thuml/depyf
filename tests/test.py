@@ -9,18 +9,23 @@ from copy import deepcopy
 
 from contextlib import contextmanager
 
-
-@contextmanager
-def replace_code_by_decompile_and_compile(func):
-    old_code = func.__code__
-
+def decompile_by_depyf(old_code):
     # first step, decompile the code
-    src = decompile(func)
+    src = decompile(old_code)
     new_src = prepare_freevars_for_compile(old_code, src)
 
     # second step, compile the code
     tmp_code = compile(new_src, filename=old_code.co_filename, mode="exec")
     new_code = [x for x in collect_all_code_objects(tmp_code) if x.co_name == old_code.co_name][0]
+    return new_code
+
+decompile_fn = decompile_by_depyf
+
+@contextmanager
+def replace_code_by_decompile_and_compile(func):
+    old_code = func.__code__
+
+    new_code = decompile_fn(old_code)
 
     # third step, replace the code
     func.__code__ = new_code
