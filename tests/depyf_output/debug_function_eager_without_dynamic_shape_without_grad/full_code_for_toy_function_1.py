@@ -5,8 +5,8 @@ def __guard_0_for_resume_in_toy_function(L):
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(5091355584))) \
-        and (___compile_config_hash() == '5ea1c21ccdfcb0ac27cb1b202e7bb233') \
+        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(4820822976))) \
+        and (___compile_config_hash() == '2201db5b37c087e0fc729cfb5bb4cd22') \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_3*.py.
@@ -48,14 +48,14 @@ def transformed___resume_at_30_1(b, x):
 
 #============ end of __resume_at_30_1 ============#
 
-def __guard_1_for_toy_function(L):
+def __guard_0_for_toy_function(L):
     return (___guarded_code.valid) \
         and (___check_global_state()) \
         and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(5091355584))) \
-        and (___compile_config_hash() == '5ea1c21ccdfcb0ac27cb1b202e7bb233') \
+        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(4820822976))) \
+        and (___compile_config_hash() == '2201db5b37c087e0fc729cfb5bb4cd22') \
         and (not ___needs_nopython()) \
         and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names))
 
@@ -68,7 +68,7 @@ def __guard_1_for_toy_function(L):
 def __compiled_fn_0(*args, **kwargs):
     pass
 
-def __transformed_code_1_for_toy_function(a, b):
+def __transformed_code_0_for_toy_function(a, b):
     __temp_1 = __compiled_fn_0(a, b)
     x = __temp_1[0]
     if __temp_1[1]:
@@ -85,8 +85,8 @@ def toy_function(a, b):
 
 def transformed_toy_function(a, b):
     L = {"a": a, "b": b}
-    if __guard_1_for_toy_function(L):
-        return __transformed_code_1_for_toy_function(a, b)
+    if __guard_0_for_toy_function(L):
+        return __transformed_code_0_for_toy_function(a, b)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return toy_function(a, b)
 
