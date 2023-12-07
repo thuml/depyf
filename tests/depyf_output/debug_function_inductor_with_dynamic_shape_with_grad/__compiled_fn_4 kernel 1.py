@@ -23,7 +23,7 @@ async_compile = AsyncCompile()
 
 
 cpp_fused_abs_add_div_mul_neg_sgn_0 = async_compile.cpp('''
-#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/2l/c2ljzlm4sosod7u6lyrroqdba6hmfcyijrric6p4t3fhbcmw6osp.h"
+#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/26/c26eqbkuxvn72gf7p2xujmqjcwf4bo6lxmp6rwborxnf4gldnimh.h"
 extern "C" void kernel(const float* in_ptr0,
                        const float* in_ptr1,
                        const float* in_ptr2,
@@ -81,7 +81,8 @@ def benchmark_compiled_module(times=10, repeat=10):
     primals_2 = rand_strided((8, ), (1, ), device='cpu', dtype=torch.float32)
     div = rand_strided((8, ), (1, ), device='cpu', dtype=torch.float32)
     tangents_1 = rand_strided((8, ), (1, ), device='cpu', dtype=torch.float32)
-    return print_performance(lambda: call([primals_1, primals_2, div, tangents_1]), times=times, repeat=repeat)
+    fn = lambda: call([primals_1, primals_2, div, tangents_1])
+    return print_performance(fn, times=times, repeat=repeat)
 
 
 if __name__ == "__main__":

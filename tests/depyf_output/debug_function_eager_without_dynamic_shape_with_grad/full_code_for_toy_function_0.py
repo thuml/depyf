@@ -5,8 +5,8 @@ def __guard_0_for_resume_in_toy_function(L):
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(5087548880))) \
-        and (___compile_config_hash() == 'adb31cc3df0fe21d3ac49367a9da0847') \
+        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(4993821632))) \
+        and (___compile_config_hash() == 'f3495073f7a66f37b701f443c3652553') \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_3*.py.
@@ -54,8 +54,8 @@ def __guard_0_for_toy_function(L):
         and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(5087548880))) \
-        and (___compile_config_hash() == 'adb31cc3df0fe21d3ac49367a9da0847') \
+        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(4993821632))) \
+        and (___compile_config_hash() == 'f3495073f7a66f37b701f443c3652553') \
         and (not ___needs_nopython()) \
         and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names))
 
@@ -69,7 +69,6 @@ def __compiled_fn_0(*args, **kwargs):
     pass
 
 def __transformed_code_0_for_toy_function(a, b):
-    x_0 = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
     __temp_1 = __compiled_fn_0(a, b)
     x = __temp_1[0]
     if __temp_1[1]:

@@ -5,8 +5,8 @@ def __guard_0_for_resume_in_forward(L):
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(5261612544))) \
-        and (___compile_config_hash() == 'b894e66128e4d9a10b245fd41fe73c19') \
+        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(6042414064))) \
+        and (___compile_config_hash() == 'e1cc38088bcd145698b1d39ac7b024ec') \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_3*.py.
@@ -54,8 +54,8 @@ def __guard_0_for_forward(L):
         and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(5261612544))) \
-        and (___compile_config_hash() == 'b894e66128e4d9a10b245fd41fe73c19') \
+        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(6042414064))) \
+        and (___compile_config_hash() == 'e1cc38088bcd145698b1d39ac7b024ec') \
         and (not ___needs_nopython()) \
         and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names))
 
@@ -69,7 +69,6 @@ def __compiled_fn_0(*args, **kwargs):
     pass
 
 def __transformed_code_0_for_forward(self, a, b):
-    x_0 = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
     __temp_1 = __compiled_fn_0(a, b)
     x = __temp_1[0]
     if __temp_1[1]:
