@@ -2,7 +2,6 @@ from .patched_boxed_run import patched_boxed_run
 from .patched_lazy_format_graph_code import patched_lazy_format_graph_code
 from .patched_load_by_key_path import patched_load_by_key_path
 from .patched__exec_with_source import patched__exec_with_source
-from .patched___call__ import patched___call__
 from typing import List, Tuple, Dict, Union, Callable, Optional, Any
 
 import contextlib
@@ -10,14 +9,28 @@ import warnings
 
 import dataclasses
 import itertools
+import sys
+import os
 
 
 @dataclasses.dataclass
 class DebuggableHook(object):
     dump_src_dir: str
     log_bytecode: bool
+    optimized_code_and_module_name: List =dataclasses.field(default_factory=list, init=False)
 
     def __call__(self, code, new_code):
+        frame = sys._getframe()
+        import os
+        while True:
+            frame = frame.f_back
+            code_name = frame.f_code.co_name
+            file_name = frame.f_code.co_filename.split(os.path.sep)[-1]
+            if code_name == "_compile" and file_name == "convert_frame.py":
+                break
+        frame = frame.f_locals["frame"]
+        assert frame.f_code == code
+        self.optimized_code_and_module_name.append([code, frame.f_globals["__name__"]])
         from depyf.decompiler import DecompilationError
         try:
             import os
@@ -144,7 +157,6 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
     data["unpatched__exec_with_source"] = torch.fx.graph_module._exec_with_source
     data["unpatched_load_by_key_path"] = torch._inductor.codecache.PyCodeCache.load_by_key_path
     data["unpatched___call__"] = torch._dynamo.eval_frame.OptimizeContext.__call__
-    data["optimized_functions"] = set()
     data["is_inside_prepare_debug"] = True
 
     bytecode_hook = DebuggableHook(dump_src_dir, log_bytecode)
@@ -152,7 +164,6 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
     # patch some functions
     with patch(torch.fx.graph_module, "_exec_with_source", patched__exec_with_source), \
             patch(torch._inductor.codecache.PyCodeCache, "load_by_key_path", patched_load_by_key_path), \
-            patch(torch._dynamo.eval_frame.OptimizeContext, "__call__", patched___call__), \
             patch(torch._dynamo.utils.lazy_format_graph_code, "__code__", patched_lazy_format_graph_code.__code__):
         # we have to directly manipulate the code object, since the function has been imported in many places.
         # simply replacing torch._dynamo.utils.lazy_format_graph_code does not work for those functions.
@@ -166,16 +177,14 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
                 yield
             finally:
 
-                funcs = data["optimized_functions"]
-
-                for func in funcs:
-                    full_code_path = None
+                for code, module_name in bytecode_hook.optimized_code_and_module_name:
+                    if code.co_name.startswith("resume_in"):
+                        continue
                     from depyf.explain import dump_src
                     from depyf.explain.utils import write_code_to_file_template
                     from torch._dynamo.eval_frame import innermost_fn
-                    func = innermost_fn(func)
-                    full_src = dump_src(func)
-                    filepath_template = os.path.join(dump_src_dir, f"full_code_for_{func.__code__.co_name}_%s.py")
+                    full_src = dump_src(code, module_name)
+                    filepath_template = os.path.join(dump_src_dir, f"full_code_for_{code.co_name}_%s.py")
                     full_code_path = write_code_to_file_template(full_src, filepath_template)
 
                 for file in os.listdir(dump_src_dir):

@@ -101,21 +101,25 @@ def display_func(self):
 
 @dataclass
 class CacheResult:
-    code: CodeType
+    original_code: CodeType
+    transformed_code: CodeType
     guard: List[str]
     compiled_subgraph: Callable
     compiled_subgraph_proxy: CodeProxy
-    transformed_code: CodeType
     transformed_code_proxy: CodeProxy
     referenced_global_functions: Dict[str, "DynamoOptimizationResult"]
 
-    def __init__(self, fn, cache):
+    def __init__(self, original_code, module_name, cache):
+        self.original_code = original_code
         guard = cache.check_fn.code_parts
+        self.guard = guard
         code = cache.code
+
         compiled_subgraphs = [
             name for name in code.co_names if name.startswith("__compiled")]
         assert len(compiled_subgraphs) == 1
-        module = import_module(fn.__module__)
+
+        module = import_module(module_name)
         # deal with compiled_subgraph
         self.compiled_subgraph = innermost_fn(
             getattr(module, compiled_subgraphs[0]))
@@ -127,14 +131,12 @@ class CacheResult:
             self.transformed_code, "transformed_code:")
         resume_fns = [
             name for name in code.co_names if name.startswith("__resume")]
-        self.referenced_global_functions = {
-            name: DynamoOptimizationResult(
-                getattr(
-                    module,
-                    name),
-                name) for name in resume_fns}
-        self.code = code
-        self.guard = guard
+        self.referenced_global_functions = {}
+        for name in resume_fns:
+            self.referenced_global_functions[name] = DynamoOptimizationResult(
+                original_code=getattr(module, name).__code__,
+                function_name=name,
+                module_name=module_name)
 
     def to_data(self):
         return {
@@ -152,28 +154,29 @@ class CacheResult:
 
 @dataclass
 class DynamoOptimizationResult:
-    name: str
-    fn: Callable
-    code: CodeType
+    function_name: str
+    module_name: str
+    original_code: CodeType
     source_code_proxy: CodeProxy
     transformed_code_entries: List[CacheResult]
 
-    def __init__(self, fn, name=None):
-        self.fn = fn
-        if name is None:
-            self.name = fn.__name__
+    def __init__(self, original_code, function_name=None, module_name=None):
+        self.original_code = original_code
+        if function_name is None:
+            self.function_name = original_code.co_name
         else:
-            self.name = name
-        caches = _debug_get_cache_entry_list(fn.__code__)
+            self.function_name = function_name
+        self.module_name = module_name
+        assert isinstance(module_name, str)
+        caches = _debug_get_cache_entry_list(original_code)
         self.transformed_code_entries = [
-            CacheResult(fn, cache) for cache in caches]
-        self.code = fn.__code__
+            CacheResult(original_code, module_name, cache) for cache in caches]
         self.source_code_proxy = CodeProxy.decompile_with_name(
-            self.code, self.name)
+            self.original_code, self.function_name)
 
     def to_data(self):
         data = {
-            "name": self.name,
+            "function_name": self.function_name,
             "source_code": str(
                 self.source_code_proxy),
             "transformed_code_entries": [
@@ -190,7 +193,7 @@ class DynamoOptimizationResult:
         code = signature.strip()
 
         # prepare args for guards, like `L = {"a": a, "b": b}`
-        code_obj = self.fn.__code__
+        code_obj = self.original_code
         normal_arg_count = code_obj.co_argcount + code_obj.co_kwonlyargcount
         arg_names = code_obj.co_varnames[:normal_arg_count]
         arg_dict = "L = {" + \
@@ -239,7 +242,7 @@ class DynamoOptimizationResult:
         code += "\n" + " " * 4 + "# Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.\n" + \
             " " * 4 + f"return {self.source_code_proxy.name}({', '.join(arg_names)})"
         return additional_code + code + \
-            f"\n\n#============ end of {self.name} ============#\n"
+            f"\n\n#============ end of {self.function_name} ============#\n"
 
     _ipython_display_ = display_func
 

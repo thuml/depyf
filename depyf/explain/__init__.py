@@ -3,16 +3,11 @@ from depyf.explain.utils import DynamoOptimizationResult
 from torch._dynamo.eval_frame import innermost_fn
 
 from typing import List, Callable, Dict, Union, Set
+from types import CodeType
 
 
-def _extract_artifacts(fn: Callable):
-    if hasattr(fn, "_torchdynamo_orig_callable"):
-        # this can deal with various types of callable objects, including
-        # `nn.Module`.
-        inner_fn = innermost_fn(fn)
-    else:
-        inner_fn = fn
-    result = DynamoOptimizationResult(inner_fn)
+def _extract_artifacts(original_code: CodeType, module_name):
+    result = DynamoOptimizationResult(original_code, None, module_name)
     return result
 
 
@@ -31,8 +26,8 @@ def interactive_explain(fn: Callable):
     return artifacts
 
 
-def dump_src(fn: Callable):
+def dump_src(original_code: CodeType, module_name):
     from depyf.explain.global_variables import data
     assert data["is_inside_prepare_debug"], "`dump_src` must be used inside `depyf.prepare_debug`."
-    artifacts = _extract_artifacts(fn)
+    artifacts = _extract_artifacts(original_code, module_name)
     return artifacts.to_src()
