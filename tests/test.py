@@ -4,6 +4,9 @@ from depyf.code_transform import prepare_freevars_for_compile
 import unittest
 import dis
 import sys
+import inspect
+import py_compile
+import subprocess
 from dataclasses import dataclass
 from copy import deepcopy
 
@@ -11,13 +14,42 @@ from contextlib import contextmanager
 
 
 @contextmanager
-def replace_code_by_decompile_and_compile(func):
+def replace_code_by_decompile_and_compile(func, decompiler="pycdc"):
     old_code = func.__code__
 
-    # first step, decompile the code
-    src = decompile(func)
-    new_src = prepare_freevars_for_compile(old_code, src)
+    if decompiler == "depyf":
+        # first step, decompile the code
+        src = decompile(func)
+        new_src = prepare_freevars_for_compile(old_code, src)
 
+    elif decompiler == "decompyle3" or \
+         decompiler == "uncompyle6" or \
+         decompiler == "pycdc":
+        if decompiler == "pycdc":
+            decompiler = "./" + "pycdc"
+        # py_path = "__pycache__/tmp_" + func.__code__.co_name + ".py"
+        py_path = "__pycache__/tmp.py"
+
+        # first step 1, store the code of func into .py
+        src = inspect.getsource(func)
+        src = src.split("\n")
+        strip = 0
+        while src[0][strip] == ' ':
+            strip += 1
+        src = "\n".join([line[strip:] for line in src])
+        with open(py_path, "w") as f:
+            f.write(src)
+
+        # first step 2, generate .pyc and decompile
+        pyc_path = py_compile.compile(py_path)
+        if pyc_path == None:
+            raise Exception("Fail to compile")
+        output = subprocess.check_output(decompiler + " " + pyc_path, shell=True)
+        new_src = output.decode()
+
+    else:
+        raise Exception("Unsupported decompiler.")
+    
     # second step, compile the code
     tmp_code = compile(new_src, filename=old_code.co_filename, mode="exec")
     new_code = [x for x in collect_all_code_objects(tmp_code) if x.co_name == old_code.co_name][0]
@@ -30,6 +62,17 @@ def replace_code_by_decompile_and_compile(func):
         # restore the code
         func.__code__ = old_code
 
+@contextmanager
+def compile_extract_code_and_decompile(func):
+    filename = "tmp_" + func.__code__.co_name + ".py"
+
+    # first step, store the code of func .pys
+    code = inspect.getsource(func)
+    with open(filename, "w") as f:
+        f.write(code)
+
+    # second step, generate .pyc
+    pyc_path = py_compile.compile(filename)
 
 @dataclass
 class Point:
