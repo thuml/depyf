@@ -113,12 +113,11 @@ def enable_bytecode_hook(hook):
 
 
 @contextlib.contextmanager
-def prepare_debug(dump_src_dir, clean_wild_fx_code=True, pause=False, log_bytecode=False):
+def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
     """
     Args:
         dump_src_dir: the directory to dump the source code.
         clean_wild_fx_code: whether to clean the wild fx code that are not recognized for parts of compiled functions. They are usually used by PyTorch internally.
-        pause: whether to pause the program after the source code is dumped.
         log_bytecode: whether to log bytecode (original bytecode, transformed bytecode from Dynamo, and decompiled_and_compiled_back_code).
     """
     if not isinstance(dump_src_dir, str):
@@ -189,20 +188,20 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, pause=False, log_byteco
                         except OSError:
                             pass
 
-                msg = f"You can check the full source code in files with prefix `full_code_for_` in {dump_src_dir} first, and set breakpoints in their separate files according to the function name. Then press enter to continue."
-                if pause:
-                    input(msg)
-
                 data["is_inside_prepare_debug"] = True
 
 @contextlib.contextmanager
 def debug():
+    from .global_variables import data
+    dump_src_dir = data["dump_src_dir"]
     import torch
     callback = torch._dynamo.eval_frame.set_eval_frame(False)
     # sometimes pytorch use Interpreter to run node by node. This cannot be debugged.
     # we patch this function to run the graph function directly.
     with patch(torch.fx.Interpreter.boxed_run, "__code__", patched_boxed_run.__code__):
         try:
+            msg = f"You can check the full source code in files with prefix `full_code_for_` in {dump_src_dir} first, and set breakpoints in their separate files according to the function name. Then press enter to continue."
+            input(msg)
             yield
         finally:
             torch._dynamo.eval_frame.set_eval_frame(callback)
