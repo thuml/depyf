@@ -15,7 +15,7 @@ from contextlib import contextmanager
 
 def decompile_by_depyf(func):
     old_code = func.__code__
-    decompile_path = "__pycache__/decompiled_code.py"
+    decompile_path = "./decompiled_code.py"
     # first step, decompile the code
     src = decompile(old_code)
     new_src = prepare_freevars_for_compile(old_code, src)
@@ -29,8 +29,8 @@ def decompile_by_depyf(func):
 
 def generate_pyc_and_get_decompiled_code(func, decompiler):
     old_code = func.__code__
-    py_path = "__pycache__/generated_code.py"
-    decompile_path = "__pycache__/decompiled_code.py"
+    py_path = "./generated_code.py"
+    decompile_path = "./decompiled_code.py"
 
     # first step, get the source code and remove indentation 
     src = inspect.getsource(func)
