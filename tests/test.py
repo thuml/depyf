@@ -61,7 +61,7 @@ def decompile_by_decompyle3(func):
 def decompile_by_pycdc(func):
     return generate_pyc_and_get_decompiled_code(func, decompiler="./pycdc")
 
-decompile_fn = decompile_by_pycdc
+decompile_fn = decompile_by_depyf
 
 @contextmanager
 def replace_code_by_decompile_and_compile(func):
