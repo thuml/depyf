@@ -39,7 +39,7 @@ The main usage of ``depyf`` involves two context managers, and it is recommended
     shape_8_inputs = {"x": torch.randn(8, requires_grad=True), "y": torch.randn(8, requires_grad=True)}
 
     import depyf
-    with depyf.prepare_debug(function, "./debug_dir"):
+    with depyf.prepare_debug("./debug_dir"):
         # warmup
         for i in range(100):
             output = function(shape_10_inputs)
@@ -49,11 +49,17 @@ The main usage of ``depyf`` involves two context managers, and it is recommended
     with depyf.debug():
         output = function(shape_10_inputs)
 
-The first context manager ``depyf.prepare_debug()`` accepts whatever you give to ``torch.compile``, and one directory path to dump all source code to. Inside this context manager, all function call of the compiled function ``function`` will be hooked by ``depyf``, which dumps necessarry source code for you.
+The first context manager ``depyf.prepare_debug()`` accepts one directory path to dump all source code to. Inside this context manager, all internal details of PyTorch will be hooked by ``depyf``, which dumps necessarry source code for you.
 
-Upon exiting the context manager, the program will pause, and you can browse all source code under the directory you specify (``"./debug_dir"`` in this example). The entry file is ``full_code.py``. You can set breakpoints inside these files.
+The second context manager ``depyf.debug()`` has no arguments, it just disables new compiled entries. Upon entering the context manager, the program will pause, and you can browse all source code under the directory you specify (``"./debug_dir"`` in this example). The entry file is ``full_code_for_xxx.py``. You can set breakpoints inside these files. And the most important thing is, those breakpoints you set, can be hit under this context manager. And you can step through the code line by line, to debug possible ``NaN`` values or to understand what happens to your code.
 
-The second context manager ``depyf.debug()`` has no arguments, it just disables new compiled entries. And the most important thing is, those breakpoints you set, can be hit under this context manager. And you can step through the code line by line, to debug possible ``NaN`` values or to understand what happens to your code.
+The following figure shows two typical usages of ``depyf``, and lists all the generated files.
+
+.. image:: _static/images/usage.svg
+  :width: 1200
+  :alt: Two typical usages of ``depyf``.
+
+For more documentations, please check:
 
 .. toctree::
    :maxdepth: 1
