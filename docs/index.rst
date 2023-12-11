@@ -10,7 +10,7 @@ Before learning the usage of ``depyf``, we recommend reading :doc:`walk_through`
 
 Take the workflow from the walk-through example:
 
-.. image:: _static/images/dynamo-workflow.png
+.. image:: _static/images/dynamo-workflow-with-depyf.svg
   :width: 1200
   :alt: Dynamo workflow
 

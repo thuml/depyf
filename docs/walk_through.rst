@@ -1,34 +1,7 @@
 A Walk Through Example of ``torch.compile``
 ===========================================
 
-In this tutorial, we will learn how does PyTorch compiler work for the following code:
-
-.. code-block:: python
-
-    import torch
-
-    @torch.compile
-    def function(inputs):
-        x = inputs["x"]
-        y = inputs["y"]
-        x = x.cos().cos()
-        if x.mean() > 0.5:
-            x = x / 1.1
-        return x * y
-
-    shape_10_inputs = {"x": torch.randn(10, requires_grad=True), "y": torch.randn(10, requires_grad=True)}
-    shape_8_inputs = {"x": torch.randn(8, requires_grad=True), "y": torch.randn(8, requires_grad=True)}
-    # warmup
-    for i in range(100):
-        output = function(shape_10_inputs)
-        output = function(shape_8_inputs)
-    
-    # execution of compiled functions
-    output = function(shape_10_inputs)
-
-The code tries to implement an activation function :math:`\text{cos}(\text{cos}(x))`, and scales the output according to its activation value, then multiplies the output with another tensor ``y``.
-
-The tutorial intends to cover the following aspects of PyTorch compiler:
+This tutorial intends to cover the following aspects of PyTorch compiler:
 
 - Basic concepts (Just-In-Time compilers, Ahead-of-time compilers)
 - Dynamo (graph capture, separate users' code into pure Python code and pure PyTorch-related code)
@@ -44,7 +17,7 @@ These components will be called with different backend options:
 PyTorch compiler is a Just-In-Time compiler
 --------------------------------------------
 
-The first concept we have to know is that PyTorch compiler is a Just-In-Time compiler. So what does `Just-In-Time compiler` mean? Well, let's look at another example:
+The first concept we have to know is that PyTorch compiler is a Just-In-Time compiler. So what does `Just-In-Time compiler` mean? Well, let's look at an example:
 
 .. code-block:: python
 
@@ -102,13 +75,13 @@ And if we want to be rigorous, our compiler example should be updated as follows
 
 We have to check each parameter so that our optimization conditions are sound, and also fallback to the original code if we fail to optimize the code.
 
-This leads to two basic concepts in compilers: guards, and transformed code. Guards are conditions when the functions can be optimized, and transformed code is the optimized version of functions. In the above simple compiler example, ``isinstance(mod, A)`` is a guard, and ``return 2 * x`` is the corresponding transformed code that is equivalent to the original code under the guarding condition, but is significantly faster.
+This leads to two basic concepts in (just-in-time) compilers: guards, and transformed code. Guards are conditions when the functions can be optimized, and transformed code is the optimized version of functions. In the above simple compiler example, ``isinstance(mod, A)`` is a guard, and ``return 2 * x`` is the corresponding transformed code that is equivalent to the original code under the guarding condition, but is significantly faster.
 
 The above example is an Ahead-of-time compiler: we inspect all the available source code, and before running any function (i.e. ahead-of-time), we write the optimized function in terms of all possible guards and transformed code.
 
 Another category of compiler is just-in-time compiler: right before the function is executed, it analyzes if the execution can be optimized, and what is the condition under which the function execution can be optimized. Hopefully, the condition is general enough for new inputs, so that the benfit outweights the cost of Just-In-Time compilation. If all conditions fail, it will try to optimize the code under the new condition.
 
-The basic workflow of a Just-In-Time compiler should look like the following:
+The basic workflow of a just-in-time compiler should look like the following:
 
 .. code-block:: python
 
@@ -125,7 +98,7 @@ The basic workflow of a Just-In-Time compiler should look like the following:
             z = torch.log(y)
             return z
 
-A Just-In-Time compiler just optimizes for what it has seen. Everytime it sees a new input that does not satisfy any guarding condition, it compiles a new guard and transformed code for the new input.
+A just-in-time compiler just optimizes for what it has seen. Everytime it sees a new input that does not satisfy any guarding condition, it compiles a new guard and transformed code for the new input.
 
 Let's explain the state of compiler (in terms of guards and transfromed code) step-by-step:
 
@@ -172,12 +145,42 @@ Let's explain the state of compiler (in terms of guards and transfromed code) st
     # the second call of f(x, b) hit a condition, so we can just execute the transformed code
     f(x, b)
 
-In this example, we guard on class types such as ``isinstance(mod, A)``, and the ``TransformedCode`` is also Python code; for ``torch.compile``, it guards on much more conditions like the devices (CPU/GPU), data types (int32, float32), shapes (``[10]``, ``[8]``), and its ``TransformedCode`` is Python bytecode. We can extract those compiled entries from functions, see the `PyTorch documentation <https://pytorch.org/docs/main/torch.compiler_deepdive.html#how-to-inspect-artifacts-generated-by-torchdynamo>`_ for more details. Despite the difference on guards and transformed code, the basic workflow of ``torch.compile`` is the same as this example, i.e., it works as a Just-In-Time compiler.
+In this example, we guard on class types such as ``isinstance(mod, A)``, and the ``TransformedCode`` is also Python code; for ``torch.compile``, it guards on much more conditions like the devices (CPU/GPU), data types (int32, float32), shapes (``[10]``, ``[8]``), and its ``TransformedCode`` is Python bytecode. We can extract those compiled entries from functions, see the `PyTorch documentation <https://pytorch.org/docs/main/torch.compiler_deepdive.html#how-to-inspect-artifacts-generated-by-torchdynamo>`_ for more details. Despite the difference on guards and transformed code, the basic workflow of ``torch.compile`` is the same as this example, i.e., it works as a just-in-time compiler.
+
+Optimization beyond algebric simplification
+---------------------------------------------------
+
+The above example is about algebric simplification. However, such an optimization is rather rare in practice. Let's look at a more practical example, and see how PyTorch compiler works for the following code:
+
+.. code-block:: python
+
+    import torch
+
+    @torch.compile
+    def function(inputs):
+        x = inputs["x"]
+        y = inputs["y"]
+        x = x.cos().cos()
+        if x.mean() > 0.5:
+            x = x / 1.1
+        return x * y
+
+    shape_10_inputs = {"x": torch.randn(10, requires_grad=True), "y": torch.randn(10, requires_grad=True)}
+    shape_8_inputs = {"x": torch.randn(8, requires_grad=True), "y": torch.randn(8, requires_grad=True)}
+    # warmup
+    for i in range(100):
+        output = function(shape_10_inputs)
+        output = function(shape_8_inputs)
+    
+    # execution of compiled functions
+    output = function(shape_10_inputs)
+
+The code tries to implement an activation function :math:`\text{cos}(\text{cos}(x))`, and scales the output according to its activation value, then multiplies the output with another tensor ``y``.
 
 How does Dynamo transform and modify the function?
 ---------------------------------------------------
 
-As we understand the global picture of ``torch.compile`` as a Just-In-Time compiler, we can dive deeper in how it works. Unlike general purpose compilers like ``gcc`` or ``llvm``, ``torch.compile`` is a domain-specific compiler: it only focuses on PyTorch related computation graph. Therefore, we need a tool to separate users code into two parts: plain python code and computation graph code.
+As we understand the global picture of ``torch.compile`` as a just-in-time compiler, we can dive deeper in how it works. Unlike general purpose compilers like ``gcc`` or ``llvm``, ``torch.compile`` is a domain-specific compiler: it only focuses on PyTorch related computation graph. Therefore, we need a tool to separate users code into two parts: plain python code and computation graph code.
 
 ``Dynamo``, living inside the module ``torch._dynamo``, is the tool for doing this. Normally we don't interact with this module directly. It is called inside the ``torch.compile`` function.
 
@@ -191,13 +194,16 @@ To enable such a fine-grained manipulation of functions, ``Dynamo`` operates on 
 
 The following procedure describes what Dynamo does to our function ``function``.
 
-.. image:: _static/images/dynamo-workflow.png
+.. image:: _static/images/dynamo-workflow.svg
   :width: 1200
   :alt: Dynamo workflow
 
 One important feature of ``Dynamo``, is that it can analyze all the functions called inside the ``function`` function. If a function can be represented entirely in a computation graph, that function call will be inlined and the function call is eliminated.
 
 The mission of ``Dynamo``, is to extract computation graphs from Python code in a safe and sound way. Once we have the computation graphs, we can enter the world of computation graph optimization now.
+
+.. note::
+    The above workflow contains much hard-to-understand bytecode. For those who cannot read Python bytecode, ``depyf`` can come to rescue! Check `the documentation <./index.html>`_ for more details.
 
 Dynamic shape support from Dynamo
 ---------------------------------------------------
