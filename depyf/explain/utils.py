@@ -117,14 +117,18 @@ class CacheResult:
 
         compiled_subgraphs = [
             name for name in code.co_names if name.startswith("__compiled")]
-        assert len(compiled_subgraphs) == 1
+        assert len(compiled_subgraphs) <= 1
 
         module = import_module(module_name)
-        # deal with compiled_subgraph
-        self.compiled_subgraph = innermost_fn(
-            getattr(module, compiled_subgraphs[0]))
-        self.compiled_subgraph_proxy = CodeProxy.decompile_with_name(
-            self.compiled_subgraph, compiled_subgraphs[0])
+        if compiled_subgraphs:
+            # deal with compiled_subgraph
+            self.compiled_subgraph = innermost_fn(
+                getattr(module, compiled_subgraphs[0]))
+            self.compiled_subgraph_proxy = CodeProxy.decompile_with_name(
+                self.compiled_subgraph, compiled_subgraphs[0])
+        else:
+            self.compiled_subgraph = None
+            self.compiled_subgraph_proxy = None
         # deal with transformed_code
         self.transformed_code = code
         self.transformed_code_proxy = CodeProxy.decompile_with_name(
@@ -144,7 +148,7 @@ class CacheResult:
             "transformed_code": str(
                 self.transformed_code_proxy),
             "compiled_subgraph": str(
-                self.compiled_subgraph_proxy),
+                self.compiled_subgraph_proxy) if self.compiled_subgraph_proxy is not None else '"No compiled subgraph."',
             "referenced_global_functions": {
                 name: fn.to_data() for name,
                 fn in self.referenced_global_functions.items()}}
@@ -215,16 +219,17 @@ class DynamoOptimizationResult:
             additional_code += f"\ndef {guard_func_name}(L):\n" + \
                 " " * 4 + "return " + guard + "\n"
 
-            # prepare compiled subgraph, like `__compiled_fn_0`
-            subgraph_name = entry.compiled_subgraph_proxy.name
-            additional_code += "\n"
-            additional_code += f"# Note: please refer to the graph code in {subgraph_name}*.py.\n"
-            additional_code += f"# Captured Graph: Dynamo generated graph (debuggable when using eager backend).\n"
-            additional_code += f"# Joint graph: joint forward+backward graph from aot autograd.\n"
-            additional_code += f"# Forward graph: forward graph from aot autograd (debuggable when using aot_eager backend).\n"
-            additional_code += f"# Backward graph: backward graph from aot autograd (debuggable when using aot_eager backend).\n"
-            additional_code += f"# AFTER XXX: graph processed by inductor (not debuggable).\n"
-            additional_code += f"def {subgraph_name}(*args, **kwargs):\n    pass\n"
+            if entry.compiled_subgraph_proxy is not None:
+                # prepare compiled subgraph, like `__compiled_fn_0`
+                subgraph_name = entry.compiled_subgraph_proxy.name
+                additional_code += "\n"
+                additional_code += f"# Note: please refer to the graph code in {subgraph_name}*.py.\n"
+                additional_code += f"# Captured Graph: Dynamo generated graph (debuggable when using eager backend).\n"
+                additional_code += f"# Joint graph: joint forward+backward graph from aot autograd.\n"
+                additional_code += f"# Forward graph: forward graph from aot autograd (debuggable when using aot_eager backend).\n"
+                additional_code += f"# Backward graph: backward graph from aot autograd (debuggable when using aot_eager backend).\n"
+                additional_code += f"# AFTER XXX: graph processed by inductor (not debuggable).\n"
+                additional_code += f"def {subgraph_name}(*args, **kwargs):\n    pass\n"
 
             # prepare transformed code, like `transformed_code_0`
             additional_code += "\n" + \

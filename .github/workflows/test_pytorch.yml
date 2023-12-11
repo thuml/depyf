@@ -42,5 +42,6 @@ jobs:
         echo "success"
     - name: Test with pytest
       run: |
+        python tests/test_pytorch/test_no_graph.py
         python tests/test_pytorch/spawn_tests.py
         python tests/test_pytorch/cmp_output.py
