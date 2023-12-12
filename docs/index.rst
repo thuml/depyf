@@ -59,10 +59,12 @@ The following figure shows two typical usages of ``depyf``, and lists all the ge
   :width: 1200
   :alt: Two typical usages of ``depyf``.
 
-For more documentations, please check:
+You can also check `the advanced usages <./index.html>`_ and `frequently asked questions <./faq.html>`_ for more details.
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
    walk_through
+   advanced
    faq

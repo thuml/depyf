@@ -35,3 +35,11 @@ html_css_files = [
 ]
 
 highlight_language = 'python3'
+
+html_theme_options = {
+    'collapse_navigation': False,
+    'sticky_navigation': True,
+    'navigation_depth': 1,  # Adjust as needed
+    'includehidden': True,
+    'titles_only': False
+}
