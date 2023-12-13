@@ -583,10 +583,11 @@ class Decompiler:
             var.__exit__()
 
         We find the start of `finally` by `WITH_EXCEPT_START`, and the end of `finally` by `POP_EXCEPT`.
+        In early python version, the start is `WITH_CLEANUP_START` and the end is `WITH_CLEANUP_FINISH`.
         """
         start_index = self.index_of(inst.offset)
         with_except_index = [i for i, x in enumerate(
-            self.instructions) if x.opname == "WITH_EXCEPT_START" and i > start_index][-1]
+            self.instructions) if x.opname in ["WITH_EXCEPT_START", "WITH_CLEANUP_START"] and i > start_index][-1]
         end_index = with_except_index
         nop_instruction(self.instructions[end_index])
 
@@ -599,7 +600,7 @@ class Decompiler:
             i -= 1
 
         pop_except_indices = [i for i, x in enumerate(
-            self.instructions) if x.opname == "POP_EXCEPT" and i > end_index]
+            self.instructions) if x.opname in ["POP_EXCEPT", "WITH_CLEANUP_FINISH"] and i > end_index]
         if sys.version_info >= (3, 11):
             # Python 3.11 seems to have two `POP_EXCEPT` instructions, not sure why.
             pop_except_index = pop_except_indices[1]

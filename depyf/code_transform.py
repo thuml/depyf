@@ -123,7 +123,7 @@ def nop_unreachable_bytecode(
     reachable[0] = True
     # each instruction marks the instruction after it
     for i, inst in enumerate(instructions):
-        if inst.is_jump_target or inst.opname == "WITH_EXCEPT_START":
+        if inst.is_jump_target or inst.opname in ["WITH_EXCEPT_START", "WITH_CLEANUP_START"]:
             # TODO need to figure out how to get exception table in Python 3.11. `WITH_EXCEPT_START` will be a target for exception.
             # the instruction is the target of a jump
             reachable[i] = True
