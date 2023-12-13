@@ -179,7 +179,7 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
 
                 code_names = {x[0].co_name for x in bytecode_hook.optimized_code_and_module_name}
                 for code, module_name in bytecode_hook.optimized_code_and_module_name:
-                    if code.co_name.startswith("resume_in_") and code.co_name[len("resume_in_"):] in code_names:
+                    if code.co_name.startswith("resume_in_") and any(f"resume_in_{name}" in code.co_name for name in code_names):
                         continue
                     from depyf.explain import dump_src
                     from depyf.explain.utils import write_code_to_file_template
