@@ -31,7 +31,7 @@ msg += "Missing files:\n"
 for x in set(expected_files) - set(output_files):
     msg += x + "\n"
 
-assert len(output_files) == len(expected_files), msg
+assert output_files == expected_files, msg
 
 for output_file, expected_file in zip(output_files, expected_files):
     if "kernel" in output_file:
