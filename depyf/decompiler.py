@@ -960,6 +960,8 @@ class Decompiler:
 
     MAKE_CELL = generic_nop
 
+    RERAISE = generic_nop
+
     # our FOR_ITER is different from CPython's FOR_ITER (as it does not need
     # to explicitly consider the case of exhausted iterator), so we don't need
     # to do anything here
@@ -972,7 +974,7 @@ class Decompiler:
     GET_YIELD_FROM_ITER = unimplemented_instruction
 
     # we don't support try-except/try-finally
-    POP_EXCEPT = RERAISE = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = CLEANUP_THROW = unimplemented_instruction
+    POP_EXCEPT = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = CLEANUP_THROW = unimplemented_instruction
 
     # we don't support async/await
     GET_AWAITABLE = GET_AITER = GET_ANEXT = END_ASYNC_FOR = BEFORE_ASYNC_WITH = SETUP_ASYNC_WITH = SEND = ASYNC_GEN_WRAP = unimplemented_instruction

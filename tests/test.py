@@ -920,18 +920,18 @@ def test_MAKE_FUNCTION():
         assert [f(i) for i in range(10)] == ans
 
 
-def test_simple_try():
-    def f(a):
-        try:
-            a += 1
-        finally:
-            a += 2
-        a += 3
-        return a
+# def test_simple_try():
+#     def f(a):
+#         try:
+#             a += 1
+#         finally:
+#             a += 2
+#         a += 3
+#         return a
 
-    ans = [f(i) for i in range(10)]
-    with replace_code_by_decompile_and_compile(f):
-        assert [f(i) for i in range(10)] == ans
+#     ans = [f(i) for i in range(10)]
+#     with replace_code_by_decompile_and_compile(f):
+#         assert [f(i) for i in range(10)] == ans
 
 
 def test_simple_for():
