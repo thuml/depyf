@@ -3,7 +3,6 @@ import glob
 output_full_code = sorted(glob.glob("depyf_output/*/full_code_*.py"))
 expected_full_code = sorted(glob.glob("tests/depyf_output/*/full_code_*.py"))
 expected_full_code = [x[len("tests/"):] for x in expected_full_code]
-assert len(output_full_code) == len(expected_full_code), f"len(output_full_code)={len(output_full_code)}, len(expected_full_code)={len(expected_full_code)}"
 
 msg = "Unexpected files:\n"
 for x in set(output_full_code) - set(expected_full_code):
