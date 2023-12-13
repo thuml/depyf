@@ -1011,10 +1011,10 @@ class Decompiler:
         raise ValueError(f"Cannot find instruction with offset {offset}")
 
     @staticmethod
-    def cleanup_instructions(instructions: List[Instruction]):
+    def cleanup_instructions(code, instructions: List[Instruction]):
         propagate_line_nums(instructions)
         simplify_finally_statement(instructions)
-        nop_unreachable_bytecode(instructions)
+        nop_unreachable_bytecode(code, instructions)
 
     def __init__(self, code: Union[CodeType, Callable]):
         if callable(code):
@@ -1022,7 +1022,7 @@ class Decompiler:
         self.code = code
         instructions = list(convert_instruction(_)
                             for _ in dis.get_instructions(code))
-        Decompiler.cleanup_instructions(instructions)
+        Decompiler.cleanup_instructions(code, instructions)
         self.instructions = instructions
         self.state = DecompilerState(source_code="", stack=[])
 

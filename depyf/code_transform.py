@@ -92,6 +92,61 @@ def propagate_line_nums(instructions: List[Instruction]):
         populate_line_num(inst)
 
 
+# ======= begin code borrowed from pytorch/torch/_dynamo/bytecode_transformation.py ===========
+@dataclasses.dataclass
+class ExceptionTableEntry:
+    start: int
+    end: int
+    target: int
+    depth: int
+    lasti: bool
+
+def decode_exception_table_varint(bytes_iter) -> int:
+    """
+    Inverse of `encode_exception_table_varint`.
+    """
+    b = next(bytes_iter)
+    val = b & 63
+    while b & 64:
+        val <<= 6
+        b = next(bytes_iter)
+        val |= b & 63
+    return val
+
+def check_exception_table(tab: List[ExceptionTableEntry]) -> None:
+    """
+    Verifies that a list of ExceptionTableEntries will make a well-formed
+    jump table: entries are non-empty, sorted, and do not overlap.
+    """
+    for i in range(len(tab) - 1):
+        assert (
+            tab[i].start <= tab[i].end
+            and tab[i].end < tab[i + 1].start
+            and tab[i + 1].start <= tab[i + 1].end
+        )
+
+def parse_exception_table(exntab) -> List[ExceptionTableEntry]:
+    """
+    Parse the exception table according to
+    https://github.com/python/cpython/blob/3.11/Objects/exception_handling_notes.txt
+    """
+    exntab_iter = iter(exntab)
+    tab = []
+    try:
+        while True:
+            start = decode_exception_table_varint(exntab_iter) * 2
+            length = decode_exception_table_varint(exntab_iter) * 2
+            end = start + length - 2
+            target = decode_exception_table_varint(exntab_iter) * 2
+            dl = decode_exception_table_varint(exntab_iter)
+            depth = dl >> 1
+            lasti = bool(dl & 1)
+            tab.append(ExceptionTableEntry(start, end, target, depth, lasti))
+    except StopIteration:
+        check_exception_table(tab)
+        return tab
+# ======= end code borrowed from pytorch/torch/_dynamo/bytecode_transformation.py ===========
+
 def simplify_finally_statement(instructions: List[Instruction]):
     """Simplify finally statement.
     3.10 finally statement:
@@ -114,17 +169,21 @@ def simplify_finally_statement(instructions: List[Instruction]):
                         nop_instruction(_inst)
 
 
-def nop_unreachable_bytecode(
+def nop_unreachable_bytecode(code, 
         instructions: List[dis.Instruction]) -> List[dis.Instruction]:
     """Mark unreachable bytecode as NOP."""
     jumps = set(dis.hasjabs) | set(dis.hasjrel)
+
+    exception_targets = {}
+    if py311:
+        tab = parse_exception_table(code.co_exceptiontable)
+        exception_targets = {entry.target: entry for entry in tab}
 
     reachable = [False for x in instructions]
     reachable[0] = True
     # each instruction marks the instruction after it
     for i, inst in enumerate(instructions):
-        if inst.is_jump_target or inst.opname in ["WITH_EXCEPT_START", "WITH_CLEANUP_START"]:
-            # TODO need to figure out how to get exception table in Python 3.11. `WITH_EXCEPT_START` will be a target for exception.
+        if inst.is_jump_target or inst.offset in exception_targets:
             # the instruction is the target of a jump
             reachable[i] = True
         # the last instruction does not need to mark any following instructions
