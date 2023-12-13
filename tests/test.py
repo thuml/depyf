@@ -12,6 +12,14 @@ from copy import deepcopy
 
 from contextlib import contextmanager
 
+@contextmanager
+def simple_manager():
+    state = []
+    try:
+        state.append("enter")
+        yield state
+    finally:
+        state.append("exit")
 
 def decompile_by_depyf(func):
     old_code = func.__code__
@@ -936,6 +944,15 @@ def test_simple_for():
     with replace_code_by_decompile_and_compile(f):
         assert [f(i) for i in range(10)] == ans
 
+def test_simple_with():
+    def f(a):
+        with simple_manager() as state:
+            state.append(a)
+        return state
+
+    ans = f(5)
+    with replace_code_by_decompile_and_compile(f):
+        assert f(5) == ans
 
 class A:
     def f(self):

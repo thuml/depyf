@@ -13,12 +13,12 @@ import contextlib
 
 from .code_transform import (
     nop_unreachable_bytecode,
+    nop_instruction,
     add_indentation,
     remove_indentation,
     remove_some_temp,
     propagate_line_nums,
     convert_instruction,
-    simplify_with_statement,
     simplify_finally_statement,
     Instruction,
 )
@@ -568,6 +568,73 @@ class Decompiler:
         self.state.source_code += try_code + finally_code
         return end_index
 
+    def SETUP_WITH(self, inst: Instruction):
+        """
+        with expression as var:
+            body
+
+        is equivalent to:
+
+        var = expression
+        var.__enter__()
+        try:
+            body
+        finally:
+            var.__exit__()
+
+        We find the start of `finally` by `WITH_EXCEPT_START`, and the end of `finally` by `POP_EXCEPT`.
+        """
+        start_index = self.index_of(inst.offset)
+        with_except_index = [i for i, x in enumerate(
+            self.instructions) if x.opname == "WITH_EXCEPT_START" and i > start_index][-1]
+        end_index = with_except_index
+        nop_instruction(self.instructions[end_index])
+
+        # NOP PUSH_EXC_INFO and JUMP_FORWARD
+        i = end_index - 1
+        while end_index - i <= 2:
+            _inst = self.instructions[i]
+            if _inst.opname.startswith("JUMP") or _inst.opname == "PUSH_EXC_INFO":
+                nop_instruction(_inst)
+            i -= 1
+
+        pop_except_indices = [i for i, x in enumerate(
+            self.instructions) if x.opname == "POP_EXCEPT" and i > end_index]
+        if sys.version_info >= (3, 11):
+            # Python 3.11 seems to have two `POP_EXCEPT` instructions, not sure why.
+            pop_except_index = pop_except_indices[1]
+        else:
+            pop_except_index = pop_except_indices[0]
+        for i in range(end_index, pop_except_index + 1):
+            nop_instruction(self.instructions[i])
+        tos = self.state.stack[-1]
+        temp = self.get_temp_name()
+        self.state.stack.append(f"{temp}.__exit__")
+        self.state.stack.append(temp)
+        with_clause = f"with {tos} as {temp}:\n"
+        with_body = ""
+        with self.new_state(self.state.stack):
+            self.decompile_range(start_index + 1, end_index)
+            with_body = self.state.source_code
+            with_body = add_indentation(with_body, self.indentation)
+            lines = with_body.splitlines()
+            ans = []
+            for line in lines:
+                if f"{temp}.__exit__" in line or "None(None, None)" in line.strip():
+                    # this is the line that calls __exit__, we need to remove it, as it is managed by `with` statement.
+                    # `None(None, None)` is used for Python 3.11. Who knows why it loads three Nones but call with 2 args for the following simple code:
+                    # def f():
+                    #     with a:
+                    #         print(2)
+                    continue
+                ans.append(line)
+            with_body = "".join([x + "\n" for x in ans])
+
+        self.state.source_code += with_clause + with_body
+        return pop_except_index + 1
+
+    BEFORE_WITH = SETUP_WITH
+
     def FOR_ITER(self, inst: Instruction):
         start_index = self.index_of(inst.offset)
         end_index = self.index_of(inst.get_jump_target())
@@ -917,7 +984,7 @@ class Decompiler:
     # we only support bytecode for functions
     IMPORT_STAR = unimplemented_instruction
 
-    YIELD_FROM = SETUP_ANNOTATIONS = LOAD_BUILD_CLASS = SETUP_WITH = BEFORE_WITH = MATCH_MAPPING = MATCH_SEQUENCE = MATCH_KEYS = MATCH_CLASS = unimplemented_instruction
+    YIELD_FROM = SETUP_ANNOTATIONS = LOAD_BUILD_CLASS = MATCH_MAPPING = MATCH_SEQUENCE = MATCH_KEYS = MATCH_CLASS = unimplemented_instruction
 
     # don't find any interesting use case for these instructions
     CALL_INTRINSIC_2 = unimplemented_instruction
@@ -945,7 +1012,6 @@ class Decompiler:
     @staticmethod
     def cleanup_instructions(instructions: List[Instruction]):
         propagate_line_nums(instructions)
-        simplify_with_statement(instructions)
         simplify_finally_statement(instructions)
         nop_unreachable_bytecode(instructions)
 

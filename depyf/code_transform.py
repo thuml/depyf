@@ -92,27 +92,6 @@ def propagate_line_nums(instructions: List[Instruction]):
         populate_line_num(inst)
 
 
-def simplify_with_statement(instructions: List[Instruction]):
-    """Simplify with statement.
-    3.10 with statement:
-    SETUP_WITH
-    with body
-    POP_BLOCK
-    some extra code (starts_line == with)
-    """
-    for i, inst in enumerate(instructions):
-        if inst.opname == "SETUP_WITH":
-            line_no = inst.starts_line
-            pop_blocks = [j for j, _inst in enumerate(
-                instructions) if j > i and _inst.opname == "POP_BLOCK" and instructions[j + 1].starts_line == line_no]
-            if pop_blocks:
-                pop_block_index = pop_blocks[0]
-                nop_instruction(instructions[pop_block_index])
-                for _inst in instructions[pop_block_index:]:
-                    if _inst.starts_line == line_no:
-                        nop_instruction(_inst)
-
-
 def simplify_finally_statement(instructions: List[Instruction]):
     """Simplify finally statement.
     3.10 finally statement:
@@ -144,7 +123,8 @@ def nop_unreachable_bytecode(
     reachable[0] = True
     # each instruction marks the instruction after it
     for i, inst in enumerate(instructions):
-        if inst.is_jump_target:
+        if inst.is_jump_target or inst.opname == "WITH_EXCEPT_START":
+            # TODO need to figure out how to get exception table in Python 3.11. `WITH_EXCEPT_START` will be a target for exception.
             # the instruction is the target of a jump
             reachable[i] = True
         # the last instruction does not need to mark any following instructions
@@ -169,8 +149,8 @@ def nop_unreachable_bytecode(
             if "IF" in inst.opname or "FOR_ITER" in inst.opname or "SETUP_LOOP" in inst.opname:
                 # the fallback block is always reachable for conditional jumps
                 reachable[i + 1] = True
-            elif inst.opname == "SETUP_FINALLY":
-                # the finally block is always reachable
+            elif inst.opname in ["SETUP_FINALLY", "SETUP_WITH", "BEFORE_WITH"]:
+                # the with/finally block is always reachable
                 reachable[i + 1] = True
             else:
                 # this is a direct jump, the target is reachable
