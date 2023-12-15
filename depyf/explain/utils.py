@@ -12,6 +12,7 @@ import contextlib
 
 import depyf
 from depyf.decompiler import DecompilationError
+from depyf.utils import get_function_signature
 
 
 def decompile_ensure(fn, overwite_fn_name=None):
@@ -20,7 +21,8 @@ def decompile_ensure(fn, overwite_fn_name=None):
             fn).decompile(overwite_fn_name=overwite_fn_name)
     except DecompilationError as e:
         print(str(e))
-        decompiled_source_code = "'Failed to decompile.'\n"
+        header = get_function_signature(fn, overwite_fn_name=overwite_fn_name)
+        decompiled_source_code = header + "'Failed to decompile.'\n"
     return decompiled_source_code
 
 
