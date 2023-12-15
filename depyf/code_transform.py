@@ -213,7 +213,7 @@ def nop_unreachable_bytecode(code,
                 reachable[i + 1] = True
             else:
                 # this is a direct jump, the target is reachable
-                # we further check if any other in-between instructions are jump targets
+                # we further check if any outside instructions jump into in-between instructions
                 # if not, we can mark this instruction as unreachable, too
                 # later, in-between instructions will be marked as unreachable (NOP)
                 # and the interpreter will slide through all the NOP directly
@@ -222,9 +222,17 @@ def nop_unreachable_bytecode(code,
                     instructions) if instruct.offset >= inst.get_jump_target()]
                 if len(jump_forwards):
                     j = jump_forwards[0]
-                    if j > i and all(
-                            not instruct.is_jump_target for instruct in instructions[i + 1:j]):
-                        reachable[i] = False
+                    if j > i:
+                        has_jump_in = False
+                        for ii, inst_ii in enumerate(instructions):
+                            try:
+                                jump_location = inst_ii.get_jump_target()
+                                if (ii < i or ii > j) and (jump_location >= inst.offset and jump_location < instructions[j].offset):
+                                    has_jump_in = True
+                            except Exception:
+                                pass
+                        if not has_jump_in:
+                            reachable[i] = False
         else:
             reachable[i + 1] = True
 
