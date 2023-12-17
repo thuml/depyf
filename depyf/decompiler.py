@@ -553,11 +553,15 @@ class Decompiler:
         # else branch might have jumps, we need to find the end of the else
         all_jump_targets = [i.get_jump_target() for i in self.instructions[this_index: max_jump_index] if qualified_jump(i)]
         max_jump_index = self.index_of(max(all_jump_targets))
-        max_jump_index += 1
+        old_map_jump_index = max_jump_index
         while max_jump_index < len(self.instructions):
             opname = self.instructions[max_jump_index].opname
-            if "JUMP" in opname or "STORE" in opname or "RETURN" in opname:
+            if "STORE" in opname or "RETURN" in opname:
+                # we want to include the store/return instruction in the if-else block
                 max_jump_index += 1
+                break
+            elif ("JUMP" in opname and max_jump_index > old_map_jump_index) or "FOR_ITER" in opname:
+                # we don't want to include the jump instruction in the if-else block
                 break
             max_jump_index += 1
         end_index_candidates.append(max_jump_index)
