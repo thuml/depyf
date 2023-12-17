@@ -409,7 +409,58 @@ class Decompiler:
         assert inst.argval == 0, "Only generator expression is supported"
 
     def generic_jump_if(self, inst: Instruction):
-        """Only support consecutive and/or, do not support mixed and/or."""
+        """How we support if-else:
+
+        Failed idea: try to find the block of instructions for if and else.
+        This is not possible, as the if-else block might have non-continuous instructions.
+        Take this function as an example:
+
+        def f(a):
+            b = 1 if a else 2
+            print(b)
+        
+        The bytecode is:
+  2           0 LOAD_FAST                0 (a)
+              2 POP_JUMP_IF_FALSE        4 (to 8)
+              4 LOAD_CONST               1 (1)
+              6 JUMP_FORWARD             1 (to 10)
+        >>    8 LOAD_CONST               2 (2)
+        >>   10 STORE_FAST               1 (b)
+
+  3          12 LOAD_GLOBAL              0 (print)
+             14 LOAD_FAST                1 (b)
+             16 CALL_FUNCTION            1
+             18 POP_TOP
+             20 LOAD_CONST               0 (None)
+             22 RETURN_VALUE
+        
+        The instructions for if branch: 2, 4, 6, 10
+        The instructions for else branch: 8, 10
+
+
+        Current idea:
+
+        We take advantage of the following fact:
+
+        This code snippet:
+
+        if cond:
+            if-body
+        else:
+            else-body
+        rest-body
+
+        is equivalent to:
+
+        if cond：
+            if-body
+            rest-body
+        else:
+            else-body
+            rest-body
+        
+        By duplicating the rest-body, we can decompile the if-else block separately.
+        """
         jump_offset = inst.get_jump_target()
         jump_index = self.index_of(jump_offset)
         this_index = self.index_of(inst.offset)
