@@ -1332,3 +1332,13 @@ def test_head_mask():
     ans = f(FakeObject('head_mask'), FakeObject('self'))
     with replace_code_by_decompile_and_compile(f):
         assert f(FakeObject('head_mask'), FakeObject('self')) == ans
+
+
+def test_gen():
+    # this test has a jump back instruction with JUMP_IF
+    def f(hidden_states, all_hidden_states, all_attentions, all_global_attentions):
+        return tuple(v for v in [hidden_states, all_hidden_states, all_attentions, all_global_attentions] if v is not None)
+
+    ans = f(1, None, 2, None)
+    with replace_code_by_decompile_and_compile(f):
+        assert f(1, None, 2, None) == ans
