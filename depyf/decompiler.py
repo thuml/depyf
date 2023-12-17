@@ -388,11 +388,10 @@ class Decompiler:
 
     def RETURN_VALUE(self, inst: Instruction):
         self.state.source_code += f"return {self.state.stack[-1]}\n"
-        return len(self.instructions)
+        self.state.stack.pop()
 
     def RETURN_CONST(self, inst: Instruction):
         self.state.source_code += f"return {inst.argval}\n"
-        return len(self.instructions)
 
     def YIELD_VALUE(self, inst: Instruction):
         if sys.version_info >= (3, 12):
@@ -512,12 +511,11 @@ class Decompiler:
         if_code = f"if {cond}:\n{if_body}"
         self.state.source_code += if_code
 
-        if end_index > jump_index:
-            # else branch exists
-            with self.new_state(jump_stack):
-                self.decompile_range(jump_index, end_index)
-                else_body = self.state.source_code
-                else_body = add_indentation(else_body, self.indentation)
+        with self.new_state(jump_stack):
+            self.decompile_range(jump_index, end_index)
+            else_body = self.state.source_code
+        if else_body:
+            else_body = add_indentation(else_body, self.indentation)
             else_code = f"else:\n{else_body}"
             self.state.source_code += else_code
 
