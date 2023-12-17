@@ -497,7 +497,8 @@ class Decompiler:
             # else branch might have jumps, we need to find the end of the else
             all_jump_targets = [i.get_jump_target() for i in self.instructions[this_index +
                                                                         1: max_jump_index] if i.is_jump() and i.get_jump_target() > jump_offset]
-            end_index_candidates.append(max(all_jump_targets))
+            max_jump_index = self.index_of(max(all_jump_targets))
+            end_index_candidates.append(max_jump_index)
 
         end_index = min(end_index_candidates)
 
