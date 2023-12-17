@@ -64,6 +64,11 @@ class Decompiler:
         """Create a new state for decompiler."""
         state = DecompilerState(source_code="", stack=stack, inside_loop=inside_loop, loop_start_index=loop_start_index, loop_end_index=loop_end_index)
         old_state = self.state
+        if old_state.inside_loop and not state.inside_loop:
+            # inherit the loop state from the old state
+            state.inside_loop = old_state.inside_loop
+            state.loop_start_index = old_state.loop_start_index
+            state.loop_end_index = old_state.loop_end_index
         self.state = state
         yield
         self.state = old_state
