@@ -473,11 +473,11 @@ class Decompiler:
         jump_stack = self.state.stack.copy()
 
         if "IF_NOT_NONE" in inst.opname:
-            cond = f"{cond} is None"
+            cond = f"({cond} is None)"
         elif "IF_NONE" in inst.opname:
-            cond = f"{cond} is not None"
+            cond = f"({cond} is not None)"
         elif "IF_TRUE" in inst.opname:
-            cond = f"not {cond}"
+            cond = f"(not {cond})"
         elif "IF_FALSE" in inst.opname:
             cond = f"{cond}"
 
@@ -496,6 +496,25 @@ class Decompiler:
             return i.is_jump() and i.get_jump_target() >= jump_offset
 
         jump_targets = [i.get_jump_target() for i in self.instructions[this_index: jump_index] if qualified_jump(i)]
+
+        if not jump_targets:
+            # this is a jump back, we will generate a ``continue`` statement
+            # normally `if` condition is for the fallthrough code, but in this case
+            # we need to generate the `if` condition for the jump code
+            # therefore the condition is reversed
+            cond = self.state.stack[-1]
+            if "IF_NOT_NONE" in inst.opname:
+                cond = f"({cond} is not None)"
+            elif "IF_NONE" in inst.opname:
+                cond = f"({cond} is None)"
+            elif "IF_TRUE" in inst.opname:
+                cond = f"{cond}"
+            elif "IF_FALSE" in inst.opname:
+                cond = f"(not {cond})"
+            if_code = f"if {cond}:\n" + add_indentation("continue\n", self.indentation)
+            self.state.source_code += if_code
+            return
+
         max_jump = max(jump_targets)
         max_jump_index = self.index_of(max_jump)
         # else branch might have jumps, we need to find the end of the else
