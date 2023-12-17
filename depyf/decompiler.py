@@ -441,6 +441,36 @@ class Decompiler:
         The instructions for if branch: 2, 4, 6, 10
         The instructions for else branch: 8, 10
 
+        Another example:
+
+        def f():
+            g(arg1=a if a is not None else b, arg2=2)
+            print(1)
+
+        The bytecode is:
+
+  2           0 LOAD_GLOBAL              0 (g)
+              2 LOAD_GLOBAL              1 (a)
+              4 LOAD_CONST               0 (None)
+              6 IS_OP                    1
+              8 POP_JUMP_IF_FALSE        7 (to 14)
+             10 LOAD_GLOBAL              1 (a)
+             12 JUMP_FORWARD             1 (to 16)
+        >>   14 LOAD_GLOBAL              2 (b)
+        >>   16 LOAD_CONST               1 (2)
+             18 LOAD_CONST               2 (('arg1', 'arg2'))
+             20 CALL_FUNCTION_KW         2
+             22 POP_TOP
+
+  3          24 LOAD_GLOBAL              3 (print)
+             26 LOAD_CONST               3 (1)
+             28 CALL_FUNCTION            1
+             30 POP_TOP
+             32 LOAD_CONST               0 (None)
+             34 RETURN_VALUE
+
+        The instructions for if branch: 8, 14, 16, 18, 20, 22
+        The instructions for else branch: 10, 12, 16, 18, 20, 22
 
         Current idea:
 
@@ -464,6 +494,9 @@ class Decompiler:
             rest-body
         
         By duplicating the rest-body, we can decompile the if-else block separately.
+
+        Of course, we don't want to duplicate too long code, so we need to find the end of if-else block.
+        The current heuristic is to find the first jump/store/return instruction after the if-else block (because they are indicators that we will generate meaningful source code).
         """
         jump_offset = inst.get_jump_target()
         jump_index = self.index_of(jump_offset)
@@ -520,9 +553,13 @@ class Decompiler:
         # else branch might have jumps, we need to find the end of the else
         all_jump_targets = [i.get_jump_target() for i in self.instructions[this_index: max_jump_index] if qualified_jump(i)]
         max_jump_index = self.index_of(max(all_jump_targets))
-        # extend one more instruction, because sometimes if-body and else-body share the same instruction
-        # TODO how to determine if we need to extend more instructions?
         max_jump_index += 1
+        while max_jump_index < len(self.instructions):
+            opname = self.instructions[max_jump_index].opname
+            if "JUMP" in opname or "STORE" in opname or "RETURN" in opname:
+                max_jump_index += 1
+                break
+            max_jump_index += 1
         end_index_candidates.append(max_jump_index)
 
         end_index = min(end_index_candidates)
