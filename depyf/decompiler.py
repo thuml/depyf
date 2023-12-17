@@ -388,6 +388,7 @@ class Decompiler:
 
     def RETURN_VALUE(self, inst: Instruction):
         self.state.source_code += f"return {self.state.stack[-1]}\n"
+        return len(self.instructions)
 
     def RETURN_CONST(self, inst: Instruction):
         self.state.source_code += f"return {inst.argval}\n"
@@ -431,7 +432,22 @@ class Decompiler:
         elif "OR_POP" in inst.opname:
             fallthrough_stack.pop()
 
-        end_index = self.state.loop_end_index if self.state.inside_loop else len(self.instructions)
+        end_index_candidates = [len(self.instructions)]
+        if self.state.inside_loop:
+            end_index_candidates.append(self.state.loop_end_index)
+
+        jump_targets = [i.get_jump_target() for i in self.instructions[this_index +
+                                                                       1: jump_index] if i.is_jump() and i.get_jump_target() > jump_offset]
+        if jump_targets:
+            # has "else" branch
+            max_jump = max(jump_targets)
+            max_jump_index = self.index_of(max_jump)
+            # else branch might have jumps, we need to find the end of the else
+            all_jump_targets = [i.get_jump_target() for i in self.instructions[this_index +
+                                                                        1: max_jump_index] if i.is_jump() and i.get_jump_target() > jump_offset]
+            end_index_candidates.append(max(all_jump_targets))
+
+        end_index = min(end_index_candidates)
 
         with self.new_state(fallthrough_stack):
             self.decompile_range(this_index + 1, end_index)
@@ -533,21 +549,6 @@ class Decompiler:
         #     self.state.source_code += add_indentation(
         #         "continue\n", self.indentation)
         #     return
-
-        # jump_targets = [i.get_jump_target() for i in self.instructions[if_body_start +
-        #                                                                1: if_body_end] if i.is_jump() and i.get_jump_target() > if_body_end_offset]
-        # else_code = ""
-        # if jump_targets:
-        #     # has "else" branch
-        #     else_start_offset = if_body_end_offset
-        #     else_start_index = self.index_of(else_start_offset)
-        #     max_jump = max(jump_targets)
-        #     max_jump_index = self.index_of(max_jump)
-        #     else_code += "else:\n"
-        #     with self.new_state(jump_stack):
-        #         self.decompile_range(else_start_index, max_jump_index)
-        #         source_code = self.state.source_code
-        #     else_code += add_indentation(source_code, self.indentation)
 
         # with self.new_state(fallthrough_stack):
         #     if else_code and self.instructions[if_body_end - 1].is_jump():
