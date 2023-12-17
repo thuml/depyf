@@ -1275,6 +1275,29 @@ def test_EXTENDED_ARG():
         assert f() == ans
 
 
+class FakeObject:
+    def __init__(self, name=''):
+        self.name = name
+
+    def __getattr__(self, attr):
+        # Generate a new instance with updated name
+        new_name = f"{self.name}.{attr}" if self.name else attr
+        return FakeObject(new_name)
+
+    def __getitem__(self, key):
+        # Generate a new instance with updated name for subscript access
+        new_name = f"{self.name}[{repr(key)}]"
+        return FakeObject(new_name)
+
+    def __call__(self, *args, **kwargs):
+        # Generate a new instance with updated name for function call
+        new_name = f"{self.name}({', '.join(map(repr, args))}, {', '.join(f'{k}={v!r}' for k, v in kwargs.items())})"
+        return FakeObject(new_name)
+
+    def __repr__(self):
+        # Represent the instance with its name
+        return f"FakeObject(name='{self.name}')"
+
 # The following test code are taken from PyTorch models' code.
 
 
@@ -1294,3 +1317,18 @@ def test_ternary_and():
     ans = [f(i, j) for i in range(2) for j in range(2)]
     with replace_code_by_decompile_and_compile(f):
         assert [f(i, j) for i in range(2) for j in range(2)] == ans
+
+def test_head_mask():
+    def f(head_mask, self):
+        # the original code uses `len(self.layer)`
+        # however, we cannot define `__len__` for FakeObject
+        # because Python requires it to return an integer
+        # so we use `self.layer.len` instead
+        if head_mask is not None:
+            return head_mask.size()[0] == (
+                self.layer.len
+            ), f"The head_mask should be specified for {self.layer.len} layers, but it is for {head_mask.size()[0]}."
+
+    ans = f(FakeObject('head_mask'), FakeObject('self'))
+    with replace_code_by_decompile_and_compile(f):
+        assert f(FakeObject('head_mask'), FakeObject('self')) == ans
