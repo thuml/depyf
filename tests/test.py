@@ -1280,9 +1280,15 @@ class FakeObject:
         self.name = name
 
     def __getattr__(self, attr):
+        if attr.startswith('__') and attr.endswith('__'):
+            # fallback to default behavior
+            return super().__getattr__(attr)
         # Generate a new instance with updated name
         new_name = f"{self.name}.{attr}" if self.name else attr
         return FakeObject(new_name)
+
+    def __eq__(self, other):
+        return self.name == other.name
 
     def __getitem__(self, key):
         # Generate a new instance with updated name for subscript access
@@ -1308,6 +1314,15 @@ def test_ternary():
     ans = [f(i) for i in range(2)]
     with replace_code_by_decompile_and_compile(f):
         assert [f(i) for i in range(2)] == ans
+
+def test_complicated_ternary():
+    def f(a, g, b):
+        ans = g(arg1=a if a is not None else b, arg2=2)
+        return ans
+
+    ans = f(None, FakeObject('g'), 2)
+    with replace_code_by_decompile_and_compile(f):
+        assert f(None, FakeObject('g'), 2) == ans
 
 
 def test_ternary_and():
