@@ -1087,18 +1087,22 @@ class Decompiler:
     CALL_INTRINSIC_2 = unimplemented_instruction
 
     def decompile_range(self, start: int, end: int):
-        running_index = start
-        while running_index < end:
-            inst = self.instructions[running_index]
-            method = getattr(
-                Decompiler,
-                inst.opname,
-                Decompiler.unimplemented_instruction)
-            output = method(self, inst)
-            if output:
-                running_index = output
-            else:
-                running_index += 1
+        try:
+            running_index = start
+            while running_index < end:
+                inst = self.instructions[running_index]
+                method = getattr(
+                    Decompiler,
+                    inst.opname,
+                    Decompiler.unimplemented_instruction)
+                output = method(self, inst)
+                if output:
+                    running_index = output
+                else:
+                    running_index += 1
+        except Exception as e:
+            raise DecompilationError(
+                f"Failed to decompile instruction {inst} in {self.code.co_name}") from e
 
     def index_of(self, offset: int):
         for idx, inst in enumerate(self.instructions):
@@ -1169,6 +1173,8 @@ class Decompiler:
             source_code = global_statements + nonlocal_statement + source_code
             source_code = header + add_indentation(source_code, indentation)
             return source_code
+        except DecompilationError:
+            raise
         except Exception as e:
             raise DecompilationError(
                 f"Failed to decompile {self.code.co_name}") from e
