@@ -392,6 +392,7 @@ class Decompiler:
 
     def RETURN_CONST(self, inst: Instruction):
         self.state.source_code += f"return {inst.argval}\n"
+        return len(self.instructions)
 
     def YIELD_VALUE(self, inst: Instruction):
         if sys.version_info >= (3, 12):
