@@ -488,15 +488,16 @@ class Decompiler:
         if self.state.inside_loop:
             end_index_candidates.append(self.state.loop_end_index)
 
-        jump_targets = [i.get_jump_target() for i in self.instructions[this_index +
-                                                                       1: jump_index] if i.is_jump() and i.get_jump_target() > jump_offset]
+        def qualified_jump(i: Instruction):
+            return i.is_jump() and i.get_jump_target() >= jump_offset
+
+        jump_targets = [i.get_jump_target() for i in self.instructions[this_index +1: jump_index] if qualified_jump(i)]
         if jump_targets:
             # has "else" branch
             max_jump = max(jump_targets)
             max_jump_index = self.index_of(max_jump)
             # else branch might have jumps, we need to find the end of the else
-            all_jump_targets = [i.get_jump_target() for i in self.instructions[this_index +
-                                                                        1: max_jump_index] if i.is_jump() and i.get_jump_target() > jump_offset]
+            all_jump_targets = [i.get_jump_target() for i in self.instructions[this_index +1: max_jump_index] if qualified_jump(i)]
             max_jump_index = self.index_of(max(all_jump_targets))
             # extend one more instruction, because sometimes if-body and else-body share the same instruction
             # TODO how to determine if we need to extend more instructions?
