@@ -498,6 +498,8 @@ class Decompiler:
             all_jump_targets = [i.get_jump_target() for i in self.instructions[this_index +
                                                                         1: max_jump_index] if i.is_jump() and i.get_jump_target() > jump_offset]
             max_jump_index = self.index_of(max(all_jump_targets))
+            # extend one more instruction, because sometimes if-body and else-body share the same instruction
+            max_jump_index += 1
             end_index_candidates.append(max_jump_index)
 
         end_index = min(end_index_candidates)
@@ -506,6 +508,7 @@ class Decompiler:
             self.decompile_range(this_index + 1, end_index)
             if_body = self.state.source_code
             if_body = add_indentation(if_body, self.indentation)
+            if_end_stack = self.state.stack.copy()
         if_code = f"if {cond}:\n{if_body}"
         self.state.source_code += if_code
 
@@ -516,6 +519,7 @@ class Decompiler:
         else_code = f"else:\n{else_body}"
         self.state.source_code += else_code
 
+        self.state.stack = if_end_stack
         return end_index
 
         # if "ASSERT" in self.instructions[this_index + 1].opname:
