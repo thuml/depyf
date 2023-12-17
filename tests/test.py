@@ -1273,3 +1273,24 @@ def test_EXTENDED_ARG():
     ans = f()
     with replace_code_by_decompile_and_compile(f):
         assert f() == ans
+
+
+# The following test code are taken from PyTorch models' code.
+
+
+def test_ternary():
+    def f(output_hidden_states):
+        all_hidden_states = () if output_hidden_states else None
+
+    ans = [f(i) for i in range(2)]
+    with replace_code_by_decompile_and_compile(f):
+        assert [f(i) for i in range(2)] == ans
+
+
+def test_ternary_and():
+    def f(output_attentions, is_global_attn):
+        all_global_attentions = () if (output_attentions and is_global_attn) else None
+
+    ans = [f(i, j) for i in range(2) for j in range(2)]
+    with replace_code_by_decompile_and_compile(f):
+        assert [f(i, j) for i in range(2) for j in range(2)] == ans
