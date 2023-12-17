@@ -499,6 +499,7 @@ class Decompiler:
                                                                         1: max_jump_index] if i.is_jump() and i.get_jump_target() > jump_offset]
             max_jump_index = self.index_of(max(all_jump_targets))
             # extend one more instruction, because sometimes if-body and else-body share the same instruction
+            # TODO how to determine if we need to extend more instructions?
             max_jump_index += 1
             end_index_candidates.append(max_jump_index)
 
