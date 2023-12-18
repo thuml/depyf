@@ -386,6 +386,8 @@ class Decompiler:
                 self.state.source_code += "break\n"
             elif jump_index <= self.state.loop_start_index:
                 self.state.source_code += "continue\n"
+            else:
+                return jump_index
         else:
             return jump_index
 
