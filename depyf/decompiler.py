@@ -874,7 +874,7 @@ class Decompiler:
         pos_args = args[:len(args) - len(kw_names)]
         kwargs = args[len(args) - len(kw_names):]
         kwcalls = []
-        for name, value in zip(kwargs, kw_names):
+        for name, value in zip(kw_names, kwargs):
             kwcalls.append(f"{name}={value}")
         func = self.state.stack.pop()
         if self.state.stack and self.state.stack[-1] is None:
