@@ -83,10 +83,10 @@ class DebuggableHook(object):
 
             if self.log_bytecode:
                 with lock_on_file(filename):
-                    import dis
-                    dis.dis(code, file=open(filename + ".original_bytecode", "w"))
-                    dis.dis(new_code, file=open(filename + ".transformed_bytecode", "w"))
-                    dis.dis(decompiled_and_compiled_back_code, file=open(filename + ".decompiled_and_compiled_back_bytecode", "w"))
+                    import marshal
+                    marshal.dump(code, open(filename + ".original_bytecode", "wb"))
+                    marshal.dump(new_code, open(filename + ".transformed_bytecode", "wb"))
+                    marshal.dump(decompiled_and_compiled_back_code, open(filename + ".decompiled_and_compiled_back_bytecode", "wb"))
 
             # this fix is used for PyTorch prior to PR https://github.com/pytorch/pytorch/pull/114487
             from torch._dynamo.utils import orig_code_map
