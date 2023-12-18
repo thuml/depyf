@@ -556,8 +556,8 @@ class Decompiler:
         all_jump_targets = [i.get_jump_target() for i in self.instructions[this_index: max_jump_index] if qualified_jump(i)]
         max_jump_index = self.index_of(max(all_jump_targets))
         last_inst = self.instructions[max_jump_index - 1]
-        if "RAISE" in last_inst.opname or "RETURN" in last_inst.opname:
-            # if-body instructions end with raise/return, it is very likely that if-body and else-body don't share any instructions
+        if "RAISE" in last_inst.opname or "RETURN" in last_inst.opname or "STORE" in last_inst.opname:
+            # if-body instructions end with raise/return/store, it is very likely that if-body and else-body don't share any instructions
             pass
         else:
             old_map_jump_index = max_jump_index
