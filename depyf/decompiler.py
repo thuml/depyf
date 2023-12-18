@@ -138,9 +138,11 @@ class Decompiler:
                 qual_name = eval(qual_name)
             except Exception:
                 pass
-            func_name = qual_name
+            # qual_name for inner function is something like `LongformerEncoder.forward.<locals>.create_custom_forward`
+            # get the last part of the name, which is the function name
+            func_name = qual_name.split(".")[-1]
             if "<" in func_name:
-                self.state.source_code += f'"original name {qual_name} is illegal, use a temp name."\n'
+                self.state.source_code += f'"original function name {func_name} is illegal, use a temp name."\n'
                 func_name = self.get_temp_name()
         else:
             # Python 3.11 support, see
