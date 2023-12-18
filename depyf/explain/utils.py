@@ -2,7 +2,6 @@ import torch
 from torch._dynamo.eval_frame import innermost_fn
 from torch._dynamo.eval_frame import _debug_get_cache_entry_list
 import inspect
-from importlib import import_module
 
 import dis
 from types import CodeType
@@ -110,7 +109,7 @@ class CacheResult:
     transformed_code_proxy: CodeProxy
     referenced_global_functions: Dict[str, "DynamoOptimizationResult"]
 
-    def __init__(self, original_code, module_name, cache):
+    def __init__(self, original_code, module, cache):
         self.original_code = original_code
         guard = cache.check_fn.code_parts
         self.guard = guard
@@ -120,11 +119,9 @@ class CacheResult:
             name for name in code.co_names if name.startswith("__compiled")]
         assert len(compiled_subgraphs) <= 1
 
-        module = import_module(module_name)
         if compiled_subgraphs:
             # deal with compiled_subgraph
-            self.compiled_subgraph = innermost_fn(
-                getattr(module, compiled_subgraphs[0]))
+            self.compiled_subgraph = innermost_fn(module[compiled_subgraphs[0]])
             self.compiled_subgraph_proxy = CodeProxy.decompile_with_name(
                 self.compiled_subgraph, compiled_subgraphs[0])
         else:
@@ -139,9 +136,9 @@ class CacheResult:
         self.referenced_global_functions = {}
         for name in resume_fns:
             self.referenced_global_functions[name] = DynamoOptimizationResult(
-                original_code=getattr(module, name).__code__,
+                original_code=module[name].__code__,
                 function_name=name,
-                module_name=module_name)
+                module=module)
 
     def to_data(self):
         return {
@@ -160,22 +157,21 @@ class CacheResult:
 @dataclass
 class DynamoOptimizationResult:
     function_name: str
-    module_name: str
+    module: dict
     original_code: CodeType
     source_code_proxy: CodeProxy
     transformed_code_entries: List[CacheResult]
 
-    def __init__(self, original_code, function_name=None, module_name=None):
+    def __init__(self, original_code, function_name=None, module=None):
         self.original_code = original_code
         if function_name is None:
             self.function_name = original_code.co_name
         else:
             self.function_name = function_name
-        self.module_name = module_name
-        assert isinstance(module_name, str)
+        self.module = module
         caches = _debug_get_cache_entry_list(original_code)
         self.transformed_code_entries = [
-            CacheResult(original_code, module_name, cache) for cache in caches]
+            CacheResult(original_code, module, cache) for cache in caches]
         self.source_code_proxy = CodeProxy.decompile_with_name(
             self.original_code, self.function_name)
 

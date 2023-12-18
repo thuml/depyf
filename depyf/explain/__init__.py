@@ -6,8 +6,8 @@ from typing import List, Callable, Dict, Union, Set
 from types import CodeType
 
 
-def _extract_artifacts(original_code: CodeType, module_name):
-    result = DynamoOptimizationResult(original_code, None, module_name)
+def _extract_artifacts(original_code: CodeType, module):
+    result = DynamoOptimizationResult(original_code, None, module)
     return result
 
 
@@ -26,8 +26,8 @@ def interactive_explain(fn: Callable):
     return artifacts
 
 
-def dump_src(original_code: CodeType, module_name):
+def dump_src(original_code: CodeType, module):
     from depyf.explain.global_variables import data
     assert data["is_inside_prepare_debug"], "`dump_src` must be used inside `depyf.prepare_debug`."
-    artifacts = _extract_artifacts(original_code, module_name)
+    artifacts = _extract_artifacts(original_code, module)
     return artifacts.to_src()

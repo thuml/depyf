@@ -17,7 +17,7 @@ import os
 class DebuggableHook(object):
     dump_src_dir: str
     log_bytecode: bool
-    optimized_code_and_module_name: List =dataclasses.field(default_factory=list, init=False)
+    optimized_code_and_module: List =dataclasses.field(default_factory=list, init=False)
 
     def __call__(self, code, new_code):
         frame = sys._getframe()
@@ -30,7 +30,7 @@ class DebuggableHook(object):
                 break
         frame = frame.f_locals["frame"]
         assert frame.f_code == code
-        self.optimized_code_and_module_name.append([code, frame.f_globals["__name__"]])
+        self.optimized_code_and_module.append([code, frame.f_globals])
         from depyf.decompiler import DecompilationError
         try:
             import os
@@ -188,14 +188,14 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
                 yield
             finally:
 
-                code_names = {x[0].co_name for x in bytecode_hook.optimized_code_and_module_name}
-                for code, module_name in bytecode_hook.optimized_code_and_module_name:
+                code_names = {x[0].co_name for x in bytecode_hook.optimized_code_and_module}
+                for code, module in bytecode_hook.optimized_code_and_module:
                     if code.co_name.startswith("resume_in_") and any(f"resume_in_{name}" in code.co_name for name in code_names):
                         continue
                     from depyf.explain import dump_src
                     from depyf.explain.utils import write_code_to_file_template
                     from torch._dynamo.eval_frame import innermost_fn
-                    full_src = dump_src(code, module_name)
+                    full_src = dump_src(code, module)
                     filepath_template = os.path.join(dump_src_dir, f"full_code_for_{code.co_name}_%s.py")
                     full_code_path = write_code_to_file_template(full_src, filepath_template)
 
