@@ -711,12 +711,15 @@ class Decompiler:
         for_code = f"for {temp_name} in {self.state.stack.pop()}:\n"
         self.state.stack.append(temp_name)
         with self.new_state(self.state.stack, inside_loop=True, loop_start_index=start_index, loop_end_index=end_index):
-            self.decompile_range(start_index + 1, end_index)
+            # end_index should be something like jumping back to for_iter
+            # and we should deal with it inside the loop
+            self.decompile_range(start_index + 1, end_index + 1)
             code = self.state.source_code
             for_code = for_code + add_indentation(code, self.indentation)
-
+            for_end_stack = self.state.stack.copy()
         self.state.source_code += for_code
-        return end_index
+        self.state.stack = for_end_stack
+        return end_index + 1
 
 # ==================== Stack Manipulation Instructions ===================
     def rot_n(self, inst: Instruction):
