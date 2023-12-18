@@ -15,6 +15,7 @@ setup(
     python_requires=">=3.7",
     install_requires=[
         "astor",
+        "dill", # used for serializing code object. PyTorch bytecode is not serializable by marshal. Check https://github.com/pytorch/pytorch/issues/116013 for details.
         # "filelock", # filelock is required by torch. If you use torch, you should have filelock.
     ],
     extras_require={
