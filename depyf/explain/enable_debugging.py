@@ -83,19 +83,19 @@ class DebuggableHook(object):
 
             if self.log_bytecode:
                 with lock_on_file(filename):
-                    import marshal
+                    import dill
                     # code object, especially `new_code` constructed by Dynamo, may not be able to be dumped using `marshal`.
-                    # see https://github.com/python/cpython/issues/89290 for more details.
+                    # see https://github.com/pytorch/pytorch/issues/116013 for more details.
                     try:
-                        marshal.dump(code, open(filename + ".original_bytecode", "wb"))
+                        dill.dump(code, open(filename + ".original_bytecode", "wb"))
                     except:
                         pass
                     try:
-                        marshal.dump(new_code, open(filename + ".transformed_bytecode", "wb"))
+                        dill.dump(new_code, open(filename + ".transformed_bytecode", "wb"))
                     except:
                         pass
                     try:
-                        marshal.dump(decompiled_and_compiled_back_code, open(filename + ".decompiled_and_compiled_back_bytecode", "wb"))
+                        dill.dump(decompiled_and_compiled_back_code, open(filename + ".decompiled_and_compiled_back_bytecode", "wb"))
                     except:
                         pass
 
