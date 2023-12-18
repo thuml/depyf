@@ -21,7 +21,7 @@ def decompile_ensure(fn, overwite_fn_name=None):
             fn).decompile(overwite_fn_name=overwite_fn_name)
     except DecompilationError as e:
         header = get_function_signature(fn, overwite_fn_name=overwite_fn_name)
-        decompiled_source_code = header + "'Failed to decompile.'\n"
+        decompiled_source_code = header + "    'Failed to decompile.'\n"
     return decompiled_source_code
 
 
