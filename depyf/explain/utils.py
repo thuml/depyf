@@ -20,7 +20,6 @@ def decompile_ensure(fn, overwite_fn_name=None):
         decompiled_source_code = depyf.Decompiler(
             fn).decompile(overwite_fn_name=overwite_fn_name)
     except DecompilationError as e:
-        print(str(e))
         header = get_function_signature(fn, overwite_fn_name=overwite_fn_name)
         decompiled_source_code = header + "'Failed to decompile.'\n"
     return decompiled_source_code
