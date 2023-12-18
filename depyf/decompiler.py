@@ -415,8 +415,8 @@ class Decompiler:
     def generic_jump_if(self, inst: Instruction):
         """How we support if-else:
 
-        Failed idea: try to find the block of instructions for if and else.
-        This is not possible, as the if-else block might have non-continuous instructions.
+        Failed idea: try to paritition the block of instructions into if and else.
+        This is not possible, as the if-else block might have overlapping instructions.
         Take this function as an example:
 
         def f(a):
@@ -440,6 +440,7 @@ class Decompiler:
         
         The instructions for if branch: 2, 4, 6, 10
         The instructions for else branch: 8, 10
+        They share the same instruction 10, so we cannot partition the block into if and else.
 
         Another example:
 
@@ -471,6 +472,7 @@ class Decompiler:
 
         The instructions for if branch: 8, 14, 16, 18, 20, 22
         The instructions for else branch: 10, 12, 16, 18, 20, 22
+        They share the same instructions 16, 18, 20, 22, so we cannot partition the block into if and else.
 
         Current idea:
 
@@ -493,10 +495,10 @@ class Decompiler:
             else-body
             rest-body
         
-        By duplicating the rest-body, we can decompile the if-else block separately.
+        By duplicating the rest-body, we can decompile the if-else block separately. And they will have some duplicated code.
 
         Of course, we don't want to duplicate too long code, so we need to find the end of if-else block.
-        The current heuristic is to find the first jump/store/return instruction after the if-else block (because they are indicators that we will generate meaningful source code).
+        The current heuristic is to find the first store/return/jump/for-iter instruction after the if-else block (because they are indicators that we will generate meaningful source code).
         """
         jump_offset = inst.get_jump_target()
         jump_index = self.index_of(jump_offset)
@@ -587,105 +589,6 @@ class Decompiler:
         self.state.stack = if_end_stack
         return end_index
 
-        # if "ASSERT" in self.instructions[this_index + 1].opname:
-        #     with self.new_state(self.state.stack):
-        #         self.decompile_range(this_index + 1, jump_index)
-        #         source_code = self.state.source_code
-        #     source_code = add_indentation(source_code, self.indentation)
-        #     self.state.source_code += f"if not {cond}:\n{source_code}"
-        #     return jump_index
-
-        
-
-        # if_body_start_offset = None
-        # if_body_end_offset = None
-        # last_index = this_index
-        # conditions = [cond]
-        # for _index in range(this_index, jump_index):
-        #     _inst = self.instructions[_index]
-        #     if "IF_FALSE" in _inst.opname or "IF_NOT_NONE" in _inst.opname or "IF_NONE" in _inst.opname:
-        #         # JUMP_IF_FALSE, followed by "and", short-circuit evaluation
-        #         # means we jump to the end of if-block if the condition is
-        #         # false
-        #         if if_body_end_offset is None:
-        #             if_body_end_offset = _inst.get_jump_target()
-        #         if _inst.get_jump_target() == if_body_end_offset:
-        #             if _index != this_index:
-        #                 with self.new_state(fallthrough_stack):
-        #                     self.decompile_range(last_index + 1, _index)
-        #                     source_code = self.state.source_code
-        #                 self.state.source_code += source_code
-        #                 conditions.append(self.state.stack[-1])
-        #                 last_index = _index
-
-        #             conditions.append("and")
-
-        #             jump_stack = fallthrough_stack.copy()
-        #             fallthrough_stack.pop()
-
-
-        #     elif "IF_TRUE" in _inst.opname:
-        #         # JUMP_IF_TRUE, followed by "or", short-circuit evaluation
-        #         # means we jump to the start of if-block if the condition is
-        #         # true
-        #         if if_body_start_offset is None:
-        #             if_body_start_offset = _inst.get_jump_target()
-        #         if _inst.get_jump_target() == if_body_start_offset:
-        #             if _index != this_index:
-        #                 with self.new_state(fallthrough_stack):
-        #                     self.decompile_range(last_index + 1, _index)
-        #                     source_code = self.state.source_code
-        #                 self.state.source_code += source_code
-        #                 conditions.append(self.state.stack[-1])
-        #                 last_index = _index
-        #             conditions.append("or")
-
-        #             jump_stack = fallthrough_stack.copy()
-        #             fallthrough_stack.pop()
-        #             # POP_AND_JUMP / JUMP_OR_POP
-        #             if "POP_JUMP" in _inst.opname:
-        #                 jump_stack.pop()
-        #             elif "OR_POP" in _inst.opname:
-        #                 pass
-
-        # conditions.pop()
-
-        # if if_body_start_offset is None:
-        #     if_body_start_offset = self.instructions[last_index + 1].offset
-
-        # if_body_start = self.index_of(if_body_start_offset)
-
-        # if if_body_end_offset is None:
-        #     # Don't know where the if body ends, so we have to find the next
-        #     # jump instruction
-        #     if_body_end = if_body_start + 1
-        #     while if_body_end < len(
-        #             self.instructions) and not self.instructions[if_body_end].is_jump():
-        #         if_body_end += 1
-        #     if if_body_end == len(self.instructions):
-        #         if_body_end -= 1
-        #     if_body_end_offset = self.instructions[if_body_end].offset
-        # else:
-        #     if_body_end = self.index_of(if_body_end_offset)
-        # if jump_index < if_body_start:
-        #     self.state.source_code += add_indentation(
-        #         "continue\n", self.indentation)
-        #     return
-
-        # with self.new_state(fallthrough_stack):
-        #     if else_code and self.instructions[if_body_end - 1].is_jump():
-        #         # the last instruction is a jump, so it is not part of the if
-        #         # body, but the jump out of the if-else block
-        #         if_body_end -= 1
-        #     self.decompile_range(if_body_start, if_body_end)
-        #     if_code = "if " + " ".join(conditions) + ":\n"
-        #     if_code = if_code + \
-        #         add_indentation(self.state.source_code, self.indentation)
-
-        # self.state.source_code += if_code + else_code
-        # self.state.stack = fallthrough_stack
-
-        # return max_jump_index if else_code else jump_index
 
     POP_JUMP_IF_TRUE = POP_JUMP_IF_FALSE = generic_jump_if
     POP_JUMP_FORWARD_IF_TRUE = POP_JUMP_FORWARD_IF_FALSE = generic_jump_if
