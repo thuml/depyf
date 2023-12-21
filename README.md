@@ -58,12 +58,15 @@ Then you can see all the details of `torch.compile` inside the directory `./dump
 
 - `full_code_for_xxx.py` for each function using `torch.compile`
 - `__transformed_code_for_xxx.py` for Python code associated with each graph.
+- `__transformed_code_for_xxx.py.xxx.bytecode` for Python bytecode, dumped code object, can be loaded via `dill.load(open("/path/to/file", "wb"))`.
 - `__compiled_fn_xxx.py` for each computation graph and its optimization:
   - `Captured Graph`: a plain forward computation graph
   - `Joint Graph`: joint forward-backward graph from `AOTAutograd`
   - `Forward Graph`: forward graph from `AOTAutograd`
   - `Backward Graph`: backward graph from `AOTAutograd`
   - `kernel xxx`: compiled CPU/GPU kernel wrapper from Inductor.
+
+We collect [all the compilation artifacts](https://github.com/thuml/depyf/tree/master/learn_pytorch) when testing over 100 deep learning models. You can take a look to learn how the PyTorch compiler works.
 
 If you want to use debugger to step through the above code, just add another context manager (and launch the script through debuggers):
 
