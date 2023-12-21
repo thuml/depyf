@@ -58,7 +58,7 @@ Then you can see all the details of `torch.compile` inside the directory `./dump
 
 - `full_code_for_xxx.py` for each function using `torch.compile`
 - `__transformed_code_for_xxx.py` for Python code associated with each graph.
-- `__transformed_code_for_xxx.py.xxx.bytecode` for Python bytecode, dumped code object, can be loaded via `dill.load(open("/path/to/file", "wb"))`.
+- `__transformed_code_for_xxx.py.xxx_bytecode` for Python bytecode, dumped code object, can be loaded via `dill.load(open("/path/to/file", "wb"))`. Note that the `load` function might import some modules like `transformers`. Make sure you have these modules installed.
 - `__compiled_fn_xxx.py` for each computation graph and its optimization:
   - `Captured Graph`: a plain forward computation graph
   - `Joint Graph`: joint forward-backward graph from `AOTAutograd`
