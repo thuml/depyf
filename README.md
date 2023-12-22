@@ -66,7 +66,7 @@ Then you can see all the details of `torch.compile` inside the directory `./dump
   - `Backward Graph`: backward graph from `AOTAutograd`
   - `kernel xxx`: compiled CPU/GPU kernel wrapper from Inductor.
 
-We collect [all the compilation artifacts](https://github.com/thuml/depyf/tree/master/learn_pytorch) when testing over 100 deep learning models. You can take a look to learn how the PyTorch compiler works.
+We collect [all the compilation artifacts](https://github.com/thuml/learn_torch.compile) when testing over 100 deep learning models. You can take a look to learn how the PyTorch compiler works.
 
 If you want to use debugger to step through the above code, just add another context manager (and launch the script through debuggers):
 
