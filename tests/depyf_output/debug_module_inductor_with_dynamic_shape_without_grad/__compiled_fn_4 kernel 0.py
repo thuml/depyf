@@ -10,20 +10,23 @@ from torch._inductor.hooks import run_intermediate_hooks
 from torch._inductor.utils import maybe_profile
 from torch._inductor.codegen.memory_planning import _align as align
 
-from torch import device, empty, empty_strided
+from torch import device, empty_strided
 from torch._inductor.codecache import AsyncCompile
 from torch._inductor.select_algorithm import extern_kernels
+from torch._inductor.codegen.multi_kernel import MultiKernelCall
 
 aten = torch.ops.aten
 inductor_ops = torch.ops.inductor
 assert_size_stride = torch._C._dynamo.guards.assert_size_stride
+empty_strided_cpu = torch._C._dynamo.guards._empty_strided_cpu
+empty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda
 alloc_from_pool = torch.ops.inductor._alloc_from_pool
 reinterpret_tensor = torch.ops.inductor._reinterpret_tensor
 async_compile = AsyncCompile()
 
 
-cpp_fused_abs_add_div_lt_sum_0 = async_compile.cpp('''
-#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/26/c26eqbkuxvn72gf7p2xujmqjcwf4bo6lxmp6rwborxnf4gldnimh.h"
+cpp_fused_abs_add_div_lt_sum_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'float*', 'float*', 'bool*', 'const long', 'const long'], '''
+#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/kf/ckfqpz6yp2sujhwvtvlb2vb43nqje6bvriedz3vj5dms52hfmvis.h"
 extern "C" void kernel(const float* in_ptr0,
                        const float* in_ptr1,
                        float* out_ptr0,
@@ -75,10 +78,10 @@ def call(args):
     s1 = arg2_1
     assert_size_stride(arg1_1, (s0, ), (1, ))
     assert_size_stride(arg3_1, (s1, ), (1, ))
-    buf0 = empty((s0, ), device='cpu', dtype=torch.float32)
-    buf1 = empty((), device='cpu', dtype=torch.float32)
-    buf2 = empty((), device='cpu', dtype=torch.bool)
-    cpp_fused_abs_add_div_lt_sum_0(c_void_p(arg1_1.data_ptr()), c_void_p(arg3_1.data_ptr()), c_void_p(buf0.data_ptr()), c_void_p(buf1.data_ptr()), c_void_p(buf2.data_ptr()), c_long(s0), c_long(s1))
+    buf0 = empty_strided_cpu((s0, ), (1, ), torch.float32)
+    buf1 = empty_strided_cpu((), (), torch.float32)
+    buf2 = empty_strided_cpu((), (), torch.bool)
+    cpp_fused_abs_add_div_lt_sum_0(arg1_1, arg3_1, buf0, buf1, buf2, s0, s1)
     del arg1_1
     del arg3_1
     return (buf0, buf2, )

@@ -10,20 +10,23 @@ from torch._inductor.hooks import run_intermediate_hooks
 from torch._inductor.utils import maybe_profile
 from torch._inductor.codegen.memory_planning import _align as align
 
-from torch import device, empty, empty_strided
+from torch import device, empty_strided
 from torch._inductor.codecache import AsyncCompile
 from torch._inductor.select_algorithm import extern_kernels
+from torch._inductor.codegen.multi_kernel import MultiKernelCall
 
 aten = torch.ops.aten
 inductor_ops = torch.ops.inductor
 assert_size_stride = torch._C._dynamo.guards.assert_size_stride
+empty_strided_cpu = torch._C._dynamo.guards._empty_strided_cpu
+empty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda
 alloc_from_pool = torch.ops.inductor._alloc_from_pool
 reinterpret_tensor = torch.ops.inductor._reinterpret_tensor
 async_compile = AsyncCompile()
 
 
-cpp_fused_mul_0 = async_compile.cpp('''
-#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/26/c26eqbkuxvn72gf7p2xujmqjcwf4bo6lxmp6rwborxnf4gldnimh.h"
+cpp_fused_mul_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'float*'], '''
+#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/kf/ckfqpz6yp2sujhwvtvlb2vb43nqje6bvriedz3vj5dms52hfmvis.h"
 extern "C" void kernel(const float* in_ptr0,
                        const float* in_ptr1,
                        float* out_ptr0)
@@ -52,8 +55,8 @@ def call(args):
     args.clear()
     assert_size_stride(primals_1, (8, ), (1, ))
     assert_size_stride(primals_2, (8, ), (1, ))
-    buf0 = empty((8, ), device='cpu', dtype=torch.float32)
-    cpp_fused_mul_0(c_void_p(primals_2.data_ptr()), c_void_p(primals_1.data_ptr()), c_void_p(buf0.data_ptr()))
+    buf0 = empty_strided_cpu((8, ), (1, ), torch.float32)
+    cpp_fused_mul_0(primals_2, primals_1, buf0)
     return (buf0, primals_1, primals_2, )
 
 

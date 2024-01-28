@@ -4,7 +4,7 @@ def __guard_0_for_f(L):
         and (___check_global_state()) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(5157186544))) \
+        and (___check_current_backend(5213799280)) \
         and (___check_tensors(L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_0*.py.
