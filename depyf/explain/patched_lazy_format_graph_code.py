@@ -5,6 +5,12 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None):
     file_name = func_name + " " + file_name
     import inspect
     import os
+
+    # https://github.com/pytorch/pytorch/pull/117911 introduces LazyGraphModule
+    # whose `forward` method is mangled and cannot be manipulated.
+    # We need to get rid of the laziness by calling `str` on it.
+    gm_s = str(gm)
+
     fn = gm.forward
 
     fn = get_code_owner(fn)
