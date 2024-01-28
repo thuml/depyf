@@ -192,6 +192,9 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
                 for code, module in bytecode_hook.optimized_code_and_module:
                     if code.co_name.startswith("resume_in_") and any(f"resume_in_{name}" in code.co_name for name in code_names):
                         continue
+                    # https://github.com/pytorch/pytorch/pull/118201 introduces `torch_dynamo_resume_in_` names.
+                    if code.co_name.startswith("torch_dynamo_resume_in_") and any(f"torch_dynamo_resume_in_{name}" in code.co_name for name in code_names):
+                        continue
                     from depyf.explain import dump_src
                     from depyf.explain.utils import write_code_to_file_template
                     from torch._dynamo.eval_frame import innermost_fn

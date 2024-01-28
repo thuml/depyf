@@ -1,11 +1,11 @@
 
-def __guard_0_for_resume_in_toy_function_at_5(L):
+def __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L):
     return (___guarded_code.valid) \
         and (___check_global_state()) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(6054593872))) \
+        and (___check_current_backend(5221960528)) \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_3*.py.
@@ -17,7 +17,7 @@ def __guard_0_for_resume_in_toy_function_at_5(L):
 def __compiled_fn_3(*args, **kwargs):
     pass
 
-def __transformed_code_0_for_resume_in_toy_function_at_5(b, x):
+def __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
     a = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
     return __compiled_fn_3(x, b)[0]
 
@@ -28,20 +28,20 @@ def __resume_at_38_2(b, x):
 
 def transformed___resume_at_38_2(b, x):
     L = {"b": b, "x": x}
-    if __guard_0_for_resume_in_toy_function_at_5(L):
-        return __transformed_code_0_for_resume_in_toy_function_at_5(b, x)
+    if __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L):
+        return __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return __resume_at_38_2(b, x)
 
 #============ end of __resume_at_38_2 ============#
 
-def __guard_1_for_resume_in_toy_function_at_5(L):
+def __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L):
     return (___guarded_code.valid) \
         and (___check_global_state()) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(6054593872))) \
+        and (___check_current_backend(5221960528)) \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_7*.py.
@@ -53,7 +53,7 @@ def __guard_1_for_resume_in_toy_function_at_5(L):
 def __compiled_fn_7(*args, **kwargs):
     pass
 
-def __transformed_code_1_for_resume_in_toy_function_at_5(b, x):
+def __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
     a = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
     return __compiled_fn_7(b, x)[0]
 
@@ -65,20 +65,20 @@ def __resume_at_30_1(b, x):
 
 def transformed___resume_at_30_1(b, x):
     L = {"b": b, "x": x}
-    if __guard_1_for_resume_in_toy_function_at_5(L):
-        return __transformed_code_1_for_resume_in_toy_function_at_5(b, x)
+    if __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L):
+        return __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return __resume_at_30_1(b, x)
 
 #============ end of __resume_at_30_1 ============#
 
-def __guard_0_for_resume_in_toy_function_at_5(L):
+def __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L):
     return (___guarded_code.valid) \
         and (___check_global_state()) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(6054593872))) \
+        and (___check_current_backend(5221960528)) \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_3*.py.
@@ -90,7 +90,7 @@ def __guard_0_for_resume_in_toy_function_at_5(L):
 def __compiled_fn_3(*args, **kwargs):
     pass
 
-def __transformed_code_0_for_resume_in_toy_function_at_5(b, x):
+def __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
     a = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
     return __compiled_fn_3(x, b)[0]
 
@@ -101,20 +101,20 @@ def __resume_at_38_6(b, x):
 
 def transformed___resume_at_38_6(b, x):
     L = {"b": b, "x": x}
-    if __guard_0_for_resume_in_toy_function_at_5(L):
-        return __transformed_code_0_for_resume_in_toy_function_at_5(b, x)
+    if __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L):
+        return __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return __resume_at_38_6(b, x)
 
 #============ end of __resume_at_38_6 ============#
 
-def __guard_1_for_resume_in_toy_function_at_5(L):
+def __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L):
     return (___guarded_code.valid) \
         and (___check_global_state()) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(6054593872))) \
+        and (___check_current_backend(5221960528)) \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_7*.py.
@@ -126,7 +126,7 @@ def __guard_1_for_resume_in_toy_function_at_5(L):
 def __compiled_fn_7(*args, **kwargs):
     pass
 
-def __transformed_code_1_for_resume_in_toy_function_at_5(b, x):
+def __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
     a = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
     return __compiled_fn_7(b, x)[0]
 
@@ -138,8 +138,8 @@ def __resume_at_30_5(b, x):
 
 def transformed___resume_at_30_5(b, x):
     L = {"b": b, "x": x}
-    if __guard_1_for_resume_in_toy_function_at_5(L):
-        return __transformed_code_1_for_resume_in_toy_function_at_5(b, x)
+    if __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L):
+        return __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return __resume_at_30_5(b, x)
 
@@ -151,7 +151,7 @@ def __guard_1_for_toy_function(L):
         and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(6054593872))) \
+        and (___check_current_backend(5221960528)) \
         and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names)) \
         and (2 <= L['a'].size()[0]) \
         and (2 <= L['b'].size()[0]) \
@@ -180,7 +180,7 @@ def __guard_0_for_toy_function(L):
         and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and ((___skip_backend_check() or ___current_backend() == ___lookup_backend(6054593872))) \
+        and (___check_current_backend(5221960528)) \
         and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_0*.py.
