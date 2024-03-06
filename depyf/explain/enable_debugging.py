@@ -217,6 +217,8 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
 @contextlib.contextmanager
 def debug():
     from .global_variables import data
+    if data["is_inside_prepare_debug"]:
+        raise RuntimeError("You cannot use `depyf.debug` inside `depyf.prepare_debug`.")
     dump_src_dir = data["dump_src_dir"]
     import torch
     callback = torch._dynamo.eval_frame.set_eval_frame(False)
