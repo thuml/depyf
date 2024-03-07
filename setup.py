@@ -1,8 +1,32 @@
 from setuptools import setup, find_packages
+from typing import Optional
+
+import subprocess
+
+def get_git_commit_id(n_digits=8) -> Optional[str]:
+    try:
+        # Run the git command to get the current commit ID
+        commit_id = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
+        # Decode bytes to string (Python 3.x)
+        commit_id = commit_id.decode('utf-8')
+        return commit_id[:n_digits]
+    except subprocess.CalledProcessError as e:
+        print("Failed to get Git commit ID:", e)
+        return None
+
+def get_version():
+    # Read the version from the VERSION.txt file
+    with open("depyf/VERSION.txt", "r") as f:
+        version = f.read().strip()
+    # If the current commit ID is available, append it to the version
+    commit_id = get_git_commit_id()
+    if commit_id:
+        version += "+" + commit_id
+    return version
 
 setup(
     name='depyf',
-    version=open("depyf/VERSION.txt").read().strip(),
+    version=get_version(),
     description='Decompile python functions, from bytecode to source code!',
     long_description=open("README.md", "r").read(),
     long_description_content_type="text/markdown",
