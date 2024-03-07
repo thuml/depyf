@@ -31,7 +31,7 @@ Nightly version (recommended): `pip install git+https://github.com/thuml/depyf.g
 
 The main usage is quite simple: just wrap your code within a context manager:
 
-```diff
+```python
 import torch
 from torch import _dynamo as torchdynamo
 from typing import List
@@ -48,10 +48,11 @@ def main():
         toy_example(torch.randn(10), torch.randn(10))
 
 if __name__ == "__main__":
--     main()
-+     import depyf
-+     with depyf.prepare_debug("./dump_src_dir"):
-+         main()
+    # main()
+    # surround the code you want to run inside `with depyf.prepare_debug`
+    import depyf
+    with depyf.prepare_debug("./dump_src_dir"):
+        main()
 ```
 
 Then you can see all the details of `torch.compile` inside the directory `./dump_src_dir`. The details are organized into the following:
@@ -70,7 +71,7 @@ We collect [all the compilation artifacts](https://github.com/thuml/learn_torch.
 
 If you want to use debugger to step through the above code, just add another context manager (and launch the script through debuggers):
 
-```diff
+```python
 import torch
 from torch import _dynamo as torchdynamo
 from typing import List
@@ -90,8 +91,9 @@ if __name__ == "__main__":
     import depyf
     with depyf.prepare_debug("./dump_src_dir"):
         main()
-+     with depyf.debug():
-+         main()
+    # surround the code you want to debug inside `with depyf.debug()`
+    with depyf.debug():
+        main()
 ```
 
 Calling `depyf.debug()` will pause the program for you to set breakpoints, and then you can use debuggers to hit breakpoints in these files under the `./dump_src_dir` directory you specified above.
