@@ -2,6 +2,7 @@ from setuptools import setup, find_packages
 from typing import Optional
 
 import subprocess
+import sys
 
 def get_git_commit_id(n_digits=8) -> Optional[str]:
     try:
@@ -20,7 +21,8 @@ def get_version():
         version = f.read().strip()
     # If the current commit ID is available, append it to the version
     commit_id = get_git_commit_id()
-    if commit_id:
+    # do not append commit_id if we are building sdist wheels for release
+    if commit_id and "sdist" not in sys.argv:
         version += "+" + commit_id
     return version
 
