@@ -30,7 +30,7 @@ For example, we can use ``depyf`` to understand some dynamically generated funct
 
 In the above example, ``@dataclass`` adds many magic methods for the class ``Data``, and we can inspect the source code of these methods:
 
-.. code-block:: text
+.. code-block:: python
 
     def __init__(self, x, y):
         self.x = x
