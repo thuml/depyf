@@ -226,8 +226,9 @@ def debug():
     # we patch this function to run the graph function directly.
     with patch(torch.fx.Interpreter.boxed_run, "__code__", patched_boxed_run.__code__):
         try:
-            msg = f"You can check the full source code in files with prefix `full_code_for_` in {dump_src_dir} first, and set breakpoints in their separate files according to the function name. Then press enter to continue."
-            input(msg)
+            msg = f"`depyf` places a breakpoint here to pause the program. You can check the full source code in files with prefix `full_code_for_` in {dump_src_dir} first, and set breakpoints in their separate files according to the function name. Then continue your debugging."
+            print(msg)
+            breakpoint()
             yield
         finally:
             torch._dynamo.eval_frame.set_eval_frame(callback)
