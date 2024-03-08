@@ -1,0 +1,4 @@
+b test_debug_output/__transformed_code_0_for_toy_example.py:2
+c
+clear test_debug_output/__transformed_code_0_for_toy_example.py:2
+c
