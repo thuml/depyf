@@ -212,7 +212,7 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
                         except OSError:
                             pass
 
-                data["is_inside_prepare_debug"] = True
+                data["is_inside_prepare_debug"] = False
 
 @contextlib.contextmanager
 def debug():
