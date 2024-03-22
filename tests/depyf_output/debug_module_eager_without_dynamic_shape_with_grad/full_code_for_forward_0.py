@@ -1,11 +1,9 @@
 
 def __guard_0_for_torch_dynamo_resume_in_forward_at_15(L):
-    return (___guarded_code.valid) \
-        and (___check_global_state()) \
+    return (___check_global_state()) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and (___check_current_backend(5319478144)) \
         and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_3*.py.
@@ -48,12 +46,10 @@ def transformed___resume_at_30_1(b, x):
 #============ end of __resume_at_30_1 ============#
 
 def __guard_0_for_forward(L):
-    return (___guarded_code.valid) \
-        and (___check_global_state()) \
+    return (___check_global_state()) \
         and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
         and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and (___check_current_backend(5319478144)) \
         and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_0*.py.

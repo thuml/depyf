@@ -1,10 +1,8 @@
 
 def __guard_0_for_f(L):
-    return (___guarded_code.valid) \
-        and (___check_global_state()) \
+    return (___check_global_state()) \
         and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
         and (utils_device.CURRENT_DEVICE == None) \
-        and (___check_current_backend(5234754416)) \
         and (___check_tensors(L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_0*.py.

@@ -26,7 +26,7 @@ async_compile = AsyncCompile()
 
 
 cpp_fused_abs_add_div_lt_sum_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'float*', 'float*', 'bool*'], '''
-#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/kf/ckfqpz6yp2sujhwvtvlb2vb43nqje6bvriedz3vj5dms52hfmvis.h"
+#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/wy/cwyvgno7oj63mpe36f4v6pizgeyvccmavffogp6xnqv56a32gbwo.h"
 extern "C" void kernel(const float* in_ptr0,
                        const float* in_ptr1,
                        float* out_ptr0,
@@ -34,7 +34,6 @@ extern "C" void kernel(const float* in_ptr0,
                        bool* out_ptr2)
 {
     {
-        #pragma GCC ivdep
         for(long x0=static_cast<long>(0L); x0<static_cast<long>(10L); x0+=static_cast<long>(1L))
         {
             auto tmp0 = in_ptr0[static_cast<long>(x0)];

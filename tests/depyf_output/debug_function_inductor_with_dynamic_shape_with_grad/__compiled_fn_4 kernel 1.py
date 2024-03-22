@@ -26,7 +26,7 @@ async_compile = AsyncCompile()
 
 
 cpp_fused_abs_add_div_mul_neg_sgn_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'const float*', 'float*', 'const long'], '''
-#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/kf/ckfqpz6yp2sujhwvtvlb2vb43nqje6bvriedz3vj5dms52hfmvis.h"
+#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/wy/cwyvgno7oj63mpe36f4v6pizgeyvccmavffogp6xnqv56a32gbwo.h"
 extern "C" void kernel(const float* in_ptr0,
                        const float* in_ptr1,
                        const float* in_ptr2,
@@ -34,7 +34,6 @@ extern "C" void kernel(const float* in_ptr0,
                        const long ks0)
 {
     {
-        #pragma GCC ivdep
         for(long x0=static_cast<long>(0L); x0<static_cast<long>(ks0); x0+=static_cast<long>(1L))
         {
             auto tmp0 = in_ptr0[static_cast<long>(x0)];
@@ -47,12 +46,18 @@ extern "C" void kernel(const float* in_ptr0,
             auto tmp6 = decltype(tmp0)(-tmp0);
             auto tmp8 = tmp7 / tmp4;
             auto tmp9 = decltype(tmp6)(tmp6 * tmp8);
-            auto tmp10 = tmp1 > 0 ? decltype(tmp1)(1) : decltype(tmp1)(0);
-            auto tmp11 = tmp1 < 0 ? decltype(tmp1)(1) : decltype(tmp1)(0);
-            auto tmp12 = tmp10 - tmp11;
-            auto tmp13 = decltype(tmp9)(tmp9 * tmp12);
-            auto tmp14 = decltype(tmp5)(tmp5 + tmp13);
-            out_ptr0[static_cast<long>(x0)] = tmp14;
+            auto tmp10 =
+            [&]()
+            {
+                auto left = tmp1 > 0 ? decltype(tmp1)(1) : decltype(tmp1)(0);
+                auto right = tmp1 < 0 ? decltype(tmp1)(1) : decltype(tmp1)(0);
+                return left - right;
+            }
+            ()
+            ;
+            auto tmp11 = decltype(tmp9)(tmp9 * tmp10);
+            auto tmp12 = decltype(tmp5)(tmp5 + tmp11);
+            out_ptr0[static_cast<long>(x0)] = tmp12;
         }
     }
 }
