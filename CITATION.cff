@@ -1,0 +1,9 @@
+@software{you2024depyf,
+      title={depyf: Open the Opaque Box of PyTorch Compiler for Machine Learning Researchers}, 
+      author={Kaichao You and Runsheng Bai and Meng Cao and Jianmin Wang and Ion Stoica and Mingsheng Long},
+      year={2024},
+      eprint={2403.13839},
+      journal={arXiv},
+      primaryClass={cs.LG},
+      url={https://github.com/thuml/depyf}
+}
