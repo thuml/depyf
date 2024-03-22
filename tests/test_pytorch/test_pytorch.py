@@ -61,6 +61,3 @@ if not os.path.exists("./depyf_output/"):
 import depyf
 with depyf.prepare_debug(f"./depyf_output/{description}"):
     warmup()
-
-with depyf.debug():
-    call()
