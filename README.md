@@ -101,3 +101,19 @@ Calling `depyf.debug()` will pause the program for you to set breakpoints, and t
 # Contact
 
 If you have any question about `depyf`, feel free to open issues to reach out! Any discussion/issue report/PR is welcome. Or contact youkaichao@gmail.com if you have any other questions.
+
+# Citing `depyf`
+
+If you find `depyf` useful, please cite it in your publications.
+
+```latex
+@article{you2024depyf,
+      title={depyf: Open the Opaque Box of PyTorch Compiler for Machine Learning Researchers}, 
+      author={Kaichao You and Runsheng Bai and Meng Cao and Jianmin Wang and Ion Stoica and Mingsheng Long},
+      year={2024},
+      eprint={2403.13839},
+      journal={arXiv},
+      primaryClass={cs.LG},
+      url={https://github.com/thuml/depyf}
+}
+```
