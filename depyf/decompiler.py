@@ -73,6 +73,55 @@ class Decompiler:
         yield
         self.state = old_state
 
+
+# ==================== Unsupported Instructions =============================
+    def unimplemented_instruction(self, inst: Instruction):
+        raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
+
+    GET_YIELD_FROM_ITER = unimplemented_instruction
+
+    # we don't support try-except/try-finally
+    POP_EXCEPT = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = CLEANUP_THROW = unimplemented_instruction
+
+    # we don't support async/await
+    GET_AWAITABLE = GET_AITER = GET_ANEXT = END_ASYNC_FOR = BEFORE_ASYNC_WITH = SETUP_ASYNC_WITH = SEND = ASYNC_GEN_WRAP = unimplemented_instruction
+
+    CACHE = unimplemented_instruction
+
+    # we don't know these instructions
+    PRINT_EXPR = COPY_DICT_WITHOUT_KEYS = unimplemented_instruction
+
+    # we only support bytecode for functions
+    IMPORT_STAR = unimplemented_instruction
+
+    YIELD_FROM = SETUP_ANNOTATIONS = LOAD_BUILD_CLASS = MATCH_MAPPING = MATCH_SEQUENCE = MATCH_KEYS = MATCH_CLASS = unimplemented_instruction
+
+    # don't find any interesting use case for these instructions
+    CALL_INTRINSIC_2 = unimplemented_instruction
+
+
+# ==================== NOP Instructions =============================
+
+    def generic_nop(self, inst: Instruction):
+        pass
+
+    # "EXTENDED_ARG" is treated as NOP here, because it has been handled by `dis.get_instructions`.
+    # The extended args are already merged into the following instruction's
+    # `inst.argval`.
+    EXTENDED_ARG = generic_nop
+
+    NOP = RESUME = SETUP_LOOP = POP_BLOCK = PRECALL = BEGIN_FINALLY = END_FINALLY = generic_nop
+
+    MAKE_CELL = generic_nop
+
+    RERAISE = generic_nop
+
+    # our FOR_ITER is different from CPython's FOR_ITER (as it does not need
+    # to explicitly consider the case of exhausted iterator), so we don't need
+    # to do anything here
+    END_FOR = generic_nop
+
+
 # ==================== Load Instructions =============================
 
     def LOAD_CONST(self, inst: Instruction):
@@ -253,7 +302,10 @@ class Decompiler:
     def generic_delete(self, inst: Instruction):
         self.state.source_code += f"del {inst.argval}\n"
 
-    DELETE_NAME = DELETE_FAST = DELETE_GLOBAL = DELETE_DEREF = generic_delete
+    DELETE_NAME = DELETE_GLOBAL = DELETE_DEREF = generic_delete
+    # `DELETE_FAST` just reduces the ref count by one
+    # it does not occur as code `del x` in the source code
+    DELETE_FAST = generic_nop
 
     def DELETE_ATTR(self, inst: Instruction):
         x = self.state.stack.pop()
@@ -1022,52 +1074,6 @@ class Decompiler:
             func = str if func is None else func
             self.state.stack.append(f"{func.__name__}({value})")
 
-
-# ==================== NOP Instructions =============================
-
-    def generic_nop(self, inst: Instruction):
-        pass
-
-    # "EXTENDED_ARG" is treated as NOP here, because it has been handled by `dis.get_instructions`.
-    # The extended args are already merged into the following instruction's
-    # `inst.argval`.
-    EXTENDED_ARG = generic_nop
-
-    NOP = RESUME = SETUP_LOOP = POP_BLOCK = PRECALL = BEGIN_FINALLY = END_FINALLY = generic_nop
-
-    MAKE_CELL = generic_nop
-
-    RERAISE = generic_nop
-
-    # our FOR_ITER is different from CPython's FOR_ITER (as it does not need
-    # to explicitly consider the case of exhausted iterator), so we don't need
-    # to do anything here
-    END_FOR = generic_nop
-
-# ==================== Unsupported Instructions =============================
-    def unimplemented_instruction(self, inst: Instruction):
-        raise NotImplementedError(f"Unsupported instruction: {inst.opname}")
-
-    GET_YIELD_FROM_ITER = unimplemented_instruction
-
-    # we don't support try-except/try-finally
-    POP_EXCEPT = WITH_EXCEPT_START = JUMP_IF_NOT_EXC_MATCH = CHECK_EG_MATCH = PUSH_EXC_INFO = PREP_RERAISE_STAR = WITH_CLEANUP_FINISH = CALL_FINALLY = POP_FINALLY = WITH_CLEANUP_START = SETUP_EXCEPT = CHECK_EXC_MATCH = CLEANUP_THROW = unimplemented_instruction
-
-    # we don't support async/await
-    GET_AWAITABLE = GET_AITER = GET_ANEXT = END_ASYNC_FOR = BEFORE_ASYNC_WITH = SETUP_ASYNC_WITH = SEND = ASYNC_GEN_WRAP = unimplemented_instruction
-
-    CACHE = unimplemented_instruction
-
-    # we don't know these instructions
-    PRINT_EXPR = COPY_DICT_WITHOUT_KEYS = unimplemented_instruction
-
-    # we only support bytecode for functions
-    IMPORT_STAR = unimplemented_instruction
-
-    YIELD_FROM = SETUP_ANNOTATIONS = LOAD_BUILD_CLASS = MATCH_MAPPING = MATCH_SEQUENCE = MATCH_KEYS = MATCH_CLASS = unimplemented_instruction
-
-    # don't find any interesting use case for these instructions
-    CALL_INTRINSIC_2 = unimplemented_instruction
 
     def decompile_range(self, start: int, end: int):
         try:
