@@ -1,4 +1,5 @@
 
+# AOT ID: ['2_inference']
 from ctypes import c_void_p, c_long
 import torch
 import math
@@ -17,6 +18,7 @@ from torch._inductor.codegen.multi_kernel import MultiKernelCall
 
 aten = torch.ops.aten
 inductor_ops = torch.ops.inductor
+_quantized = torch.ops._quantized
 assert_size_stride = torch._C._dynamo.guards.assert_size_stride
 empty_strided_cpu = torch._C._dynamo.guards._empty_strided_cpu
 empty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda
@@ -25,22 +27,62 @@ reinterpret_tensor = torch.ops.inductor._reinterpret_tensor
 async_compile = AsyncCompile()
 
 
-cpp_fused_mul_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'float*'], '''
-#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/wy/cwyvgno7oj63mpe36f4v6pizgeyvccmavffogp6xnqv56a32gbwo.h"
+cpp_fused_abs_add_div_lt_sum_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'float*', 'float*', 'bool*', 'const long', 'const long'], '''
+#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/ub/cub6x5nmhqhp7xapkb3dlgjxef3t2bnkx7y7n4z2f4z5obnecxpy.h"
 extern "C" void kernel(const float* in_ptr0,
                        const float* in_ptr1,
-                       float* out_ptr0)
+                       float* out_ptr0,
+                       float* out_ptr1,
+                       bool* out_ptr2,
+                       const long ks0,
+                       const long ks1)
 {
     {
-        for(long x0=static_cast<long>(0L); x0<static_cast<long>(8L); x0+=static_cast<long>(1L))
+        for(long x0=static_cast<long>(0L); x0<static_cast<long>(8L*(c10::div_floor_integer(ks0, 8L))); x0+=static_cast<long>(8L))
+        {
+            auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr0 + static_cast<long>(x0), 8);
+            auto tmp1 = tmp0.abs();
+            auto tmp2 = static_cast<float>(1.0);
+            auto tmp3 = at::vec::Vectorized<float>(tmp2);
+            auto tmp4 = tmp1 + tmp3;
+            auto tmp5 = tmp0 / tmp4;
+            tmp5.store(out_ptr0 + static_cast<long>(x0));
+        }
+        #pragma omp simd simdlen(4) 
+        for(long x0=static_cast<long>(8L*(c10::div_floor_integer(ks0, 8L))); x0<static_cast<long>(ks0); x0+=static_cast<long>(1L))
         {
             auto tmp0 = in_ptr0[static_cast<long>(x0)];
-            auto tmp1 = in_ptr1[static_cast<long>(x0)];
-            auto tmp2 = static_cast<float>(-1.0);
-            auto tmp3 = decltype(tmp1)(tmp1 * tmp2);
-            auto tmp4 = decltype(tmp0)(tmp0 * tmp3);
+            auto tmp1 = std::abs(tmp0);
+            auto tmp2 = static_cast<float>(1.0);
+            auto tmp3 = decltype(tmp1)(tmp1 + tmp2);
+            auto tmp4 = tmp0 / tmp3;
             out_ptr0[static_cast<long>(x0)] = tmp4;
         }
+    }
+    {
+        {
+            float tmp_acc0 = 0;
+            at::vec::Vectorized<float> tmp_acc0_vec = at::vec::Vectorized<float>(0);
+            for(long x0=static_cast<long>(0L); x0<static_cast<long>(8L*(c10::div_floor_integer(ks1, 8L))); x0+=static_cast<long>(8L))
+            {
+                auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr1 + static_cast<long>(x0), 8);
+                tmp_acc0_vec = tmp_acc0_vec + tmp0;
+            }
+            #pragma omp simd simdlen(4) 
+            for(long x0=static_cast<long>(8L*(c10::div_floor_integer(ks1, 8L))); x0<static_cast<long>(ks1); x0+=static_cast<long>(1L))
+            {
+                auto tmp0 = in_ptr1[static_cast<long>(x0)];
+                tmp_acc0 = tmp_acc0 + tmp0;
+            }
+            tmp_acc0 = tmp_acc0 + at::vec::vec_reduce_all<float>([](at::vec::Vectorized<float>& x, at::vec::Vectorized<float>& y) { return x + y; }, tmp_acc0_vec);
+            out_ptr1[static_cast<long>(0L)] = static_cast<float>(tmp_acc0);
+        }
+    }
+    {
+        auto tmp0 = out_ptr1[static_cast<long>(0L)];
+        auto tmp1 = static_cast<float>(0.0);
+        auto tmp2 = tmp0 < tmp1;
+        out_ptr2[static_cast<long>(0L)] = tmp2;
     }
 }
 ''')
@@ -50,23 +92,29 @@ async_compile.wait(globals())
 del async_compile
 
 def call(args):
-    arg0_1, arg1_1 = args
+    arg0_1, arg1_1, arg2_1, arg3_1 = args
     args.clear()
-    assert_size_stride(arg0_1, (8, ), (1, ))
-    assert_size_stride(arg1_1, (8, ), (1, ))
-    buf0 = empty_strided_cpu((8, ), (1, ), torch.float32)
-    cpp_fused_mul_0(arg1_1, arg0_1, buf0)
-    del arg0_1
+    s0 = arg0_1
+    s1 = arg2_1
+    assert_size_stride(arg1_1, (s0, ), (1, ))
+    assert_size_stride(arg3_1, (s1, ), (1, ))
+    buf0 = empty_strided_cpu((s0, ), (1, ), torch.float32)
+    buf1 = empty_strided_cpu((), (), torch.float32)
+    buf2 = empty_strided_cpu((), (), torch.bool)
+    cpp_fused_abs_add_div_lt_sum_0(arg1_1, arg3_1, buf0, buf1, buf2, s0, s1)
     del arg1_1
-    return (buf0, )
+    del arg3_1
+    return (buf0, buf2, )
 
 
 def benchmark_compiled_module(times=10, repeat=10):
     from torch._dynamo.testing import rand_strided
     from torch._inductor.utils import print_performance
-    arg0_1 = rand_strided((8, ), (1, ), device='cpu', dtype=torch.float32)
+    arg0_1 = 8
     arg1_1 = rand_strided((8, ), (1, ), device='cpu', dtype=torch.float32)
-    fn = lambda: call([arg0_1, arg1_1])
+    arg2_1 = 8
+    arg3_1 = rand_strided((8, ), (1, ), device='cpu', dtype=torch.float32)
+    fn = lambda: call([arg0_1, arg1_1, arg2_1, arg3_1])
     return print_performance(fn, times=times, repeat=repeat)
 
 
