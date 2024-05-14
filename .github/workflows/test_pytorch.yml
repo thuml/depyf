@@ -47,4 +47,5 @@ jobs:
         python tests/test_pytorch/spawn_tests.py
         python tests/test_pytorch/cmp_output.py
         python tests/test_pytorch/test_debug.py 2>&1 < tests/test_pytorch/debug_input.txt > tests/test_pytorch/debug_output.txt
+        cat tests/test_pytorch/debug_output.txt
         python tests/test_pytorch/check_debug_output.py
