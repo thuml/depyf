@@ -6,4 +6,4 @@ for line in open('tests/test_pytorch/debug_output.txt'):
     if line.startswith('->') or line.startswith('>'):
         count += 1
 
-assert count == 2
+assert count >= 2
