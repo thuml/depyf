@@ -1,0 +1,38 @@
+name: 💻 Usage
+description: Raise an issue here if you don't know how to use depyf.
+title: "[Usage]: "
+labels: ["usage"]
+
+body:
+- type: markdown
+  attributes:
+    value: >
+      #### Before submitting an issue, please make sure the issue hasn't been already addressed by searching through [the existing and past issues](https://github.com/thuml/depyf/issues?q=is%3Aissue+sort%3Acreated-desc+).
+- type: textarea
+  attributes:
+    label: Your current environment
+    description: |
+      Please run the following and paste the output below.
+      ```sh
+      wget https://raw.githubusercontent.com/thuml/depyf/master/collect_env.py
+      # For security purposes, please feel free to check the contents of collect_env.py before running it.
+      python collect_env.py
+      ```
+      It is suggested to download and execute the latest script, as depyf might frequently update the diagnosis information needed for accurately and quickly responding to issues.
+    value: |
+      ```text
+      The output of `python collect_env.py`
+      ```
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: How would you like to use depyf
+    description: |
+      A detailed description of how you want to use depyf.
+    value: |
+      I want to understand the following code with `torch.compile`.
+- type: markdown
+  attributes:
+    value: >
+      Thanks for contributing 🎉!
