@@ -1169,6 +1169,7 @@ class Decompiler:
                 f"Failed to decompile {self.code.co_name}") from e
 
     def __hash__(self):
+        # see https://github.com/thuml/depyf/pull/21
         return id(self.code)
 
 
