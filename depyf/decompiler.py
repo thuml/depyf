@@ -1169,7 +1169,7 @@ class Decompiler:
                 f"Failed to decompile {self.code.co_name}") from e
 
     def __hash__(self):
-        return hash(self.code)
+        return id(self.code)
 
 
 def decompile(code: Union[CodeType, Callable]):
