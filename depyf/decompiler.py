@@ -1172,6 +1172,8 @@ class Decompiler:
         # see https://github.com/thuml/depyf/pull/21
         return id(self.code)
 
+    def __eq__(self, other):
+        return hash(self) == hash(other)
 
 def decompile(code: Union[CodeType, Callable]):
     """Decompile a code object or a function."""
