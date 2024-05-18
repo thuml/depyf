@@ -916,15 +916,35 @@ class Decompiler:
 # ==================== Container Related Instructions (tuple, list, set, d
 
     def UNPACK_SEQUENCE(self, inst: Instruction):
+        # sequence can be tuple, list, or even generator
+        # we cannot directly use indexing to get the elements
+        # because the sequence might be a generator (not subscriptable)
+        # instead, we use a temporary variable to store the unpacked elements
+
+        # e.g. `a, b = (None for _ in (1, 2))`
+        # will be transformed into:
+        # __temp_1 = (None for _ in (1, 2))
+        # __temp_2, __temp_3 = __temp_1
+        # a = __temp_2
+        # b = __temp_3
         varname = self.state.stack.pop()
+        tmp_names = []
         for i in range(inst.argval):
-            self.state.stack.append(f"{varname}[{inst.argval - 1 - i}]")
+            tmp_names.append(self.get_temp_name())
+        self.state.source_code += ", ".join(tmp_names) + f" = {varname}\n"
+        for name in tmp_names[::-1]:
+            self.state.stack.append(name)
 
     def UNPACK_EX(self, inst: Instruction):
         varname = self.state.stack.pop()
-        self.state.stack.append(f"list({varname}[{inst.argval}:])")
+        tmp_names = []
         for i in range(inst.argval):
-            self.state.stack.append(f"{varname}[{inst.argval - 1 - i}]")
+            tmp_names.append(self.get_temp_name())
+        star_name = self.get_temp_name()
+        self.state.source_code += ", ".join(tmp_names) + f", *{star_name}" + f" = {varname}\n"
+        self.state.stack.append(star_name)
+        for name in tmp_names[::-1]:
+            self.state.stack.append(name)
 
     def BUILD_SLICE(self, inst: Instruction):
         tos = self.state.stack.pop()
