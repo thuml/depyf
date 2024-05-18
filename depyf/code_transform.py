@@ -179,7 +179,11 @@ def nop_unreachable_bytecode(code,
         tab = parse_exception_table(code.co_exceptiontable)
         exception_targets = {entry.target: entry for entry in tab}
 
+    # difference bwteween `i in deadcode_positions` and `reachable[i] == False`:
+    # `i in deadcode_positions` means that the instruction is not reachable, defnitely a NOP
+    # `reachable[i] == False` means that the instruction is not reachable currently, but it might be reachable later when we iterate through the instructions
     reachable = [False for x in instructions]
+    deadcode_positions = set()
     reachable[0] = True
     # each instruction marks the instruction after it
     for i, inst in enumerate(instructions):
@@ -233,8 +237,13 @@ def nop_unreachable_bytecode(code,
                                 pass
                         if not has_jump_in:
                             reachable[i] = False
+                            for _ in range(i, j):
+                                deadcode_positions.add(_)
         else:
             reachable[i + 1] = True
+
+    for i in deadcode_positions:
+        reachable[i] = False
 
     # mark unreachable instructions as NOP
     for inst, flag in zip(instructions, reachable):
