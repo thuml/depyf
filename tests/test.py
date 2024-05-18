@@ -499,9 +499,29 @@ def test_UNPACK_SEQUENCE():
         assert f() == ans
 
 
+def test_UNPACK_SEQUENCE2():
+    # unpack generator
+    def f():
+        a, b = (None for _ in (1, 2))
+        return a
+    ans = f()
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
+
+
 def test_UNPACK_EX():
     def f():
         a, *b = (1, 2, 3)
+        return b
+    ans = f()
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
+
+
+def test_UNPACK_EX2():
+    # unpack generator
+    def f():
+        a, *b = (None for _ in (1, 2, 3))
         return b
     ans = f()
     with replace_code_by_decompile_and_compile(f):
