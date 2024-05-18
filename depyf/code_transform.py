@@ -179,7 +179,11 @@ def nop_unreachable_bytecode(code,
         tab = parse_exception_table(code.co_exceptiontable)
         exception_targets = {entry.target: entry for entry in tab}
 
+    # difference bwteween `i in deadcode_positions` and `reachable[i] == False`:
+    # `i in deadcode_positions` means that the instruction is not reachable, defnitely a NOP
+    # `reachable[i] == False` means that the instruction is not reachable currently, but it might be reachable later when we iterate through the instructions
     reachable = [False for x in instructions]
+    deadcode_positions = set()
     reachable[0] = True
     # each instruction marks the instruction after it
     for i, inst in enumerate(instructions):
@@ -223,18 +227,36 @@ def nop_unreachable_bytecode(code,
                 if len(jump_forwards):
                     j = jump_forwards[0]
                     if j > i:
+                        smallest_jump_in = j
                         has_jump_in = False
+
+                        for ii, inst_ii in enumerate(instructions[i: j]):
+                            # in python 3.11 exception table
+                            # exception target indicates a jump target from many instructions
+                            # and therefore it is treated as a jump-in
+                            if inst_ii.offset in exception_targets:
+                                has_jump_in = True
+                                smallest_jump_in = min(
+                                    smallest_jump_in, ii)
+
                         for ii, inst_ii in enumerate(instructions):
                             try:
                                 jump_location = inst_ii.get_jump_target()
                                 if (ii < i or ii > j) and (jump_location >= inst.offset and jump_location < instructions[j].offset):
                                     has_jump_in = True
+                                    smallest_jump_in = min(
+                                        smallest_jump_in, ii)
                             except Exception:
                                 pass
                         if not has_jump_in:
                             reachable[i] = False
+                        for _ in range(i, smallest_jump_in):
+                            deadcode_positions.add(_)
         else:
             reachable[i + 1] = True
+
+    for i in deadcode_positions:
+        reachable[i] = False
 
     # mark unreachable instructions as NOP
     for inst, flag in zip(instructions, reachable):
