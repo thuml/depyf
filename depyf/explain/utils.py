@@ -112,7 +112,10 @@ class CacheResult:
     def __init__(self, original_code, module, cache):
         self.original_code = original_code
         guard = cache.check_fn.code_parts
+        freevar_names = cache.check_fn.__code__.co_freevars
+        freevar_values = [x.cell_contents for x in cache.check_fn.__closure__]
         self.guard = guard
+        self.freevars = {name: value for name, value in zip(freevar_names, freevar_values)}
         code = cache.code
 
         compiled_subgraphs = [
@@ -208,13 +211,16 @@ class DynamoOptimizationResult:
 
             # prepare guards, like `def guard_0(L):\n    return a > 0 and b >
             # 0`
+            freevars = "".join([f"{name} = '''{value}'''\n" for name, value in entry.freevars.items()])
+            if freevars:
+                freevars = "# Note: the following variables are used inside the guard function.\n" + freevars
             guard = (" \\\n" + " " * 8 +
                      "and ").join(["(" + x + ")" for x in entry.guard])
             if entry.transformed_code_proxy.name.startswith("__transformed_code_"):
                 guard_func_name = entry.transformed_code_proxy.name.replace("__transformed_code_", "__guard_")
             else:
                 guard_func_name = CodeProxy.consume_new_name("guard:")
-            additional_code += f"\ndef {guard_func_name}(L, G, **___kwargs_ignored):\n" + \
+            additional_code += "\n" + freevars + f"def {guard_func_name}(L, G, **___kwargs_ignored):\n" + \
                 " " * 4 + "return " + guard + "\n"
 
             if entry.compiled_subgraph_proxy is not None:
