@@ -118,7 +118,7 @@ class DebuggableHook(object):
 
 @contextlib.contextmanager
 def patch(parent, name, value):
-    old_value = getattr(parent, name)
+    old_value = getattr(parent, name, None)
     setattr(parent, name, value)
     try:
         yield
@@ -175,7 +175,8 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
     # patch some functions
     with patch(torch.fx.graph_module, "_exec_with_source", patched__exec_with_source), \
             patch(torch._inductor.codecache.PyCodeCache, "load_by_key_path", patched_load_by_key_path), \
-            patch(torch._dynamo.utils.lazy_format_graph_code, "__code__", patched_lazy_format_graph_code.__code__):
+            patch(torch._dynamo.utils.lazy_format_graph_code, "__code__", patched_lazy_format_graph_code.__code__), \
+            patch(torch._dynamo.config, "enable_cpp_guard_manager", False):
         # we have to directly manipulate the code object, since the function has been imported in many places.
         # simply replacing torch._dynamo.utils.lazy_format_graph_code does not work for those functions.
         # Note: `unitest.mock.patch` does not work here, since it will not
