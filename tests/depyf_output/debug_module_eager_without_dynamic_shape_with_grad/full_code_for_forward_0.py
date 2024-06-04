@@ -1,6 +1,10 @@
 
-def __guard_0_for_torch_dynamo_resume_in_forward_at_15(L):
-    return 
+def __guard_0_for_torch_dynamo_resume_in_forward_at_15(L, G, **___kwargs_ignored):
+    return (___check_global_state()) \
+        and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
+        and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
+        and (utils_device.CURRENT_DEVICE == None) \
+        and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_5*.py.
 # Captured Graph: Dynamo generated graph (debuggable when using eager backend).
@@ -13,7 +17,7 @@ def __compiled_fn_5(*args, **kwargs):
 
 def __transformed_code_0_for_torch_dynamo_resume_in_forward_at_15(b, x):
     a = None; self = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
-    return __compiled_fn_5(x, b)[0]
+    return __compiled_fn_5(x, b)
 
 
 # Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.
@@ -21,8 +25,9 @@ def __resume_at_38_3(b, x):
     return x * b
 
 def transformed___resume_at_38_3(b, x):
-    L = {"b": b, "x": x}
-    if __guard_0_for_torch_dynamo_resume_in_forward_at_15(L):
+    __local_dict = {"b": b, "x": x}
+    __global_dict = globals()
+    if __guard_0_for_torch_dynamo_resume_in_forward_at_15(__local_dict, __global_dict):
         return __transformed_code_0_for_torch_dynamo_resume_in_forward_at_15(b, x)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return __resume_at_38_3(b, x)
@@ -35,14 +40,21 @@ def __resume_at_30_2(b, x):
     return x * b
 
 def transformed___resume_at_30_2(b, x):
-    L = {"b": b, "x": x}
+    __local_dict = {"b": b, "x": x}
+    __global_dict = globals()
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return __resume_at_30_2(b, x)
 
 #============ end of __resume_at_30_2 ============#
 
-def __guard_0_for_forward(L):
-    return 
+def __guard_0_for_forward(L, G, **___kwargs_ignored):
+    return (___check_global_state()) \
+        and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
+        and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
+        and (utils_device.CURRENT_DEVICE == None) \
+        and (___check_obj_id(G['torch'], 4373605616)) \
+        and (___check_obj_id(G['torch'].abs, 4379088656)) \
+        and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_1*.py.
 # Captured Graph: Dynamo generated graph (debuggable when using eager backend).
@@ -54,9 +66,9 @@ def __compiled_fn_1(*args, **kwargs):
     pass
 
 def __transformed_code_0_for_forward(self, a, b):
-    __temp_1 = __compiled_fn_1(a, b)
-    x = __temp_1[0]
-    if __temp_1[1]:
+    __temp_2, __temp_3 = __compiled_fn_1(a, b)
+    x = __temp_2
+    if __temp_3:
         return __resume_at_30_2(b, x)
     return __resume_at_38_3(b, x)
 
@@ -69,8 +81,9 @@ def forward(self, a, b):
     return x * b
 
 def transformed_forward(self, a, b):
-    L = {"self": self, "a": a, "b": b}
-    if __guard_0_for_forward(L):
+    __local_dict = {"self": self, "a": a, "b": b}
+    __global_dict = globals()
+    if __guard_0_for_forward(__local_dict, __global_dict):
         return __transformed_code_0_for_forward(self, a, b)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return forward(self, a, b)

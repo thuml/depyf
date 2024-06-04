@@ -1,6 +1,10 @@
 
-def __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L):
-    return 
+def __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L, G, **___kwargs_ignored):
+    return (___check_global_state()) \
+        and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
+        and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
+        and (utils_device.CURRENT_DEVICE == None) \
+        and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_5*.py.
 # Captured Graph: Dynamo generated graph (debuggable when using eager backend).
@@ -13,7 +17,7 @@ def __compiled_fn_5(*args, **kwargs):
 
 def __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
     a = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
-    return __compiled_fn_5(x, b)[0]
+    return __compiled_fn_5(x, b)
 
 
 # Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.
@@ -21,16 +25,21 @@ def __resume_at_38_3(b, x):
     return x * b
 
 def transformed___resume_at_38_3(b, x):
-    L = {"b": b, "x": x}
-    if __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L):
+    __local_dict = {"b": b, "x": x}
+    __global_dict = globals()
+    if __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(__local_dict, __global_dict):
         return __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return __resume_at_38_3(b, x)
 
 #============ end of __resume_at_38_3 ============#
 
-def __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L):
-    return 
+def __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L, G, **___kwargs_ignored):
+    return (___check_global_state()) \
+        and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
+        and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
+        and (utils_device.CURRENT_DEVICE == None) \
+        and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_11*.py.
 # Captured Graph: Dynamo generated graph (debuggable when using eager backend).
@@ -43,7 +52,7 @@ def __compiled_fn_11(*args, **kwargs):
 
 def __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
     a = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
-    return __compiled_fn_11(b, x)[0]
+    return __compiled_fn_11(b, x)
 
 
 # Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.
@@ -52,16 +61,21 @@ def __resume_at_30_2(b, x):
     return x * b
 
 def transformed___resume_at_30_2(b, x):
-    L = {"b": b, "x": x}
-    if __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L):
+    __local_dict = {"b": b, "x": x}
+    __global_dict = globals()
+    if __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(__local_dict, __global_dict):
         return __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return __resume_at_30_2(b, x)
 
 #============ end of __resume_at_30_2 ============#
 
-def __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L):
-    return 
+def __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L, G, **___kwargs_ignored):
+    return (___check_global_state()) \
+        and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
+        and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
+        and (utils_device.CURRENT_DEVICE == None) \
+        and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_5*.py.
 # Captured Graph: Dynamo generated graph (debuggable when using eager backend).
@@ -74,7 +88,7 @@ def __compiled_fn_5(*args, **kwargs):
 
 def __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
     a = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
-    return __compiled_fn_5(x, b)[0]
+    return __compiled_fn_5(x, b)
 
 
 # Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.
@@ -82,16 +96,21 @@ def __resume_at_38_9(b, x):
     return x * b
 
 def transformed___resume_at_38_9(b, x):
-    L = {"b": b, "x": x}
-    if __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L):
+    __local_dict = {"b": b, "x": x}
+    __global_dict = globals()
+    if __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(__local_dict, __global_dict):
         return __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return __resume_at_38_9(b, x)
 
 #============ end of __resume_at_38_9 ============#
 
-def __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L):
-    return 
+def __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L, G, **___kwargs_ignored):
+    return (___check_global_state()) \
+        and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
+        and (hasattr(L['x'], '_dynamo_dynamic_indices') == False) \
+        and (utils_device.CURRENT_DEVICE == None) \
+        and (___check_tensors(L['b'], L['x'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_11*.py.
 # Captured Graph: Dynamo generated graph (debuggable when using eager backend).
@@ -104,7 +123,7 @@ def __compiled_fn_11(*args, **kwargs):
 
 def __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
     a = None # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function
-    return __compiled_fn_11(b, x)[0]
+    return __compiled_fn_11(b, x)
 
 
 # Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.
@@ -113,16 +132,25 @@ def __resume_at_30_8(b, x):
     return x * b
 
 def transformed___resume_at_30_8(b, x):
-    L = {"b": b, "x": x}
-    if __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L):
+    __local_dict = {"b": b, "x": x}
+    __global_dict = globals()
+    if __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(__local_dict, __global_dict):
         return __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return __resume_at_30_8(b, x)
 
 #============ end of __resume_at_30_8 ============#
 
-def __guard_1_for_toy_function(L):
-    return 
+def __guard_1_for_toy_function(L, G, **___kwargs_ignored):
+    return (___check_global_state()) \
+        and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
+        and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
+        and (utils_device.CURRENT_DEVICE == None) \
+        and (___check_obj_id(G['torch'], 4344327408)) \
+        and (___check_obj_id(G['torch'].abs, 4349810448)) \
+        and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names)) \
+        and (2 <= L['a'].size()[0]) \
+        and (2 <= L['b'].size()[0])
 
 # Note: please refer to the graph code in __compiled_fn_7*.py.
 # Captured Graph: Dynamo generated graph (debuggable when using eager backend).
@@ -134,15 +162,21 @@ def __compiled_fn_7(*args, **kwargs):
     pass
 
 def __transformed_code_1_for_toy_function(a, b):
-    __temp_7 = __compiled_fn_7(a.size(0), a, b.size(0), b)
-    x = __temp_7[0]
-    if __temp_7[1]:
+    __temp_11, __temp_12 = __compiled_fn_7(a.size(0), a, b.size(0), b)
+    x = __temp_11
+    if __temp_12:
         return __resume_at_30_8(b, x)
     return __resume_at_38_9(b, x)
 
 
-def __guard_0_for_toy_function(L):
-    return 
+def __guard_0_for_toy_function(L, G, **___kwargs_ignored):
+    return (___check_global_state()) \
+        and (hasattr(L['a'], '_dynamo_dynamic_indices') == False) \
+        and (hasattr(L['b'], '_dynamo_dynamic_indices') == False) \
+        and (utils_device.CURRENT_DEVICE == None) \
+        and (___check_obj_id(G['torch'], 4344327408)) \
+        and (___check_obj_id(G['torch'].abs, 4349810448)) \
+        and (___check_tensors(L['a'], L['b'], tensor_check_names=tensor_check_names))
 
 # Note: please refer to the graph code in __compiled_fn_1*.py.
 # Captured Graph: Dynamo generated graph (debuggable when using eager backend).
@@ -154,9 +188,9 @@ def __compiled_fn_1(*args, **kwargs):
     pass
 
 def __transformed_code_0_for_toy_function(a, b):
-    __temp_1 = __compiled_fn_1(a, b)
-    x = __temp_1[0]
-    if __temp_1[1]:
+    __temp_2, __temp_3 = __compiled_fn_1(a, b)
+    x = __temp_2
+    if __temp_3:
         return __resume_at_30_2(b, x)
     return __resume_at_38_3(b, x)
 
@@ -169,10 +203,11 @@ def toy_function(a, b):
     return x * b
 
 def transformed_toy_function(a, b):
-    L = {"a": a, "b": b}
-    if __guard_1_for_toy_function(L):
+    __local_dict = {"a": a, "b": b}
+    __global_dict = globals()
+    if __guard_1_for_toy_function(__local_dict, __global_dict):
         return __transformed_code_1_for_toy_function(a, b)
-    if __guard_0_for_toy_function(L):
+    if __guard_0_for_toy_function(__local_dict, __global_dict):
         return __transformed_code_0_for_toy_function(a, b)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return toy_function(a, b)
