@@ -12,7 +12,7 @@ from torch._inductor.utils import maybe_profile
 from torch._inductor.codegen.memory_planning import _align as align
 
 from torch import device, empty_strided
-from torch._inductor.codecache import AsyncCompile
+from torch._inductor.async_compile import AsyncCompile
 from torch._inductor.select_algorithm import extern_kernels
 from torch._inductor.codegen.multi_kernel import MultiKernelCall
 
@@ -28,7 +28,7 @@ async_compile = AsyncCompile()
 
 
 cpp_fused_abs_add_div_lt_sum_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'float*', 'float*', 'bool*'], '''
-#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/ub/cub6x5nmhqhp7xapkb3dlgjxef3t2bnkx7y7n4z2f4z5obnecxpy.h"
+#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/sk/cskh5dx62fglpphcrl6723dnmowdabouerrzy3dmqcngbxwfa7bv.h"
 extern "C" void kernel(const float* in_ptr0,
                        const float* in_ptr1,
                        float* out_ptr0,
