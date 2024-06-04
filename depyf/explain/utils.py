@@ -197,9 +197,10 @@ class DynamoOptimizationResult:
         code_obj = self.original_code
         normal_arg_count = code_obj.co_argcount + code_obj.co_kwonlyargcount
         arg_names = code_obj.co_varnames[:normal_arg_count]
-        arg_dict = "L = {" + \
+        arg_dict = "__local_dict = {" + \
             ", ".join([f'"{name}": {name}' for name in arg_names]) + "}"
         code += "\n" + " " * 4 + arg_dict
+        code += "\n" + " " * 4 + "__global_dict = globals()"
 
         additional_code = ""
 
@@ -213,7 +214,7 @@ class DynamoOptimizationResult:
                 guard_func_name = entry.transformed_code_proxy.name.replace("__transformed_code_", "__guard_")
             else:
                 guard_func_name = CodeProxy.consume_new_name("guard:")
-            additional_code += f"\ndef {guard_func_name}(L):\n" + \
+            additional_code += f"\ndef {guard_func_name}(L, G, **___kwargs_ignored):\n" + \
                 " " * 4 + "return " + guard + "\n"
 
             if entry.compiled_subgraph_proxy is not None:
@@ -236,7 +237,7 @@ class DynamoOptimizationResult:
                 additional_code = func.to_src() + additional_code
 
             code += "\n" + " " * 4 + \
-                f"if {guard_func_name}(L):\n" + " " * 8 + f"return {entry.transformed_code_proxy.name}({', '.join(arg_names)})"
+                f"if {guard_func_name}(__local_dict, __global_dict):\n" + " " * 8 + f"return {entry.transformed_code_proxy.name}({', '.join(arg_names)})"
 
         additional_code += "\n" + "# Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.\n" + \
             remove_indentation(self.source_code_proxy.raw_code) + "\n"
