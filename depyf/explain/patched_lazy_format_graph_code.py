@@ -1,4 +1,4 @@
-def patched_lazy_format_graph_code(name, gm, maybe_id=None):
+def patched_lazy_format_graph_code(name, gm, maybe_id=None, **kwargs):
     from depyf.explain.utils import get_current_compiled_fn_name, get_code_owner, write_code_to_file_template
     func_name = get_current_compiled_fn_name()
     file_name = name if name != func_name else "Captured Graph"
@@ -48,10 +48,13 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None):
         else:
             return name
 
+    if "print_output" not in kwargs:
+        kwargs["print_output"] = False
+
     return LazyString(
         lambda: _format_graph_code(
             f"===== {format_name()} =====\n",
             gm.forward.__code__.co_filename,
-            gm.print_readable(print_output=False),
+            gm.print_readable(**kwargs),
         )
     )
