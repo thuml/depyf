@@ -41,7 +41,7 @@ class DebuggableHook(object):
                 f"__transformed_code_%s_for_{func_name}.py")
 
             from depyf.explain.utils import lock_on_file
-            from depyf.code_transform import prepare_freevars_for_compile
+            from depyf.code_transform import fix_irregular_code
             from depyf.utils import collect_all_code_objects
             from depyf.decompiler import Decompiler
 
@@ -50,7 +50,7 @@ class DebuggableHook(object):
                 # we first try to find an existing file with the same code body.
                 src = Decompiler(new_code).decompile(overwite_fn_name="__place_holder__")
                 # check https://dev-discuss.pytorch.org/t/what-is-the-relationship-requirement-among-original-bytecode-transformed-bytecode-and-bytecode-returned-by-hooks-in-dynamo/1693/4 for why we need to prepare freevars like `code` rather than `new_code`
-                src = prepare_freevars_for_compile(code, src)
+                src = fix_irregular_code(code, src)
                 src_body = src[src.find("("):]
                 if code.co_freevars:
                     src_body = src_body[src_body.find("("):]

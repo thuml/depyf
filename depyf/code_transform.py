@@ -431,7 +431,7 @@ def structure_hash(source_code: str) -> str:
     return hash_value
 
 
-def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str, add_local_variables: Optional[List[str]]=None) -> str:
+def fix_irregular_code(old_bytecode: CodeType, src_code: str, add_local_variables: Optional[List[str]]=None) -> str:
     function_name = src_code.split("(")[0].split()[-1]
     new_code = src_code
     if add_local_variables is not None:
@@ -463,5 +463,5 @@ def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str, add_loca
     missing_local_variables = set(old_bytecode.co_varnames) - set(target_code.co_varnames)
 
     if missing_local_variables:
-        return prepare_freevars_for_compile(old_bytecode, src_code, add_local_variables=sorted(list(missing_local_variables)))
+        return fix_irregular_code(old_bytecode, src_code, add_local_variables=sorted(list(missing_local_variables)))
     return new_code
