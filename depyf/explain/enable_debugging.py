@@ -6,6 +6,7 @@ from typing import List, Tuple, Dict, Union, Callable, Optional, Any
 
 import contextlib
 import warnings
+import traceback
 
 import dataclasses
 import itertools
@@ -115,6 +116,7 @@ class DebuggableHook(object):
             print("Please consider submitting an issue to https://github.com/thuml/depyf .", file=string_io)
             # do not stop the program for decompilation error and compile error
             warnings.warn(string_io.getvalue())
+            traceback.print_exc()
 
 @contextlib.contextmanager
 def patch(parent, name, value):
