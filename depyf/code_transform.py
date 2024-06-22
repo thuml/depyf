@@ -431,16 +431,31 @@ def structure_hash(source_code: str) -> str:
     return hash_value
 
 
-def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str, add_local_variables: Optional[List[str]]=None) -> str:
+def fix_irregular_code(
+    old_bytecode: CodeType,
+    src_code: str,
+    add_local_variables: Optional[List[str]]=None,
+    add_cellvars: Optional[List[str]]=None,
+    ) -> str:
     function_name = src_code.split("(")[0].split()[-1]
     new_code = src_code
-    if add_local_variables is not None:
+    if add_local_variables is not None or add_cellvars is not None:
         lines = src_code.splitlines()
         header = lines[0]
         body = lines[1:]
-        added_line = "; ".join(f"{x} = None" for x in add_local_variables)
-        added_line = "    " + added_line + " # this line helps the compiler to generate bytecode with at least the same number of local variables as the original function\n"
-        new_code = "".join([x + "\n" for x in [header, added_line] + body])
+        headers = [header]
+        if add_local_variables:
+            added_line = "; ".join(f"{x} = None" for x in add_local_variables)
+            added_line = "    " + added_line + " # this line helps Python to generate bytecode with at least the same number of local variables as the original function\n"
+            headers.append(added_line)
+        if add_cellvars:
+            added_line = "return " + ", ".join(x for x in add_cellvars)
+            added_line = (
+                "    def __helper_for_cellvars():\n"
+                "        # this function helps Python to generate bytecode with at least the same number of cellvars as the original function\n"
+            ) + "        " + added_line
+            headers.append(added_line)
+        new_code = "".join([x + "\n" for x in headers + body])
 
     freevars = old_bytecode.co_freevars
     if freevars:
@@ -461,7 +476,11 @@ def prepare_freevars_for_compile(old_bytecode: CodeType, src_code: str, add_loca
     target_code = [x for x in code_objects if x.co_name == function_name][0]
 
     missing_local_variables = set(old_bytecode.co_varnames) - set(target_code.co_varnames)
+    missing_cellvars = set(old_bytecode.co_cellvars) - set(target_code.co_cellvars)
 
-    if missing_local_variables:
-        return prepare_freevars_for_compile(old_bytecode, src_code, add_local_variables=sorted(list(missing_local_variables)))
+    if missing_local_variables or missing_cellvars:
+        return fix_irregular_code(
+            old_bytecode, src_code, 
+            add_local_variables=sorted(list(missing_local_variables)),
+            add_cellvars=sorted(list(missing_cellvars)))
     return new_code

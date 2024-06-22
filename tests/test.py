@@ -1,6 +1,6 @@
 from depyf import decompile
 from depyf.utils import collect_all_code_objects
-from depyf.code_transform import prepare_freevars_for_compile
+from depyf.code_transform import fix_irregular_code
 import unittest
 import dis
 import sys
@@ -26,7 +26,7 @@ def decompile_by_depyf(func):
     decompile_path = "./decompiled_code.py"
     # first step, decompile the code
     src = decompile(old_code)
-    new_src = prepare_freevars_for_compile(old_code, src)
+    new_src = fix_irregular_code(old_code, src)
     with open(decompile_path, "w") as f:
         f.write(new_src)
 
