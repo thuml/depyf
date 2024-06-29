@@ -931,7 +931,10 @@ class Decompiler:
         tmp_names = []
         for i in range(inst.argval):
             tmp_names.append(self.get_temp_name())
-        self.state.source_code += ", ".join(tmp_names) + f" = {varname}\n"
+        # NOTE: even if there is only one element, we still need to unpack it
+        # a = b is different from a, = b
+        lhs = "".join([f"{x}, " for x in tmp_names])
+        self.state.source_code += lhs + f"= {varname}\n"
         for name in tmp_names[::-1]:
             self.state.stack.append(name)
 

@@ -499,6 +499,16 @@ def test_UNPACK_SEQUENCE():
         assert f() == ans
 
 
+def test_UNPACK_SEQUENCE1():
+    # unpack sequence with one element
+    def f():
+        a, = (1,)
+        return a
+    ans = f()
+    with replace_code_by_decompile_and_compile(f):
+        assert f() == ans
+
+
 def test_UNPACK_SEQUENCE2():
     # unpack generator
     def f():
