@@ -2,6 +2,8 @@
 
 [![Documentation Status](https://readthedocs.org/projects/depyf/badge/?version=latest)](https://depyf.readthedocs.io/en/latest/) ![Supported Python Versions](https://img.shields.io/badge/python-%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-blue) ![Python Decompilation Tests](https://github.com/thuml/depyf/actions/workflows/test_decompile.yml/badge.svg) ![PyTorch Integration Tests](https://github.com/thuml/depyf/actions/workflows/test_pytorch.yml/badge.svg) ![MIT License](https://img.shields.io/github/license/thuml/depyf)
 
+> `depyf` is proud to be a [PyTorch ecosystem project](https://pytorch.org/ecosystem/). Check out the announcement blog [https://pytorch.org/blog/introducing-depyf/](https://pytorch.org/blog/introducing-depyf/) for more details.
+
 Have you ever felt overwhelmed by the complexities of `torch.compile`? Diving into its workings can feel like black magic, with bytecode and Python internal details that many users fail to understand, hindering them from understanding and adapting to `torch.compile`.
 
 If you also face the problem, then you might be interested in `depyf`. As the logo suggests, `depyf` is a software tool to leverage advanced Python features (the Python snake symbol) to open up internal details (the internal gears symbol) of PyTorch's compiler `torch.compile` (the PyTorch logo), so that users can understand it, adapt to it, and tune their code (the debugger symbol) to get maximum performance benefit out of it.
