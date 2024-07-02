@@ -12,6 +12,7 @@ import dataclasses
 import itertools
 import sys
 import os
+import inspect
 
 
 @dataclasses.dataclass
@@ -152,10 +153,8 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
     import os
     import torch
 
-    warnings.warn((
-        "You are trying to debug `torch.compile`. Please make sure the code "
-        "runs multiple times to cover all the possible branches."
-    ))
+    current_line_number = inspect.currentframe().f_lineno + 1
+    warnings.warn_explicit(f"{__file__}:{current_line_number}: You are trying to debug `torch.compile`. Please make sure the code runs multiple times to cover all the possible branches.", UserWarning, "", 0)
 
     from depyf.utils import safe_create_directory
 
@@ -200,7 +199,11 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
                         continue
                     from depyf.explain import dump_src
                     from depyf.explain.utils import write_code_to_file_template
-                    from torch._dynamo.eval_frame import innermost_fn
+                    from torch._dynamo.eval_frame import innermost_fn, _debug_get_cache_entry_list
+                    entries = _debug_get_cache_entry_list(code)
+                    if not entries:
+                        current_line_number = inspect.currentframe().f_lineno + 1
+                        warnings.warn_explicit(f"{__file__}:{current_line_number}: Code object {code} is compiled but does not have any compiled cache entries. Probably some torch.nn.Module instances are destroyed too early. It is recommended to make sure the torch.nn.Module instances exist after `with depyf.prepare_debug`.", UserWarning, "", 0)
                     full_src = dump_src(code, module)
                     filepath_template = os.path.join(dump_src_dir, f"full_code_for_{code.co_name}_%s.py")
                     full_code_path = write_code_to_file_template(full_src, filepath_template)
