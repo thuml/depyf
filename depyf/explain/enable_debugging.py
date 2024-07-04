@@ -122,11 +122,13 @@ class DebuggableHook(object):
 @contextlib.contextmanager
 def patch(parent, name, value):
     old_value = getattr(parent, name, None)
-    setattr(parent, name, value)
+    if old_value is not None:
+        setattr(parent, name, value)
     try:
         yield
     finally:
-        setattr(parent, name, old_value)
+        if old_value is not None:
+            setattr(parent, name, old_value)
 
 
 @contextlib.contextmanager
