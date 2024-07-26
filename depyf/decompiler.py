@@ -153,7 +153,7 @@ class Decompiler:
                 self.state.source_code += f'{temp_name} = {inst.argval}\n'
                 self.state.stack.append(temp_name)
             else:
-                self.state.stack.append(inst.argval)
+                self.state.stack.append(f"'__co_consts[{inst.arg}]'")
 
     def generic_load(self, inst: Instruction):
         """`inst.argval` is the variable name, in string"""

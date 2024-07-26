@@ -83,6 +83,21 @@ class DebuggableHook(object):
             func_name = filename.split(os.path.sep)[-1].split(".")[0]
             decompiled_and_compiled_back_code = [x for x in transformed_codes if x.co_name == func_name][0]
 
+            # torch.compile might hold random non-constant values in `new_code.co_consts` that cannot
+            # be represented in source code. During decompliation, we treat them as `__co_consts[i]`,
+            # a string that represents the constant in the original code object.
+            # We need to replace them with the actual constant in the original code object, so that
+            # the decompiled and compiled back code object can be used for execution.
+            updated_consts = []
+            for i, x in enumerate(decompiled_and_compiled_back_code.co_consts):
+                if isinstance(x, str) and x.startswith("__co_consts"):
+                    index = int(x.split("[")[-1][:-1]) # __co_consts[0] -> 0
+                    updated_consts.append(new_code.co_consts[index])
+                else:
+                    updated_consts.append(x)
+
+            decompiled_and_compiled_back_code = decompiled_and_compiled_back_code.replace(co_consts=tuple(updated_consts))
+
             if self.log_bytecode:
                 with lock_on_file(filename):
                     import dill
