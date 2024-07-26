@@ -229,7 +229,10 @@ def debug():
         raise RuntimeError("You cannot use `depyf.debug` inside `depyf.prepare_debug`.")
     dump_src_dir = data["dump_src_dir"]
     import torch
-    callback = torch._dynamo.eval_frame.set_eval_frame(False)
+    # after https://github.com/pytorch/pytorch/pull/131258
+    # torch._dynamo.eval_frame.set_eval_frame is not available in the module
+    # we need to directly access it from the `_C` extension.
+    callback = torch._C._dynamo.eval_frame.set_eval_frame(False)
     # sometimes pytorch use Interpreter to run node by node. This cannot be debugged.
     # we patch this function to run the graph function directly.
     with patch(torch.fx.Interpreter.boxed_run, "__code__", patched_boxed_run.__code__):
@@ -239,4 +242,4 @@ def debug():
             breakpoint()
             yield
         finally:
-            torch._dynamo.eval_frame.set_eval_frame(callback)
+            torch._C._dynamo.eval_frame.set_eval_frame(callback)
