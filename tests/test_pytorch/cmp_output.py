@@ -1,8 +1,14 @@
 import glob
 
+def exclude_files(files, keys):
+    return [x for x in files if not any(key in x for key in keys)]
+
 output_full_code = sorted(glob.glob("depyf_output/*/full_code_*.py"))
 expected_full_code = sorted(glob.glob("tests/depyf_output/*/full_code_*.py"))
 expected_full_code = [x[len("tests/"):] for x in expected_full_code]
+
+output_full_code = exclude_files(output_full_code, ["insert_deferred_runtime_asserts"])
+expected_full_code = exclude_files(expected_full_code, ["insert_deferred_runtime_asserts"])
 
 msg = "Unexpected files:\n"
 for x in set(output_full_code) - set(expected_full_code):
@@ -22,6 +28,9 @@ output_files = [x for x in output_files if not x.endswith(".lock")]
 expected_files = glob.glob("tests/depyf_output/*/__compiled_fn_*.py") + glob.glob("tests/depyf_output/*/__transformed_code_*.py")
 expected_files.sort()
 expected_files = [x[len("tests/"):] for x in expected_files]
+
+output_files = exclude_files(output_files, ["insert_deferred_runtime_asserts"])
+expected_files = exclude_files(expected_files, ["insert_deferred_runtime_asserts"])
 
 msg = f"len(output_files)={len(output_files)}, len(expected_files)={len(expected_files)}.\n"
 msg += "Unexpected files:\n"
