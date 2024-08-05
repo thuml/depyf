@@ -152,6 +152,9 @@ class Decompiler:
                 temp_name = self.get_temp_name()
                 self.state.source_code += f'{temp_name} = {inst.argval}\n'
                 self.state.stack.append(temp_name)
+            elif isinstance(inst.argval, CodeType):
+                # used in MAKE_FUNCTION
+                self.state.stack.append(inst.argval)
             else:
                 self.state.stack.append(f"'__co_consts[{inst.arg}]'")
 
