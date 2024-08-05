@@ -47,7 +47,7 @@ class DebuggableHook(object):
 
             # function name and file name are related.
             with lock_on_file(filepath_template):
-                decompiled_and_compiled_back_code = Decompiler.decompile_and_compile_like(code=new_code, reference_code=code, filepath_template=filepath_template)
+                decompiled_and_compiled_back_code = Decompiler.decompile_and_compile_like(code_to_decompile=new_code, reference_code=code, filepath_template=filepath_template)
 
             if self.log_bytecode:
                 with lock_on_file(filename):
