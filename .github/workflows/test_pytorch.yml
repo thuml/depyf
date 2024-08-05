@@ -44,6 +44,7 @@ jobs:
       run: |
         python tests/test_pytorch/test_mp.py
         python tests/test_pytorch/test_no_graph.py
+        python tests/test_pytorch/test_irregular.py
         python tests/test_pytorch/test_simple_graph.py
         python tests/test_pytorch/test_cellvars.py
         python tests/test_pytorch/spawn_tests.py
