@@ -16,7 +16,8 @@ class Tmp:
 tmp = Tmp()
 
 co_consts = code.co_consts
-# replace the const string with the globals() dict
+# replace the const string with a new object, to emulate the irregular behavior
+# of torch.compile
 new_consts = tuple(x if x is None else tmp for x in co_consts)
 
 new_code = code.replace(co_consts=new_consts)
