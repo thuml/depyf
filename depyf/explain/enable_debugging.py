@@ -43,45 +43,11 @@ class DebuggableHook(object):
                 f"__transformed_code_%s_for_{func_name}.py")
 
             from depyf.explain.utils import lock_on_file
-            from depyf.code_transform import fix_irregular_code
-            from depyf.utils import collect_all_code_objects
             from depyf.decompiler import Decompiler
 
             # function name and file name are related.
             with lock_on_file(filepath_template):
-                # we first try to find an existing file with the same code body.
-                src = Decompiler(new_code).decompile(overwite_fn_name="__place_holder__")
-                # check https://dev-discuss.pytorch.org/t/what-is-the-relationship-requirement-among-original-bytecode-transformed-bytecode-and-bytecode-returned-by-hooks-in-dynamo/1693/4 for why we need to prepare freevars like `code` rather than `new_code`
-                src = fix_irregular_code(code, src)
-                src_body = src[src.find("("):]
-                if code.co_freevars:
-                    src_body = src_body[src_body.find("("):]
-
-                count = 0
-                while True:
-                    filename = filepath_template % count
-                    if os.path.exists(filename):
-                        existing_code = open(filename, "r").read()
-                        existing_code_body = existing_code[existing_code.find("("):]
-                        if code.co_freevars:
-                            existing_code_body = existing_code_body[existing_code_body.find("("):]
-                        if src_body == existing_code_body:
-                            # the same code body is found, we do not need to dump the code again.
-                            src = existing_code
-                            break
-                        else:
-                            count += 1
-                    else:
-                        func_name = filename.split(os.path.sep)[-1].split(".")[0]
-                        src = src.replace("__place_holder__", func_name)
-                        with open(filename, "w") as f:
-                            f.write(src)
-                        break
-
-            transformed_code = compile(src, filename=filename, mode="exec")
-            transformed_codes = collect_all_code_objects(transformed_code)
-            func_name = filename.split(os.path.sep)[-1].split(".")[0]
-            decompiled_and_compiled_back_code = [x for x in transformed_codes if x.co_name == func_name][0]
+                decompiled_and_compiled_back_code = Decompiler.decompile_and_compile_like(code_to_decompile=new_code, reference_code=code, filepath_template=filepath_template)
 
             if self.log_bytecode:
                 with lock_on_file(filename):

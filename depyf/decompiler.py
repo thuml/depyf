@@ -152,8 +152,11 @@ class Decompiler:
                 temp_name = self.get_temp_name()
                 self.state.source_code += f'{temp_name} = {inst.argval}\n'
                 self.state.stack.append(temp_name)
-            else:
+            elif isinstance(inst.argval, CodeType):
+                # used in MAKE_FUNCTION
                 self.state.stack.append(inst.argval)
+            else:
+                self.state.stack.append(f"'__co_consts[{inst.arg}]'")
 
     def generic_load(self, inst: Instruction):
         """`inst.argval` is the variable name, in string"""
@@ -1190,6 +1193,76 @@ class Decompiler:
         except Exception as e:
             raise DecompilationError(
                 f"Failed to decompile {self.code.co_name}") from e
+
+    @staticmethod
+    def decompile_and_compile_like(
+            code_to_decompile: CodeType,
+            reference_code: CodeType,
+            indentation=4,
+            temp_prefix: str = "__temp_",
+            filepath_template: Optional[str] = None) -> CodeType:
+
+        # first, decompile the code into source code, with function name `__place_holder__`
+        src = Decompiler(code_to_decompile).decompile(indentation=indentation, temp_prefix=temp_prefix, overwite_fn_name="__place_holder__")
+
+        # fix the freevars/cellvars in the source code
+        from depyf.code_transform import fix_irregular_code
+        # check https://dev-discuss.pytorch.org/t/what-is-the-relationship-requirement-among-original-bytecode-transformed-bytecode-and-bytecode-returned-by-hooks-in-dynamo/1693/4 for why we need to prepare freevars like `reference_code` rather than `code`
+        src = fix_irregular_code(reference_code, src)
+
+        if filepath_template is None:
+            func_name = reference_code.co_name
+            src = src.replace("__place_holder__", func_name)
+            filename = "noname"
+        else:
+            src_body = src[src.find("("):]
+            if reference_code.co_freevars:
+                src_body = src_body[src_body.find("("):]
+
+            count = 0
+            while True:
+                filename = filepath_template % count
+                if os.path.exists(filename):
+                    existing_code = open(filename, "r").read()
+                    existing_code_body = existing_code[existing_code.find("("):]
+                    if reference_code.co_freevars:
+                        existing_code_body = existing_code_body[existing_code_body.find("("):]
+                    if src_body == existing_code_body:
+                        # the same code body is found, we do not need to dump the code again.
+                        src = existing_code
+                        break
+                    else:
+                        count += 1
+                else:
+                    func_name = filename.split(os.path.sep)[-1].split(".")[0]
+                    src = src.replace("__place_holder__", func_name)
+                    with open(filename, "w") as f:
+                        f.write(src)
+                    break
+
+            func_name = filename.split(os.path.sep)[-1].split(".")[0]
+
+        from depyf.utils import collect_all_code_objects
+        transformed_code = compile(src, filename=filename, mode="exec")
+        transformed_codes = collect_all_code_objects(transformed_code)
+        decompiled_and_compiled_back_code = [x for x in transformed_codes if x.co_name == func_name][0]
+
+        # torch.compile might hold random non-constant values in `new_code.co_consts` that cannot
+        # be represented in source code. During decompliation, we treat them as `__co_consts[i]`,
+        # a string that represents the constant in the original code object.
+        # We need to replace them with the actual constant in the original code object, so that
+        # the decompiled and compiled back code object can be used for execution.
+        updated_consts = []
+        for i, x in enumerate(decompiled_and_compiled_back_code.co_consts):
+            if isinstance(x, str) and x.startswith("__co_consts"):
+                index = int(x.split("[")[-1][:-1]) # __co_consts[0] -> 0
+                updated_consts.append(code_to_decompile.co_consts[index])
+            else:
+                updated_consts.append(x)
+
+        decompiled_and_compiled_back_code = decompiled_and_compiled_back_code.replace(co_consts=tuple(updated_consts))
+
+        return decompiled_and_compiled_back_code
 
     def __hash__(self):
         # see https://github.com/thuml/depyf/pull/21
