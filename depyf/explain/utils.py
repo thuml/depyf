@@ -48,7 +48,7 @@ class CodeProxy:
         return new_name
 
     @staticmethod
-    def decompile_with_name(code: CodeType, name: str):
+    def decompile_with_name(code: CodeType, name: str, skip_decompile=False):
         if hasattr(code, "__code__"):
             code = code.__code__
         if code.co_name.startswith("transformed_code_") or code.co_name.startswith("__transformed_code_"):
@@ -56,7 +56,10 @@ class CodeProxy:
             new_name = code.co_name
         else:
             new_name = CodeProxy.get_new_name(name)
-            src = decompile_ensure(code, new_name)
+            if not skip_decompile:
+                src = decompile_ensure(code, new_name)
+            else:
+                src = ""
         self = CodeProxy(src)
         self.name = new_name
         self.code = f"""<details>
@@ -111,9 +114,37 @@ class CacheResult:
 
     def __init__(self, original_code, module, cache):
         self.original_code = original_code
-        guard = cache.check_fn.code_parts
-        freevar_names = cache.check_fn.__code__.co_freevars
-        freevar_values = [x.cell_contents for x in cache.check_fn.__closure__]
+
+        cpp_guard = False
+
+        try:
+            from torch._dynamo.guards import GuardManager
+            cpp_guard = isinstance(cache.check_fn, GuardManager)
+        except Exception:
+            pass
+
+        if not cpp_guard:
+            guard = cache.check_fn.code_parts
+            freevar_names = cache.check_fn.__code__.co_freevars
+            freevar_values = [x.cell_contents for x in cache.check_fn.__closure__]
+        else:
+            def visit(root, ans):
+                for x in root.get_leaf_guards():
+                    for verbose_str in x.verbose_code_parts():
+                        verbose_str = verbose_str.split("#")[0].strip()
+                        ans.append(verbose_str)
+                for child in root.get_child_managers():
+                    visit(child, ans)
+            guard = []
+            root = cache.check_fn.root
+            visit(root, guard)
+            if cache.check_fn.closure_vars is None:
+                freevar_names = tuple()
+                freevar_values = []
+            else:
+                freevar_names = tuple(cache.check_fn.closure_vars.keys())
+                freevar_values = list(cache.check_fn.closure_vars.values())
+
         self.guard = guard
         self.freevars = {name: value for name, value in zip(freevar_names, freevar_values)}
         code = cache.code
@@ -125,8 +156,9 @@ class CacheResult:
         if compiled_subgraphs:
             # deal with compiled_subgraph
             self.compiled_subgraph = innermost_fn(module[compiled_subgraphs[0]])
+            # subgraph does not need decompile
             self.compiled_subgraph_proxy = CodeProxy.decompile_with_name(
-                self.compiled_subgraph, compiled_subgraphs[0])
+                self.compiled_subgraph, compiled_subgraphs[0], skip_decompile=True)
         else:
             self.compiled_subgraph = None
             self.compiled_subgraph_proxy = None
