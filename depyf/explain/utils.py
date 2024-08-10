@@ -131,7 +131,7 @@ class CacheResult:
             def visit(root, ans):
                 for x in root.get_leaf_guards():
                     for verbose_str in x.verbose_code_parts():
-                        verbose_str = verbose_str.split("#")[0].strip()
+                        verbose_str = verbose_str.strip()
                         ans.append(verbose_str)
                 for child in root.get_child_managers():
                     visit(child, ans)
@@ -243,17 +243,19 @@ class DynamoOptimizationResult:
 
             # prepare guards, like `def guard_0(L):\n    return a > 0 and b >
             # 0`
-            freevars = "".join([f"{name} = '''{value}'''\n" for name, value in entry.freevars.items()])
+            freevars = "".join([f"{name} = '''{value}'''\n" for name, value in entry.freevars.items() if name not in ["__builtins__"]])
             if freevars:
                 freevars = "# Note: the following variables are used inside the guard function.\n" + freevars
-            guard = (" \\\n" + " " * 8 +
-                     "and ").join(["(" + x + ")" for x in entry.guard])
+            guard_lines = [" " * 4 + "__guard_hit = True\n"]
+            for x in entry.guard:
+                guard_lines.append(" " * 4 + f"__guard_hit = __guard_hit and {x}\n")
+            guard_lines.append(" " * 4 + "return __guard_hit\n")
+            guard = "".join(guard_lines)
             if entry.transformed_code_proxy.name.startswith("__transformed_code_"):
                 guard_func_name = entry.transformed_code_proxy.name.replace("__transformed_code_", "__guard_")
             else:
                 guard_func_name = CodeProxy.consume_new_name("guard:")
-            additional_code += "\n" + freevars + f"def {guard_func_name}(L, G, **___kwargs_ignored):\n" + \
-                " " * 4 + "return " + guard + "\n"
+            additional_code += "\n" + freevars + f"def {guard_func_name}(L, G, **___kwargs_ignored):\n" + guard
 
             if entry.compiled_subgraph_proxy is not None:
                 # prepare compiled subgraph, like `__compiled_fn_0`
