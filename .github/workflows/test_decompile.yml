@@ -43,7 +43,7 @@ jobs:
         echo "success"
     - name: Test with pytest
       run: |
-        pytest --cov tests/test.py
+        pytest --cov=depyf tests/test.py
         python tests/assert.py
 
     - name: Upload results to Codecov
