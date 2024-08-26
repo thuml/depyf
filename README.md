@@ -1,6 +1,6 @@
 ![Logo](imgs/logo-and-text.svg)
 
-[![Documentation Status](https://readthedocs.org/projects/depyf/badge/?version=latest)](https://depyf.readthedocs.io/en/latest/) ![Supported Python Versions](https://img.shields.io/badge/python-%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-blue) ![Python Decompilation Tests](https://github.com/thuml/depyf/actions/workflows/test_decompile.yml/badge.svg) ![PyTorch Integration Tests](https://github.com/thuml/depyf/actions/workflows/test_pytorch.yml/badge.svg) ![MIT License](https://img.shields.io/github/license/thuml/depyf)
+[![Documentation Status](https://readthedocs.org/projects/depyf/badge/?version=latest)](https://depyf.readthedocs.io/en/latest/) ![Supported Python Versions](https://img.shields.io/badge/python-%203.7%20%7C%203.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-blue) ![Python Decompilation Tests](https://github.com/thuml/depyf/actions/workflows/test_decompile.yml/badge.svg) ![PyTorch Integration Tests](https://github.com/thuml/depyf/actions/workflows/test_pytorch.yml/badge.svg) [![Test Coverage](https://codecov.io/github/thuml/depyf/graph/badge.svg?token=DUQ1CQ0I5U)](https://codecov.io/github/thuml/depyf) ![MIT License](https://img.shields.io/github/license/thuml/depyf)
 
 > `depyf` is proud to be a [PyTorch ecosystem project](https://pytorch.org/ecosystem/). Check out the announcement blog [https://pytorch.org/blog/introducing-depyf/](https://pytorch.org/blog/introducing-depyf/) for more details.
 
