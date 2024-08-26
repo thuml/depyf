@@ -6,10 +6,10 @@ For developers, if you want to understand and contribute to the codebase, this s
 Overall architecture of the library
 -----------------------------------
 
-Put it in short, the library is a Python bytecode decompiler with tight integration with PyTorch. It naturally falls into 2 parts.
+Put it in short, the library is a Python bytecode decompiler with tight integration with PyTorch. It naturally falls into 2 parts:
 
-1. The decompiler: It decompiles Python bytecode into Python source code. The decompiler is implemented in the ``depyf/decompiler.py`` file. It can be used as a standalone library to decompile Python bytecode.
-2. The PyTorch integration: We work together with the Pytorch team to design a bytecode hook mechanism. We use ``torch._dynamo.convert_frame.register_bytecode_hook`` to register a hook to PyTorch. Every time PyTorch compiles a function, the hook will be called, and we can decompile the bytecode and dump the source code to disk. The source code is futher compiled into a new bytecode object, which is functionally equivalent to the original bytecode object but with source code information, making it easier to debug. PyTorch will use the new bytecode object to run the function. The integration logic is implemented in the ``depyf/explain
+* The decompiler: It decompiles Python bytecode into Python source code. The decompiler is implemented in the ``depyf/decompiler.py`` file. It can be used as a standalone library to decompile Python bytecode.
+* The PyTorch integration: We work together with the Pytorch team to design a bytecode hook mechanism. We use ``torch._dynamo.convert_frame.register_bytecode_hook`` to register a hook to PyTorch. Every time PyTorch compiles a function, the hook will be called, and we can decompile the bytecode and dump the source code to disk. The source code is futher compiled into a new bytecode object, which is functionally equivalent to the original bytecode object but with source code information, making it easier to debug. PyTorch will use the new bytecode object to run the function. The integration logic is implemented in the ``depyf/explain
 /enable_debugging.py`` file.
 
 Relatively speaking, the PyTorch integration part is easier to understand and contribute. Our main goal for the integration is to make ``depyf`` compatible with all previous versions of PyTorch starting from PyTorch 2.2 . To achieve this goal, the test is run against the nightly build of PyTorch. Whenever we find a compatibility issue, we will fix it in a backward-compatible way. If such a fix is not possible, we will discuss with the PyTorch team to find a solution.
