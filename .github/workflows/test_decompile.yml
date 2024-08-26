@@ -28,6 +28,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
+        python -m pip install pytest pytest-cov
         python -m pip install setuptools
         python -m pip install decompyle3
         python -m pip install uncompyle6
@@ -42,5 +43,10 @@ jobs:
         echo "success"
     - name: Test with pytest
       run: |
-        pytest tests/test.py
+        pytest --cov=depyf tests/test.py
         python tests/assert.py
+
+    - name: Upload results to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
