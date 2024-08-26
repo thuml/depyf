@@ -128,8 +128,17 @@ class CacheResult:
             freevar_names = cache.check_fn.__code__.co_freevars
             freevar_values = [x.cell_contents for x in cache.check_fn.__closure__]
         else:
+            # keep the logic synced with
+            # https://github.com/pytorch/pytorch/blob/7b6b10417d8616ebd7a42b06528c5c2b2fded55a/torch/_dynamo/guards.py#L262
+            tensor_aliasing_guard_seen = False
             def visit(root, ans):
+                nonlocal tensor_aliasing_guard_seen
                 for x in root.get_leaf_guards():
+                    if isinstance(guard, torch._C._dynamo.guards.NO_TENSOR_ALIASING):
+                        if not tensor_aliasing_guard_seen:
+                            tensor_aliasing_guard_seen = True
+                        else:
+                            continue
                     for verbose_str in x.verbose_code_parts():
                         verbose_str = verbose_str.strip()
                         ans.append(verbose_str)
