@@ -61,6 +61,8 @@ The following figure shows two typical usages of ``depyf``, and lists all the ge
 
 You can also check `the advanced usages <./index.html>`_ and `frequently asked questions <./faq.html>`_ for more details.
 
+If you'd like to contribute (which we highly appreciate), please read the `developer documentation <./dev_doc.html>`_ section.
+
 .. toctree::
    :maxdepth: 1
    :hidden:
@@ -68,3 +70,4 @@ You can also check `the advanced usages <./index.html>`_ and `frequently asked q
    walk_through
    advanced
    faq
+   dev_doc
