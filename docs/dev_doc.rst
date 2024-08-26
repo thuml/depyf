@@ -8,11 +8,11 @@ Overall architecture of the library
 
 Put it in short, the library is a Python bytecode decompiler with tight integration with PyTorch. It naturally falls into 2 parts.
 
-#. The decompiler: It decompiles Python bytecode into Python source code. The decompiler is implemented in the `depyf/decompiler.py` file. It can be used as a standalone library to decompile Python bytecode.
-#. The PyTorch integration: We work together with the Pytorch team to design a bytecode hook mechanism. We use `torch._dynamo.convert_frame.register_bytecode_hook` to register a hook to PyTorch. Every time PyTorch compiles a function, the hook will be called, and we can decompile the bytecode and dump the source code to disk. The source code is futher compiled into a new bytecode object, which is functionally equivalent to the original bytecode object but with source code information, making it easier to debug. PyTorch will use the new bytecode object to run the function. The integration logic is implemented in the `depyf/explain
-/enable_debugging.py` file.
+1. The decompiler: It decompiles Python bytecode into Python source code. The decompiler is implemented in the ``depyf/decompiler.py`` file. It can be used as a standalone library to decompile Python bytecode.
+2. The PyTorch integration: We work together with the Pytorch team to design a bytecode hook mechanism. We use ``torch._dynamo.convert_frame.register_bytecode_hook`` to register a hook to PyTorch. Every time PyTorch compiles a function, the hook will be called, and we can decompile the bytecode and dump the source code to disk. The source code is futher compiled into a new bytecode object, which is functionally equivalent to the original bytecode object but with source code information, making it easier to debug. PyTorch will use the new bytecode object to run the function. The integration logic is implemented in the ``depyf/explain
+/enable_debugging.py`` file.
 
-Relatively speaking, the PyTorch integration part is easier to understand and contribute. Our main goal for the integration is to make `depyf` compatible with all previous versions of PyTorch starting from PyTorch 2.2 . To achieve this goal, the test is run against the nightly build of PyTorch. Whenever we find a compatibility issue, we will fix it in a backward-compatible way. If such a fix is not possible, we will discuss with the PyTorch team to find a solution.
+Relatively speaking, the PyTorch integration part is easier to understand and contribute. Our main goal for the integration is to make ``depyf`` compatible with all previous versions of PyTorch starting from PyTorch 2.2 . To achieve this goal, the test is run against the nightly build of PyTorch. Whenever we find a compatibility issue, we will fix it in a backward-compatible way. If such a fix is not possible, we will discuss with the PyTorch team to find a solution.
 
 The decompiler part is more challenging. It is complicated and needs to deal with all sorts of random Python implementation details. Fortunately, we only need to deal with official release versions of Python, which makes the task more manageable. The decompiler only needs to be updated once we find a bug or a new Python version is released.
 
@@ -45,13 +45,13 @@ It has the following bytecode:
     4 BINARY_ADD
     6 RETURN_VALUE
 
-When we execute the first bytecode `LOAD_FAST`, instead of loading a variable into the stack, we push the variable name ``"a"`` in the stack, which is a string representation of the variable.
+When we execute the first bytecode ``LOAD_FAST``, instead of loading a variable into the stack, we push the variable name ``"a"`` in the stack, which is a string representation of the variable.
 
-When we execute the second bytecode `LOAD_FAST`, likewise, we push the variable name ``"b"`` in the stack.
+When we execute the second bytecode ``LOAD_FAST``, likewise, we push the variable name ``"b"`` in the stack.
 
-When we execute the third bytecode `BINARY_ADD`, which intends to add the two variables, we pop the two variables from the stack, and perform the string concatenation ``"a + b"``. The concatenated string is pushed back to the stack.
+When we execute the third bytecode ``BINARY_ADD``, which intends to add the two variables, we pop the two variables from the stack, and perform the string concatenation ``"a + b"``. The concatenated string is pushed back to the stack.
 
-Finally, when we execute the fourth bytecode `RETURN_VALUE`, we pop the string from the stack, prefix it with the ``return`` keyword, and then we get the decompiled source code ``"return a + b"``.
+Finally, when we execute the fourth bytecode ``RETURN_VALUE``, we pop the string from the stack, prefix it with the ``return`` keyword, and then we get the decompiled source code ``"return a + b"``.
 
 To accurately decompile the bytecode, we need to faithfully respect the semantics of the Python bytecode instructions. It is noteworthy that the `Python bytecode documentation <https://docs.python.org/3/library/dis.html>`_ can be outdated and inaccurate, too. The golden standard is to refer to the CPython source code and the Python interpreter's behavior. The `torchdynamo source code <https://github.com/pytorch/pytorch/blob/main/torch/_dynamo/symbolic_convert.py>`_ is also a good reference to understand how the Python bytecode is generated by PyTorch.
 
