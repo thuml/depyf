@@ -28,7 +28,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
+        python -m pip install flake8 pytest pytest-cov
         python -m pip install setuptools
         python -m pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cpu
         python setup.py develop
@@ -42,11 +42,11 @@ jobs:
         echo "success"
     - name: Test with pytest
       run: |
-        python tests/test_pytorch/test_mp.py
-        python tests/test_pytorch/test_no_graph.py
-        python tests/test_pytorch/test_irregular.py
-        python tests/test_pytorch/test_simple_graph.py
-        python tests/test_pytorch/test_cellvars.py
+        coverage run --append tests/test_pytorch/test_mp.py
+        coverage run --append tests/test_pytorch/test_no_graph.py
+        coverage run --append tests/test_pytorch/test_irregular.py
+        coverage run --append tests/test_pytorch/test_simple_graph.py
+        coverage run --append tests/test_pytorch/test_cellvars.py
         python tests/test_pytorch/spawn_tests.py
         python tests/test_pytorch/cmp_output.py
         python tests/test_pytorch/test_debug.py 2>&1 < tests/test_pytorch/debug_input.txt > tests/test_pytorch/debug_output.txt
