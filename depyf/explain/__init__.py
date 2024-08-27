@@ -20,12 +20,6 @@ def _collect_compiled_subgraphs(result: DynamoOptimizationResult):
             compiled_subgraphs.update(ans)
     return compiled_subgraphs
 
-
-def interactive_explain(fn: Callable):
-    artifacts = _extract_artifacts(fn)
-    return artifacts
-
-
 def dump_src(original_code: CodeType, module):
     from depyf.explain.global_variables import data
     assert data["is_inside_prepare_debug"], "`dump_src` must be used inside `depyf.prepare_debug`."
