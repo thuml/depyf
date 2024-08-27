@@ -1,2 +1,5 @@
 [run]
-omit = depyf/explain/*
+source = depyf
+
+[report]
+include = depyf/*
