@@ -89,19 +89,6 @@ class CodeProxy:
         yield CodeProxy.used_instances
 
 
-def display_func(self):
-    from IPython.display import display, JSON, Markdown, Code
-    display(Markdown("# transformed source code:"))
-    with CodeProxy.record() as instances:
-        data = self.to_data()
-    display(JSON(data))
-    display(Markdown("# source code of referenced function:"))
-    markdown = ""
-    for instance in instances:
-        markdown += CodeProxy.instances[instance].code
-    display(Markdown(markdown))
-
-
 @dataclass
 class CacheResult:
     original_code: CodeType
@@ -194,8 +181,6 @@ class CacheResult:
             "referenced_global_functions": {
                 name: fn.to_data() for name,
                 fn in self.referenced_global_functions.items()}}
-
-    _ipython_display_ = display_func
 
 
 @dataclass
@@ -295,8 +280,6 @@ class DynamoOptimizationResult:
             " " * 4 + f"return {self.source_code_proxy.name}({', '.join(arg_names)})"
         return additional_code + code + \
             f"\n\n#============ end of {self.function_name} ============#\n"
-
-    _ipython_display_ = display_func
 
 
 def remove_indentation(code: str):

@@ -3,7 +3,7 @@ import subprocess
 import os
 
 def task():
-    subprocess.run("coverage run --append  tests/test_pytorch/test_pytorch.py", shell=True, input="c\n", text=True)
+    subprocess.run("coverage run --append tests/test_pytorch/test_pytorch.py", shell=True, input="c\n", text=True)
 
 if __name__ == '__main__':
 
