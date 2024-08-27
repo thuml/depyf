@@ -9,5 +9,5 @@ def fn():
     return x.grad
 
 import depyf
-with depyf.prepare_debug("./simple_output"):
+with depyf.prepare_debug("./simple_output", log_bytecode=True, clean_wild_fx_code=False):
     fn()
