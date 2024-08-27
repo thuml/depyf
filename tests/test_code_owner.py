@@ -11,6 +11,6 @@ import depyf
 
 print(depyf.decompile(partial(f, 1)))
 
-print(depyf.decompile(lru_cache(f)))
+print(depyf.decompile(lru_cache(None)(f)))
 
 print(depyf.decompile(A()))
