@@ -1133,7 +1133,7 @@ class Decompiler:
 
     def __init__(self, code: Union[CodeType, Callable]):
         if callable(code):
-            from depyf.explain.utils import get_code_owner
+            from depyf.utils import get_code_owner
             code = get_code_owner(code).__code__
         self.code = code
         instructions = list(convert_instruction(_)

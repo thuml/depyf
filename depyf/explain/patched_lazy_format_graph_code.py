@@ -1,5 +1,6 @@
 def patched_lazy_format_graph_code(name, gm, maybe_id=None, **kwargs):
-    from depyf.explain.utils import get_current_compiled_fn_name, get_code_owner, write_code_to_file_template
+    from depyf.explain.utils import get_current_compiled_fn_name, write_code_to_file_template
+    from depyf.utils import get_code_owner
     func_name = get_current_compiled_fn_name()
     file_name = name if name != func_name else "Captured Graph"
     file_name = func_name + " " + file_name
