@@ -75,3 +75,16 @@ def get_code_owner(fn):
         else:
             break
     return fn
+
+
+
+def decompile_ensure(fn: CodeType, overwite_fn_name=None):
+    import depyf
+    from depyf.decompiler import DecompilationError
+    try:
+        decompiled_source_code = depyf.Decompiler(
+            fn).decompile(overwite_fn_name=overwite_fn_name)
+    except DecompilationError as e:
+        header = get_function_signature(fn, overwite_fn_name=overwite_fn_name)
+        decompiled_source_code = header + "    'Failed to decompile.'\n"
+    return decompiled_source_code

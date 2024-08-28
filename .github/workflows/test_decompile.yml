@@ -46,6 +46,7 @@ jobs:
         pytest --cov=depyf tests/test.py
         coverage run --append python_coverage.py
         coverage run --append tests/test_code_owner.py
+        coverage run --append tests/test_ensure.py
         python tests/assert.py
 
     - name: Upload results to Codecov

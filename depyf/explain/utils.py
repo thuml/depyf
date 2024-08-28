@@ -9,21 +9,6 @@ from typing import List, Callable, Dict, Union, Set
 from dataclasses import dataclass
 import contextlib
 
-import depyf
-from depyf.decompiler import DecompilationError
-from depyf.utils import get_function_signature
-
-
-def decompile_ensure(fn, overwite_fn_name=None):
-    try:
-        decompiled_source_code = depyf.Decompiler(
-            fn).decompile(overwite_fn_name=overwite_fn_name)
-    except DecompilationError as e:
-        header = get_function_signature(fn, overwite_fn_name=overwite_fn_name)
-        decompiled_source_code = header + "    'Failed to decompile.'\n"
-    return decompiled_source_code
-
-
 class CodeProxy:
     instances: Dict[str, "CodeProxy"] = {}
     used_instances: Set[str] = set()
@@ -49,6 +34,7 @@ class CodeProxy:
 
     @staticmethod
     def decompile_with_name(code: CodeType, name: str, skip_decompile=False):
+        from depyf.utils import decompile_ensure
         if hasattr(code, "__code__"):
             code = code.__code__
         if code.co_name.startswith("transformed_code_") or code.co_name.startswith("__transformed_code_"):
