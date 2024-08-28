@@ -1,5 +1,7 @@
 [run]
 source = depyf
+# omit patched file from pytorch
+omit = depyf/explain/patched*
 
 [report]
 include = depyf/*
