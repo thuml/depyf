@@ -54,18 +54,14 @@ class DebuggableHook(object):
                     import dill
                     # code object, especially `new_code` constructed by Dynamo, may not be able to be dumped using `marshal`.
                     # see https://github.com/pytorch/pytorch/issues/116013 for more details.
-                    try:
+                    with contextlib.suppress(Exception):
                         dill.dump(code, open(filename + ".original_bytecode", "wb"))
-                    except:
-                        pass
-                    try:
+
+                    with contextlib.suppress(Exception):
                         dill.dump(new_code, open(filename + ".transformed_bytecode", "wb"))
-                    except:
-                        pass
-                    try:
+
+                    with contextlib.suppress(Exception):
                         dill.dump(decompiled_and_compiled_back_code, open(filename + ".decompiled_and_compiled_back_bytecode", "wb"))
-                    except:
-                        pass
 
             # this fix is used for PyTorch prior to PR https://github.com/pytorch/pytorch/pull/114487
             from torch._dynamo.utils import orig_code_map
