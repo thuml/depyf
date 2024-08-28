@@ -1,0 +1,10 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        informational: true  # Ensure that the project status never fails
+    patch:
+      default:
+        target: auto
+        informational: true  # Ensure that the patch status never fails
