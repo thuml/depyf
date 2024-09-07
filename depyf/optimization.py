@@ -8,7 +8,7 @@ from typing import Callable, List
 import torch
 
 
-class TorchCompileWrapperWithCustomDispacther:
+class TorchCompileWrapperWithCustomDispatcher:
     """
     A wrapper class for torch.compile, with a custom dispatch logic.
     Subclasses should:
