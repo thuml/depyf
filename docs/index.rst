@@ -71,3 +71,4 @@ If you'd like to contribute (which we highly appreciate), please read the `devel
    advanced
    faq
    dev_doc
+   opt_tutorial
