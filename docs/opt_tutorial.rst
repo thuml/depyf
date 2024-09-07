@@ -80,6 +80,8 @@ After running the code, a new directory named ``dump_src_dir/`` will appear. Thi
 
 This is the code that ``torch.compile`` generates to check whether the function's input remains valid for the compiled function. However, many of these checks are overly conservative. For example, ``L['self'].fs[0].i == 0`` checks that ``self.fs[0].i`` is still ``0``, even though our code doesn't modify this value.
 
+Remember from the :doc:`walk_through`, that ``torch.compile`` is a just-in-time compiler. It means all the above checks are executed every time we call the function, introducing significant overhead.
+
 Optimizing the Code
 -------------------
 
@@ -145,7 +147,7 @@ Real-World Applications
 
 This is an extreme example with a trivial computation, where the overhead introduced by Dynamo is disproportionately large. In practice, the overhead is typically not as severe. However, it can still be significant in high-performance environments, such as when running code on TPU. TPU code is often performance-sensitive, and removing unnecessary checks can lead to substantial speedups.
 
-For example, in `vLLM's TPU integration <https://github.com/vllm-project/vllm/pull/7898>_`, this optimization technique is used to remove Dynamo's overhead, improving TPU throughput by 4%.
+For example, in `vLLM's TPU integration <https://github.com/vllm-project/vllm/pull/7898>`_, this optimization technique is used to remove Dynamo's overhead, improving TPU throughput by 4%.
 
 Conclusion
 ----------
