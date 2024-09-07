@@ -158,4 +158,4 @@ Optimizing code with ``torch.compile`` involves:
 2. Identifying and addressing unnecessary checks or other sources of overhead.
 3. Using ``depyf`` to directly call the compiled function, bypassing unnecessary steps where appropriate.
 
-By following these steps, you can significantly improve performance, especially in environments where execution time is critical.
+By following these steps, we can significantly improve performance, especially in environments where execution time is critical.
