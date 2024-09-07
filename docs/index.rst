@@ -72,3 +72,4 @@ If you'd like to contribute (which we highly appreciate), please read the `devel
    faq
    dev_doc
    opt_tutorial
+   api_reference
