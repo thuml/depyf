@@ -4,6 +4,7 @@ API Reference
 Decompile general Python Bytecode/Function
 -------------------------------------------
 
+.. autofunction:: depyf.decompile
 
 Enhance PyTorch Logging
 -----------------------
