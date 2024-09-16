@@ -146,11 +146,13 @@ def prepare_debug(dump_src_dir, clean_wild_fx_code=True, log_bytecode=False):
         - ``Backward Graph``: backward graph from AOTAutograd
         - ``kernel xxx``: compiled CPU/GPU kernel wrapper from Inductor.
 
-    Args:
-        dump_src_dir: the directory to dump the source code.
-        clean_wild_fx_code: whether to clean the wild fx code that are not recognized for parts of compiled functions. They are usually used by PyTorch internally.
-        log_bytecode: whether to log bytecode (original bytecode, transformed bytecode from Dynamo, and decompiled_and_compiled_back_code).
+    Arguments:
+
+    - ``dump_src_dir``: the directory to dump the source code.
+    - ``clean_wild_fx_code``: whether to clean the wild fx code that are not recognized for parts of compiled functions. They are usually used by PyTorch internally.
+    - ``log_bytecode``: whether to log bytecode (original bytecode, transformed bytecode from Dynamo, and decompiled_and_compiled_back_code).
     """
+
     if not isinstance(dump_src_dir, str):
         raise RuntimeError('''You are using an obsolete usage style`depyf.prepare_debug(func=function, dump_src_dir="/path")`. Please use `depyf.prepare_debug(dump_src_dir="/path")` instead, which will automatically capture all compiled functions.''')
 
