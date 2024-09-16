@@ -64,7 +64,7 @@ You can also check `the advanced usages <./index.html>`_ and `frequently asked q
 If you'd like to contribute (which we highly appreciate), please read the `developer documentation <./dev_doc.html>`_ section.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :hidden:
 
    api_reference
