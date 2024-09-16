@@ -65,7 +65,6 @@ If you'd like to contribute (which we highly appreciate), please read the `devel
 
 .. toctree::
    :maxdepth: 2
-   :hidden:
 
    api_reference
    walk_through
