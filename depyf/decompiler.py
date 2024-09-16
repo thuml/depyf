@@ -1272,7 +1272,41 @@ class Decompiler:
     def __eq__(self, other):
         return hash(self) == hash(other)
 
-def decompile(code: Union[CodeType, Callable]):
-    """Decompile a code object or a function."""
-    return Decompiler(code).decompile()
+def decompile(code: Union[CodeType, Callable]) -> str:
+    """Decompile any callable or code object into Python source code.
+    It is especially useful for some dynamically generated code, like ``torch.compile``,
+    or ``dataclasses``.
 
+    Example usage:
+
+    .. code-block:: python
+
+        from dataclasses import dataclass
+        @dataclass
+        class Data:
+            x: int
+            y: float
+
+        import depyf
+        print(depyf.decompile(Data.__init__))
+        print(depyf.decompile(Data.__eq__))
+    
+    Output:
+
+    .. code-block:: python
+
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+            return None
+
+        def __eq__(self, other):
+            if other.__class__ is self.__class__:
+                return (self.x, self.y) == (other.x, other.y)
+            return NotImplemented
+    
+    The output source code is semantically equivalent to the function, but not syntactically the same. It verbosely adds many details that are hidden in the Python code. For example, the above output code of ``__init__`` explicitly returns ``None``, which is typically ignored.
+
+    Another detail is that the output code of ``__eq__`` returns ``NotImplemented`` instead of raising ``NotImplemented`` exception when the types are different. At the first glance, it seems to be a bug. However, it is actually the correct behavior. The ``__eq__`` method should return ``NotImplemented`` when the types are different, so that the other object can try to compare with the current object. See `the Python documentation <https://docs.python.org/3/library/numbers.html#implementing-the-arithmetic-operations>`_ for more details.
+    """
+    return Decompiler(code).decompile()

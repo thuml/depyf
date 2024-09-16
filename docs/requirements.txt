@@ -1,1 +1,4 @@
 sphinx-rtd-theme
+astor
+dill
+torch

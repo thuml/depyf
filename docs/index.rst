@@ -64,11 +64,10 @@ You can also check `the advanced usages <./index.html>`_ and `frequently asked q
 If you'd like to contribute (which we highly appreciate), please read the `developer documentation <./dev_doc.html>`_ section.
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
+   :maxdepth: 2
 
+   api_reference
    walk_through
-   advanced
-   faq
-   dev_doc
    opt_tutorial
+   dev_doc
+   faq
