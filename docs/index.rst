@@ -67,8 +67,8 @@ If you'd like to contribute (which we highly appreciate), please read the `devel
    :maxdepth: 1
    :hidden:
 
-   walk_through
-   faq
-   dev_doc
-   opt_tutorial
    api_reference
+   walk_through
+   opt_tutorial
+   dev_doc
+   faq
