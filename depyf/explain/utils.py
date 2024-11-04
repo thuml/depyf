@@ -99,6 +99,7 @@ class CacheResult:
 
         try:
             klass = getattr(torch._dynamo.guards, "GuardManagerWrapper", None) or \
+                getattr(torch._dynamo.guards, "GuardManager", None) or \
                 getattr(torch._C._dynamo.guards, "GuardManager", None)
             assert klass is not None
             cpp_guard = isinstance(guard_manager, klass)
