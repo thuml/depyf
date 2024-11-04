@@ -90,16 +90,27 @@ class CacheResult:
 
         cpp_guard = False
 
+        # starting from https://github.com/pytorch/pytorch/pull/138896 ,
+        # pytorch uses `guard_manager` instead of `check_fn` to store the
+        # guards
+        attr_name = "guard_manager" if hasattr(cache, "guard_manager") else "check_fn"
+
+        guard_manager = getattr(cache, attr_name)
+
         try:
-            from torch._dynamo.guards import GuardManager
-            cpp_guard = isinstance(cache.check_fn, GuardManager)
+            klass = getattr(torch._dynamo.guards, "GuardManagerWrapper", None) or \
+                getattr(torch._C._dynamo.guards, "GuardManager", None)
+            assert klass is not None
+            cpp_guard = isinstance(guard_manager, klass)
         except Exception:
             pass
 
         if not cpp_guard:
-            guard = cache.check_fn.code_parts
-            freevar_names = cache.check_fn.__code__.co_freevars
-            freevar_values = [x.cell_contents for x in cache.check_fn.__closure__]
+            # for old version of pytorch,
+            # `guard_manager` is a plain python function
+            guard = guard_manager.code_parts
+            freevar_names = guard_manager.__code__.co_freevars
+            freevar_values = [x.cell_contents for x in guard_manager.__closure__]
         else:
             # keep the logic synced with
             # https://github.com/pytorch/pytorch/blob/7b6b10417d8616ebd7a42b06528c5c2b2fded55a/torch/_dynamo/guards.py#L262
@@ -118,14 +129,14 @@ class CacheResult:
                 for child in root.get_child_managers():
                     visit(child, ans)
             guard = []
-            root = cache.check_fn.root
+            root = guard_manager.root
             visit(root, guard)
-            if cache.check_fn.closure_vars is None:
+            if guard_manager.closure_vars is None:
                 freevar_names = tuple()
                 freevar_values = []
             else:
-                freevar_names = tuple(cache.check_fn.closure_vars.keys())
-                freevar_values = list(cache.check_fn.closure_vars.values())
+                freevar_names = tuple(guard_manager.closure_vars.keys())
+                freevar_values = list(guard_manager.closure_vars.values())
 
         self.guard = guard
         self.freevars = {name: value for name, value in zip(freevar_names, freevar_values)}
