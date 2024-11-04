@@ -1,6 +1,5 @@
-
 # AOT ID: ['2_inference']
-from ctypes import c_void_p, c_long
+from ctypes import c_void_p, c_long, c_int
 import torch
 import math
 import random
@@ -10,7 +9,6 @@ from math import inf, nan
 from torch._inductor.hooks import run_intermediate_hooks
 from torch._inductor.utils import maybe_profile
 from torch._inductor.codegen.memory_planning import _align as align
-
 from torch import device, empty_strided
 from torch._inductor.async_compile import AsyncCompile
 from torch._inductor.select_algorithm import extern_kernels
@@ -22,67 +20,68 @@ _quantized = torch.ops._quantized
 assert_size_stride = torch._C._dynamo.guards.assert_size_stride
 empty_strided_cpu = torch._C._dynamo.guards._empty_strided_cpu
 empty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda
+empty_strided_xpu = torch._C._dynamo.guards._empty_strided_xpu
+reinterpret_tensor = torch._C._dynamo.guards._reinterpret_tensor
 alloc_from_pool = torch.ops.inductor._alloc_from_pool
-reinterpret_tensor = torch.ops.inductor._reinterpret_tensor
 async_compile = AsyncCompile()
+empty_strided_p2p = torch._C._distributed_c10d._SymmetricMemory.empty_strided_p2p
 
 
-cpp_fused_abs_add_div_lt_sum_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'float*', 'float*', 'bool*', 'const long', 'const long'], '''
-#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/sk/cskh5dx62fglpphcrl6723dnmowdabouerrzy3dmqcngbxwfa7bv.h"
-extern "C" void kernel(const float* in_ptr0,
+cpp_fused_abs_add_div_lt_sum_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'float*', 'bool*', 'float*', 'const int64_t', 'const int64_t'], '''
+#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/2r/c2rnilspx43ivnzu4uieul65kx65dfhfbptbh5og4wk6rqebuxoo.h"
+extern "C"  void kernel(const float* in_ptr0,
                        const float* in_ptr1,
                        float* out_ptr0,
-                       float* out_ptr1,
-                       bool* out_ptr2,
-                       const long ks0,
-                       const long ks1)
+                       bool* out_ptr1,
+                       float* out_ptr2,
+                       const int64_t ks0,
+                       const int64_t ks1)
 {
     {
-        for(long x0=static_cast<long>(0L); x0<static_cast<long>(8L*(c10::div_floor_integer(ks0, 8L))); x0+=static_cast<long>(8L))
         {
-            auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr0 + static_cast<long>(x0), 8);
+            float tmp_acc0 = 0;
+            at::vec::Vectorized<float> tmp_acc0_vec = at::vec::Vectorized<float>(0);
+            for(int64_t x0=static_cast<int64_t>(0LL); x0<static_cast<int64_t>(4LL*(c10::div_floor_integer(static_cast<int64_t>(ks0), static_cast<int64_t>(4LL)))); x0+=static_cast<int64_t>(4LL))
+            {
+                auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr0 + static_cast<int64_t>(x0), static_cast<int64_t>(4));
+                tmp_acc0_vec = tmp_acc0_vec + tmp0;
+            }
+            for(int64_t x0=static_cast<int64_t>(4LL*(c10::div_floor_integer(static_cast<int64_t>(ks0), static_cast<int64_t>(4LL)))); x0<static_cast<int64_t>(ks0); x0+=(static_cast<int64_t>(ks0 + ((-4LL)*(c10::div_floor_integer(static_cast<int64_t>(ks0), static_cast<int64_t>(4LL))))) == 0 ? 1 : static_cast<int64_t>(ks0 + ((-4LL)*(c10::div_floor_integer(static_cast<int64_t>(ks0), static_cast<int64_t>(4LL)))))))
+            {
+                auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr0 + static_cast<int64_t>(x0), static_cast<int64_t>(ks0 + ((-4LL)*(c10::div_floor_integer(static_cast<int64_t>(ks0), static_cast<int64_t>(4LL))))));
+                tmp_acc0_vec = sum_masked_reduce(tmp_acc0_vec, tmp0, static_cast<int64_t>(ks0 + ((-4LL)*(c10::div_floor_integer(static_cast<int64_t>(ks0), static_cast<int64_t>(4LL))))));
+            }
+            tmp_acc0 = tmp_acc0 + at::vec::vec_reduce_all<float, 1>([](at::vec::Vectorized<float>& x, at::vec::Vectorized<float>& y) { return x + y; }, tmp_acc0_vec);
+            out_ptr0[static_cast<int64_t>(0LL)] = static_cast<float>(tmp_acc0);
+        }
+    }
+    {
+        auto tmp0 = out_ptr0[static_cast<int64_t>(0LL)];
+        auto tmp1 = static_cast<float>(0.0);
+        auto tmp2 = tmp0 < tmp1;
+        out_ptr1[static_cast<int64_t>(0LL)] = tmp2;
+    }
+    {
+        for(int64_t x0=static_cast<int64_t>(0LL); x0<static_cast<int64_t>(4LL*(c10::div_floor_integer(static_cast<int64_t>(ks1), static_cast<int64_t>(4LL)))); x0+=static_cast<int64_t>(4LL))
+        {
+            auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr1 + static_cast<int64_t>(x0), static_cast<int64_t>(4));
             auto tmp1 = tmp0.abs();
             auto tmp2 = static_cast<float>(1.0);
             auto tmp3 = at::vec::Vectorized<float>(tmp2);
             auto tmp4 = tmp1 + tmp3;
             auto tmp5 = tmp0 / tmp4;
-            tmp5.store(out_ptr0 + static_cast<long>(x0));
+            tmp5.store(out_ptr2 + static_cast<int64_t>(x0));
         }
-        #pragma omp simd simdlen(4) 
-        for(long x0=static_cast<long>(8L*(c10::div_floor_integer(ks0, 8L))); x0<static_cast<long>(ks0); x0+=static_cast<long>(1L))
+        for(int64_t x0=static_cast<int64_t>(4LL*(c10::div_floor_integer(static_cast<int64_t>(ks1), static_cast<int64_t>(4LL)))); x0<static_cast<int64_t>(ks1); x0+=(static_cast<int64_t>(ks1 + ((-4LL)*(c10::div_floor_integer(static_cast<int64_t>(ks1), static_cast<int64_t>(4LL))))) == 0 ? 1 : static_cast<int64_t>(ks1 + ((-4LL)*(c10::div_floor_integer(static_cast<int64_t>(ks1), static_cast<int64_t>(4LL)))))))
         {
-            auto tmp0 = in_ptr0[static_cast<long>(x0)];
-            auto tmp1 = std::abs(tmp0);
+            auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr1 + static_cast<int64_t>(x0), static_cast<int64_t>(ks1 + ((-4LL)*(c10::div_floor_integer(static_cast<int64_t>(ks1), static_cast<int64_t>(4LL))))));
+            auto tmp1 = tmp0.abs();
             auto tmp2 = static_cast<float>(1.0);
-            auto tmp3 = decltype(tmp1)(tmp1 + tmp2);
-            auto tmp4 = tmp0 / tmp3;
-            out_ptr0[static_cast<long>(x0)] = tmp4;
+            auto tmp3 = at::vec::Vectorized<float>(tmp2);
+            auto tmp4 = tmp1 + tmp3;
+            auto tmp5 = tmp0 / tmp4;
+            tmp5.store(out_ptr2 + static_cast<int64_t>(x0), static_cast<int64_t>(ks1 + ((-4LL)*(c10::div_floor_integer(static_cast<int64_t>(ks1), static_cast<int64_t>(4LL))))));
         }
-    }
-    {
-        {
-            float tmp_acc0 = 0;
-            at::vec::Vectorized<float> tmp_acc0_vec = at::vec::Vectorized<float>(0);
-            for(long x0=static_cast<long>(0L); x0<static_cast<long>(8L*(c10::div_floor_integer(ks1, 8L))); x0+=static_cast<long>(8L))
-            {
-                auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr1 + static_cast<long>(x0), 8);
-                tmp_acc0_vec = tmp_acc0_vec + tmp0;
-            }
-            #pragma omp simd simdlen(4) 
-            for(long x0=static_cast<long>(8L*(c10::div_floor_integer(ks1, 8L))); x0<static_cast<long>(ks1); x0+=static_cast<long>(1L))
-            {
-                auto tmp0 = in_ptr1[static_cast<long>(x0)];
-                tmp_acc0 = tmp_acc0 + tmp0;
-            }
-            tmp_acc0 = tmp_acc0 + at::vec::vec_reduce_all<float>([](at::vec::Vectorized<float>& x, at::vec::Vectorized<float>& y) { return x + y; }, tmp_acc0_vec);
-            out_ptr1[static_cast<long>(0L)] = static_cast<float>(tmp_acc0);
-        }
-    }
-    {
-        auto tmp0 = out_ptr1[static_cast<long>(0L)];
-        auto tmp1 = static_cast<float>(0.0);
-        auto tmp2 = tmp0 < tmp1;
-        out_ptr2[static_cast<long>(0L)] = tmp2;
     }
 }
 ''')
@@ -98,10 +97,10 @@ def call(args):
     s1 = arg2_1
     assert_size_stride(arg1_1, (s0, ), (1, ))
     assert_size_stride(arg3_1, (s1, ), (1, ))
-    buf0 = empty_strided_cpu((s0, ), (1, ), torch.float32)
     buf1 = empty_strided_cpu((), (), torch.float32)
     buf2 = empty_strided_cpu((), (), torch.bool)
-    cpp_fused_abs_add_div_lt_sum_0(arg1_1, arg3_1, buf0, buf1, buf2, s0, s1)
+    buf0 = empty_strided_cpu((s0, ), (1, ), torch.float32)
+    cpp_fused_abs_add_div_lt_sum_0(arg3_1, arg1_1, buf1, buf2, buf0, s1, s0)
     del arg1_1
     del arg3_1
     return (buf0, buf2, )
