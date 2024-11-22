@@ -124,7 +124,7 @@ class CacheResult:
                             tensor_aliasing_guard_seen = True
                         else:
                             continue
-                        append_guard_code(leaf_guard, ans)
+                    append_guard_code(leaf_guard, ans)
                 for child in root.get_child_managers():
                     visit(child, ans)
             guard_codes = []
