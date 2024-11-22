@@ -118,13 +118,13 @@ class CacheResult:
             tensor_aliasing_guard_seen = False
             def visit(root, ans):
                 nonlocal tensor_aliasing_guard_seen
-                for x in root.get_leaf_guards():
+                for leaf_guard in root.get_leaf_guards():
                     if isinstance(guard_codes, torch._C._dynamo.guards.NO_TENSOR_ALIASING):
                         if not tensor_aliasing_guard_seen:
                             tensor_aliasing_guard_seen = True
                         else:
                             continue
-                        append_guard_code(x, ans)
+                        append_guard_code(leaf_guard, ans)
                 for child in root.get_child_managers():
                     visit(child, ans)
             guard_codes = []
