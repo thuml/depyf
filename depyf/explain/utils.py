@@ -109,7 +109,7 @@ class CacheResult:
         if not cpp_guard:
             # for old version of pytorch,
             # `guard_manager` is a plain python function
-            guard = guard_manager.code_parts
+            guard_codes = guard_manager.code_parts
             freevar_names = guard_manager.__code__.co_freevars
             freevar_values = [x.cell_contents for x in guard_manager.__closure__]
         else:
@@ -119,27 +119,24 @@ class CacheResult:
             def visit(root, ans):
                 nonlocal tensor_aliasing_guard_seen
                 for x in root.get_leaf_guards():
-                    if isinstance(guard, torch._C._dynamo.guards.NO_TENSOR_ALIASING):
+                    if isinstance(guard_codes, torch._C._dynamo.guards.NO_TENSOR_ALIASING):
                         if not tensor_aliasing_guard_seen:
                             tensor_aliasing_guard_seen = True
                         else:
                             continue
-                    for verbose_str in x.verbose_code_parts():
-                        verbose_str = verbose_str.strip()
-                        ans.append(verbose_str)
+                        append_guard_code(x, ans)
                 for child in root.get_child_managers():
                     visit(child, ans)
-            guard = []
+            guard_codes = []
             root = guard_manager.root
 
             # Add guards in RootGuardManager
-            visit(root, guard)
+            visit(root, guard_codes)
             # Add guards in epilogue lambda guards
             if hasattr(root, "get_epilogue_lambda_guards"):
                 for lambda_guard in root.get_epilogue_lambda_guards():
-                    for verbose_str in lambda_guard.verbose_code_parts():
-                        verbose_str = verbose_str.strip()
-                        guard.append(verbose_str)
+                    append_guard_code(lambda_guard, guard_codes)
+
             if guard_manager.closure_vars is None:
                 freevar_names = tuple()
                 freevar_values = []
@@ -147,7 +144,7 @@ class CacheResult:
                 freevar_names = tuple(guard_manager.closure_vars.keys())
                 freevar_values = list(guard_manager.closure_vars.values())
 
-        self.guard = guard
+        self.guard = guard_codes
         self.freevars = {name: value for name, value in zip(freevar_names, freevar_values)}
         code = cache.code
 
@@ -292,6 +289,11 @@ def remove_indentation(code: str):
     lines = code.splitlines()
     indent = len(lines[0]) - len(lines[0].lstrip())
     return "".join([line[indent:] + "\n" for line in lines])
+
+def append_guard_code(guard, ans):
+    for verbose_str in guard.verbose_code_parts():
+        verbose_str = verbose_str.strip()
+        ans.append(verbose_str)
 
 from contextlib import contextmanager
 
