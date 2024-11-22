@@ -131,7 +131,15 @@ class CacheResult:
                     visit(child, ans)
             guard = []
             root = guard_manager.root
+
+            # Add guards in RootGuardManager
             visit(root, guard)
+            # Add guards in epilogue lambda guards
+            if hasattr(root, "get_epilogue_lambda_guards"):
+                for lambda_guard in root.get_epilogue_lambda_guards():
+                    for verbose_str in lambda_guard.verbose_code_parts():
+                        verbose_str = verbose_str.strip()
+                        guard.append(verbose_str)
             if guard_manager.closure_vars is None:
                 freevar_names = tuple()
                 freevar_values = []
