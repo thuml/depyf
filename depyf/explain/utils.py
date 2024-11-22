@@ -119,7 +119,7 @@ class CacheResult:
             def visit(root, ans):
                 nonlocal tensor_aliasing_guard_seen
                 for x in root.get_leaf_guards():
-                    if isinstance(guard, torch._C._dynamo.guards.NO_TENSOR_ALIASING):
+                    if isinstance(x, torch._C._dynamo.guards.NO_TENSOR_ALIASING):
                         if not tensor_aliasing_guard_seen:
                             tensor_aliasing_guard_seen = True
                         else:
