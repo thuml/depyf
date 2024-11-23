@@ -50,6 +50,11 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+cellvars/
+depyf_output/
+simple_output/
+temp_output/
+test_irregular/
 
 # Translations
 *.mo
