@@ -311,6 +311,7 @@ def lock_on_file(path_template):
 
 
 def write_code_to_file_template(src, path_template):
+    path_template = path_template.replace(" ", "_")
     with lock_on_file(path_template):
         import os
         count = 0
