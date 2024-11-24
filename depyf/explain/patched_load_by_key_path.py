@@ -16,6 +16,6 @@ def patched_load_by_key_path(
 
     func_name = get_current_compiled_fn_name()
     new_filepath = write_code_to_file_template(src, os.path.join(
-        dump_src_dir, func_name + " kernel " + "%s" + ".py"))
+        dump_src_dir, func_name + ".kernel_" + "%s" + ".py"))
     path = new_filepath
     return unpatched_load_by_key_path(key, path, linemap, attrs)

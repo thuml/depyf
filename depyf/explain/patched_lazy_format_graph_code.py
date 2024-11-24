@@ -3,7 +3,8 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None, **kwargs):
     from depyf.utils import get_code_owner
     func_name = get_current_compiled_fn_name()
     file_name = name if name != func_name else "Captured Graph"
-    file_name = func_name + " " + file_name
+    file_name = file_name.replace(" ", "_")
+    file_name = func_name + "." + file_name
     import inspect
     import os
 
@@ -35,7 +36,7 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None, **kwargs):
         src = simple_code + commented_src
     if filepath is not None:
         new_filepath = write_code_to_file_template(
-            src, os.path.dirname(filepath) + "/" + file_name + " " + "%s" + ".py")
+            src, os.path.dirname(filepath) + "/" + file_name + "." + "%s" + ".py")
         scope = fn.__globals__
         exec(compile(src, filename=new_filepath, mode="exec"), scope)
         fn.__code__ = scope[fn.__name__].__code__
