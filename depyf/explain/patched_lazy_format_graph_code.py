@@ -1,6 +1,10 @@
 def patched_lazy_format_graph_code(name, gm, maybe_id=None, **kwargs):
     from depyf.explain.utils import get_current_compiled_fn_name, write_code_to_file_template
     from depyf.utils import get_code_owner
+    # When using torch export, the name includes
+    # a dumped dict of the nn_module_stack of a node in the module after the ':'
+    if ':' in name: 
+        name = name.split(':')[0]
     func_name = get_current_compiled_fn_name()
     file_name = name if name != func_name else "Captured Graph"
     file_name = file_name.replace(" ", "_")
