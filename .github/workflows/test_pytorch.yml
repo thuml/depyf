@@ -45,6 +45,7 @@ jobs:
         coverage run --append tests/test_pytorch/test_wrapper.py
         coverage run --append tests/test_pytorch/test_mp.py
         coverage run --append tests/test_pytorch/test_no_graph.py
+        coverage run --append tests/test_pytorch/test_export.py
         coverage run --append tests/test_pytorch/test_irregular.py
         coverage run --append tests/test_pytorch/test_simple_graph.py
         TORCH_LOGS="+bytecode" coverage run --append tests/test_pytorch/test_logging.py
