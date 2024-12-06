@@ -30,6 +30,7 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None, **kwargs):
     src = "from __future__ import annotations\nimport torch\n" + \
         gm.print_readable(print_output=False)
     src = src.replace("<lambda>", "GraphModule")
+    print(src)
     try:
         compile(src, "noname", "exec")
     except Exception as e:
