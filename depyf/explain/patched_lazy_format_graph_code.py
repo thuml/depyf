@@ -24,8 +24,12 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None, **kwargs):
     # update file path
     filepath = inspect.getsourcefile(fn)
     # try to use verbose code with type and shape annotations
+    use_gm = True
+
+    # use `print_readable` because it can include submodules
     src = "from __future__ import annotations\n" + \
-        gm._graph.python_code(root_module="self", verbose=True).src
+        gm.print_readable(print_output=False)
+    src = src.replace("<lambda>", "GraphModule")
     try:
         compile(src, "noname", "exec")
     except Exception as e:
@@ -38,13 +42,17 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None, **kwargs):
         commented_src += "".join(["# " + line +
                                  "\n" for line in src.splitlines()])
         src = simple_code + commented_src
+        use_gm = False
     if filepath is not None:
         new_filepath = write_code_to_file_template(
             src, os.path.dirname(filepath) + "/" + file_name + "." + "%s" + ".py")
         scope = fn.__globals__
         exec(compile(src, filename=new_filepath, mode="exec"), scope)
-        fn.__code__ = scope[fn.__name__].__code__
-        del scope[fn.__name__]
+        if use_gm:
+            fn.__code__ = getattr(scope["GraphModule"], fn.__name__).__code__
+        else:
+            fn.__code__ = scope[fn.__name__].__code__
+            del scope[fn.__name__]
 
     # =========================================
     # original code of `lazy_format_graph_code`
