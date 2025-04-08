@@ -1,8 +1,8 @@
 def patched_load_by_key_path(
     key: str,
     path: str,
-    linemap,
-    attrs,
+    linemap=None,
+    attrs=None,
 ):
     from depyf.explain.global_variables import data
     from depyf.explain.utils import write_code_to_file_template, get_current_compiled_fn_name
