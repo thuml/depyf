@@ -27,7 +27,7 @@ def patched_lazy_format_graph_code(name, gm, maybe_id=None, **kwargs):
     use_gm = True
 
     # use `print_readable` because it can include submodules
-    src = "from __future__ import annotations\nimport torch\n" + \
+    src = "from __future__ import annotations\nimport torch\nfrom torch import device\n" + \
         gm.print_readable(print_output=False)
     src = src.replace("<lambda>", "GraphModule")
     try:
