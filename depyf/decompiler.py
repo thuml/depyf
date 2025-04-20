@@ -808,9 +808,13 @@ class Decompiler:
         self.state.stack[- n] = value
 
     def COPY(self, inst: Instruction):
-        # not tested, don't know how to generate this instruction
         n = inst.argval
-        value = self.state.stack[-1 - n]
+        # COPY argument is 1-based
+        # see https://discuss.python.org/t/the-oparg-of-the-new-copy-opcode-is-not-zero-based/22110
+        # n == 0 is a silent error and will be ignored by the interpreter
+        if n == 0:
+            return
+        value = self.state.stack[-1 - (n - 1)]
         self.state.stack.append(value)
 
     def POP_TOP(self, inst: Instruction):
