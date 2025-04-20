@@ -1,5 +1,6 @@
 from __future__ import annotations
 import torch
+from torch import device
 class GraphModule(torch.nn.Module):
     def forward(self, arg0_1: "f32[10]", arg1_1: "f32[10]"):
          # File: /Users/youkaichao/data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:5 in toy_function, code: if b.sum() < 0:

@@ -2,30 +2,30 @@
 # Note: the following variables are used inside the guard function.
 ___check_tensors = '''None'''
 ___check_tensors_verbose = '''None'''
-___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x17846cbf0>'''
-___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x178a0e9e0>'''
-IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x169a87a30>'''
-cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x169a87be0>'''
+___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x16ec4e8b0>'''
+___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x15581e4d0>'''
+IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x130987eb0>'''
+cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x1309980d0>'''
 math = '''<module 'math' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/lib-dynload/math.cpython-310-darwin.so'>'''
 torch = '''<module 'torch' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/__init__.py'>'''
 ___check_type_id = '''<built-in function check_type_id>'''
 ___check_obj_id = '''<built-in function check_obj_id>'''
 ___odict_getitem = '''<method '__getitem__' of 'dict' objects>'''
-___key_to_id = '''<function key_to_id at 0x169b89870>'''
+___key_to_id = '''<function key_to_id at 0x130a81cf0>'''
 ___dict_version = '''<built-in function dict_version>'''
-___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x17899fac0>'''
+___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x157e8bbe0>'''
 ___tuple_iterator_len = '''<method '__length_hint__' of 'tuple_iterator' objects>'''
-___normalize_range_iter = '''<function normalize_range_iter at 0x169b893f0>'''
-___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x169b89360>'''
-___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x169b8cb80>'''
+___normalize_range_iter = '''<function normalize_range_iter at 0x130a81870>'''
+___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x130a817e0>'''
+___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x130a8d000>'''
 __math_isnan = '''<built-in function isnan>'''
 __numpy_isnan = '''<ufunc 'isnan'>'''
 inf = '''inf'''
-__load_module = '''<function import_module at 0x100f23490>'''
+__load_module = '''<function import_module at 0x10309b490>'''
 utils_device = '''<module 'torch.utils._device' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/utils/_device.py'>'''
 device = '''<class 'torch.device'>'''
-___from_numpy = '''<function from_numpy at 0x169c07370>'''
-___as_tensor = '''<function _as_tensor_fullprec at 0x168306560>'''
+___from_numpy = '''<function from_numpy at 0x130b037f0>'''
+___as_tensor = '''<function _as_tensor_fullprec at 0x1208fa9e0>'''
 inspect = '''<module 'inspect' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/inspect.py'>'''
 def __guard_0_for_torch_dynamo_resume_in_forward_at_15(L, G, **___kwargs_ignored):
     __guard_hit = True
@@ -86,30 +86,30 @@ def transformed___resume_at_30_2(b, x):
 # Note: the following variables are used inside the guard function.
 ___check_tensors = '''None'''
 ___check_tensors_verbose = '''None'''
-___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x1783706b0>'''
-___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x17899fc70>'''
-IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x169a87a30>'''
-cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x169a87be0>'''
+___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x15502fa70>'''
+___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x157e8b5b0>'''
+IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x130987eb0>'''
+cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x1309980d0>'''
 math = '''<module 'math' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/lib-dynload/math.cpython-310-darwin.so'>'''
 torch = '''<module 'torch' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/__init__.py'>'''
 ___check_type_id = '''<built-in function check_type_id>'''
 ___check_obj_id = '''<built-in function check_obj_id>'''
 ___odict_getitem = '''<method '__getitem__' of 'dict' objects>'''
-___key_to_id = '''<function key_to_id at 0x169b89870>'''
+___key_to_id = '''<function key_to_id at 0x130a81cf0>'''
 ___dict_version = '''<built-in function dict_version>'''
-___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x17899fac0>'''
+___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x157e8bbe0>'''
 ___tuple_iterator_len = '''<method '__length_hint__' of 'tuple_iterator' objects>'''
-___normalize_range_iter = '''<function normalize_range_iter at 0x169b893f0>'''
-___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x169b89360>'''
-___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x169b8cb80>'''
+___normalize_range_iter = '''<function normalize_range_iter at 0x130a81870>'''
+___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x130a817e0>'''
+___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x130a8d000>'''
 __math_isnan = '''<built-in function isnan>'''
 __numpy_isnan = '''<ufunc 'isnan'>'''
 inf = '''inf'''
-__load_module = '''<function import_module at 0x100f23490>'''
+__load_module = '''<function import_module at 0x10309b490>'''
 utils_device = '''<module 'torch.utils._device' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/utils/_device.py'>'''
 device = '''<class 'torch.device'>'''
-___from_numpy = '''<function from_numpy at 0x169c07370>'''
-___as_tensor = '''<function _as_tensor_fullprec at 0x168306560>'''
+___from_numpy = '''<function from_numpy at 0x130b037f0>'''
+___as_tensor = '''<function _as_tensor_fullprec at 0x1208fa9e0>'''
 inspect = '''<module 'inspect' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/inspect.py'>'''
 def __guard_0_for_forward(L, G, **___kwargs_ignored):
     __guard_hit = True
@@ -121,8 +121,8 @@ def __guard_0_for_forward(L, G, **___kwargs_ignored):
     __guard_hit = __guard_hit and check_no_aliasing(L['a'], L['b'])
     __guard_hit = __guard_hit and check_tensor(L['b'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[10], stride=[1])
     __guard_hit = __guard_hit and hasattr(L['b'], '_dynamo_dynamic_indices') == False
-    __guard_hit = __guard_hit and ___check_obj_id(G['torch'], 4338956176)
-    __guard_hit = __guard_hit and ___check_obj_id(G['torch'].abs, 4342135232)
+    __guard_hit = __guard_hit and ___check_obj_id(G['torch'], 4364285840)
+    __guard_hit = __guard_hit and ___check_obj_id(G['torch'].abs, 4365598784)
     return __guard_hit
 
 # Note: please refer to the graph code in __compiled_fn_1*.py.

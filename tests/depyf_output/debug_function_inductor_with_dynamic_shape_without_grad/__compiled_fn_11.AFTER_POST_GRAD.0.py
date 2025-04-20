@@ -1,5 +1,6 @@
 from __future__ import annotations
 import torch
+from torch import device
 class GraphModule(torch.nn.Module):
     def forward(self, arg0_1: "Sym(s52)", arg1_1: "f32[s52]", arg2_1: "f32[s52]"):
          # File: /Users/youkaichao/data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:6 in torch_dynamo_resume_in_toy_function_at_5, code: b = b * -1

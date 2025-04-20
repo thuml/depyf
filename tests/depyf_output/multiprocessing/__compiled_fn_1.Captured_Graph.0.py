@@ -1,5 +1,6 @@
 from __future__ import annotations
 import torch
+from torch import device
 class GraphModule(torch.nn.Module):
     def forward(self, L_x_: "f32[5]"):
         l_x_ = L_x_

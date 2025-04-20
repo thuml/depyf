@@ -1,5 +1,6 @@
 from __future__ import annotations
 import torch
+from torch import device
 class joint_helper(torch.nn.Module):
     def forward(self, primals, tangents):
         primals_1: "Sym(s52)"; primals_2: "f32[s52]"; primals_3: "f32[s52]"; tangents_1: "f32[s52]"; 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import torch
+from torch import device
 class GraphModule(torch.nn.Module):
     def forward(self, arg0_1: "Sym(s97)", arg1_1: "f32[s97]", arg2_1: "Sym(s52)", arg3_1: "f32[s52]"):
          # File: /Users/youkaichao/data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:14 in forward, code: x = a / (torch.abs(a) + 1)
