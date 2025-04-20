@@ -6,6 +6,7 @@ import random
 import os
 import tempfile
 from math import inf, nan
+from cmath import nanj
 from torch._inductor.hooks import run_intermediate_hooks
 from torch._inductor.utils import maybe_profile
 from torch._inductor.codegen.memory_planning import _align as align
@@ -18,6 +19,7 @@ aten = torch.ops.aten
 inductor_ops = torch.ops.inductor
 _quantized = torch.ops._quantized
 assert_size_stride = torch._C._dynamo.guards.assert_size_stride
+assert_alignment = torch._C._dynamo.guards.assert_alignment
 empty_strided_cpu = torch._C._dynamo.guards._empty_strided_cpu
 empty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda
 empty_strided_xpu = torch._C._dynamo.guards._empty_strided_xpu
@@ -28,7 +30,7 @@ empty_strided_p2p = torch._C._distributed_c10d._SymmetricMemory.empty_strided_p2
 
 
 cpp_fused_abs_add_div_lt_sum_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'float*', 'bool*', 'float*'], '''
-#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/2r/c2rnilspx43ivnzu4uieul65kx65dfhfbptbh5og4wk6rqebuxoo.h"
+#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/do/cdoggdcp7ux2jv5ebkajvacaprabp6b4h4m2o3zifjj6xwp2kz4n.h"
 extern "C"  void kernel(const float* in_ptr0,
                        const float* in_ptr1,
                        float* out_ptr0,
@@ -39,46 +41,60 @@ extern "C"  void kernel(const float* in_ptr0,
         {
             float tmp_acc0 = 0;
             at::vec::Vectorized<float> tmp_acc0_vec = at::vec::Vectorized<float>(0);
-            for(int64_t x0=static_cast<int64_t>(0LL); x0<static_cast<int64_t>(8LL); x0+=static_cast<int64_t>(4LL))
+            for(int64_t x0=static_cast<int64_t>(0LL); x0<static_cast<int64_t>(10LL); x0+=static_cast<int64_t>(4LL))
             {
-                auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr0 + static_cast<int64_t>(x0), static_cast<int64_t>(4));
-                tmp_acc0_vec = tmp_acc0_vec + tmp0;
-            }
-            for(int64_t x0=static_cast<int64_t>(8LL); x0<static_cast<int64_t>(10LL); x0+=static_cast<int64_t>(2LL))
-            {
-                auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr0 + static_cast<int64_t>(x0), static_cast<int64_t>(2LL));
-                tmp_acc0_vec = sum_masked_reduce(tmp_acc0_vec, tmp0, static_cast<int64_t>(2LL));
+                {
+                    if(C10_LIKELY(x0 >= static_cast<int64_t>(0) && x0 < static_cast<int64_t>(8LL)))
+                    {
+                        auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr0 + static_cast<int64_t>(x0), static_cast<int64_t>(4));
+                        tmp_acc0_vec = tmp_acc0_vec + tmp0;
+                    }
+                    if(C10_UNLIKELY(x0 >= static_cast<int64_t>(8LL) && x0 < static_cast<int64_t>(10LL)))
+                    {
+                        auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr0 + static_cast<int64_t>(x0), static_cast<int64_t>(2LL));
+                        tmp_acc0_vec = sum_masked_reduce(tmp_acc0_vec, tmp0, static_cast<int64_t>(2LL));
+                    }
+                }
             }
             tmp_acc0 = tmp_acc0 + at::vec::vec_reduce_all<float, 1>([](at::vec::Vectorized<float>& x, at::vec::Vectorized<float>& y) { return x + y; }, tmp_acc0_vec);
             out_ptr0[static_cast<int64_t>(0LL)] = static_cast<float>(tmp_acc0);
         }
     }
     {
-        auto tmp0 = out_ptr0[static_cast<int64_t>(0LL)];
-        auto tmp1 = static_cast<float>(0.0);
-        auto tmp2 = tmp0 < tmp1;
-        out_ptr1[static_cast<int64_t>(0LL)] = tmp2;
+        {
+            {
+                auto tmp0 = out_ptr0[static_cast<int64_t>(0LL)];
+                auto tmp1 = static_cast<float>(0.0);
+                auto tmp2 = tmp0 < tmp1;
+                out_ptr1[static_cast<int64_t>(0LL)] = tmp2;
+            }
+        }
     }
     {
-        for(int64_t x0=static_cast<int64_t>(0LL); x0<static_cast<int64_t>(8LL); x0+=static_cast<int64_t>(4LL))
+        for(int64_t x0=static_cast<int64_t>(0LL); x0<static_cast<int64_t>(10LL); x0+=static_cast<int64_t>(4LL))
         {
-            auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr1 + static_cast<int64_t>(x0), static_cast<int64_t>(4));
-            auto tmp1 = tmp0.abs();
-            auto tmp2 = static_cast<float>(1.0);
-            auto tmp3 = at::vec::Vectorized<float>(tmp2);
-            auto tmp4 = tmp1 + tmp3;
-            auto tmp5 = tmp0 / tmp4;
-            tmp5.store(out_ptr2 + static_cast<int64_t>(x0));
-        }
-        for(int64_t x0=static_cast<int64_t>(8LL); x0<static_cast<int64_t>(10LL); x0+=static_cast<int64_t>(2LL))
-        {
-            auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr1 + static_cast<int64_t>(x0), static_cast<int64_t>(2LL));
-            auto tmp1 = tmp0.abs();
-            auto tmp2 = static_cast<float>(1.0);
-            auto tmp3 = at::vec::Vectorized<float>(tmp2);
-            auto tmp4 = tmp1 + tmp3;
-            auto tmp5 = tmp0 / tmp4;
-            tmp5.store(out_ptr2 + static_cast<int64_t>(x0), static_cast<int64_t>(2LL));
+            {
+                if(C10_LIKELY(x0 >= static_cast<int64_t>(0) && x0 < static_cast<int64_t>(8LL)))
+                {
+                    auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr1 + static_cast<int64_t>(x0), static_cast<int64_t>(4));
+                    auto tmp1 = tmp0.abs();
+                    auto tmp2 = static_cast<float>(1.0);
+                    auto tmp3 = at::vec::Vectorized<float>(tmp2);
+                    auto tmp4 = tmp1 + tmp3;
+                    auto tmp5 = tmp0 / tmp4;
+                    tmp5.store(out_ptr2 + static_cast<int64_t>(x0));
+                }
+                if(C10_UNLIKELY(x0 >= static_cast<int64_t>(8LL) && x0 < static_cast<int64_t>(10LL)))
+                {
+                    auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr1 + static_cast<int64_t>(x0), static_cast<int64_t>(2LL));
+                    auto tmp1 = tmp0.abs();
+                    auto tmp2 = static_cast<float>(1.0);
+                    auto tmp3 = at::vec::Vectorized<float>(tmp2);
+                    auto tmp4 = tmp1 + tmp3;
+                    auto tmp5 = tmp0 / tmp4;
+                    tmp5.store(out_ptr2 + static_cast<int64_t>(x0), static_cast<int64_t>(2LL));
+                }
+            }
         }
     }
 }
@@ -93,13 +109,13 @@ def call(args):
     args.clear()
     assert_size_stride(arg0_1, (10, ), (1, ))
     assert_size_stride(arg1_1, (10, ), (1, ))
-    buf1 = empty_strided_cpu((), (), torch.float32)
+    buf0 = empty_strided_cpu((), (), torch.float32)
     buf2 = empty_strided_cpu((), (), torch.bool)
-    buf0 = empty_strided_cpu((10, ), (1, ), torch.float32)
-    cpp_fused_abs_add_div_lt_sum_0(arg1_1, arg0_1, buf1, buf2, buf0)
+    buf1 = empty_strided_cpu((10, ), (1, ), torch.float32)
+    cpp_fused_abs_add_div_lt_sum_0(arg1_1, arg0_1, buf0, buf2, buf1)
     del arg0_1
     del arg1_1
-    return (buf0, buf2, )
+    return (buf2, buf1, )
 
 
 def benchmark_compiled_module(times=10, repeat=10):
