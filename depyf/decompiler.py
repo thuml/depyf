@@ -1042,9 +1042,8 @@ class Decompiler:
         self.state.stack.append(f"tuple({item})")
 
     def LIST_EXTEND(self, inst: Instruction):
-        assert inst.argval == 1, "Only tested for argval==1"
         values = self.state.stack.pop()
-        temp = self.replace_mutable_tos_with_temp()
+        temp = self.replace_mutable_tos_with_temp(pos=inst.argval)
         self.state.source_code += f"{temp}.extend({values})\n"
 
     def LIST_APPEND(self, inst: Instruction):
@@ -1150,11 +1149,12 @@ class Decompiler:
         Decompiler.temp_count += 1
         return f"{self.temp_prefix}{Decompiler.temp_count}"
 
-    def replace_mutable_tos_with_temp(self):
-        ans = self.state.stack.pop()
+    def replace_mutable_tos_with_temp(self, pos: int = 1):
+        # pos is basically argval of the instruction
+        ans = self.state.stack[-pos]
         temp_name = self.get_temp_name()
         self.state.source_code += f"{temp_name} = {ans}\n"
-        self.state.stack.append(temp_name)
+        self.state.stack[-pos] = temp_name
         return temp_name
 
     @staticmethod
