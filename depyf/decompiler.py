@@ -300,7 +300,11 @@ class Decompiler:
     def DELETE_SUBSCR(self, inst: Instruction):
         index = self.state.stack.pop()
         x = self.state.stack.pop()
-        self.state.source_code += f"del {x}[{index}]\n"
+        if not f"{x}[{index}]" in self.state.stack:
+            # if f"{x}[{index}]" already exists somewhere in the stack,
+            # we don't need to delete it, otherwise that reference will be invalidated.
+            # TODO: this is a hack, we should use a more robust way to track the references.
+            self.state.source_code += f"del {x}[{index}]\n"
 
     def generic_delete(self, inst: Instruction):
         self.state.source_code += f"del {inst.argval}\n"
@@ -1042,9 +1046,8 @@ class Decompiler:
         self.state.stack.append(f"tuple({item})")
 
     def LIST_EXTEND(self, inst: Instruction):
-        assert inst.argval == 1, "Only tested for argval==1"
         values = self.state.stack.pop()
-        temp = self.replace_mutable_tos_with_temp()
+        temp = self.replace_mutable_tos_with_temp(pos=inst.argval)
         self.state.source_code += f"{temp}.extend({values})\n"
 
     def LIST_APPEND(self, inst: Instruction):
@@ -1150,11 +1153,12 @@ class Decompiler:
         Decompiler.temp_count += 1
         return f"{self.temp_prefix}{Decompiler.temp_count}"
 
-    def replace_mutable_tos_with_temp(self):
-        ans = self.state.stack.pop()
+    def replace_mutable_tos_with_temp(self, pos: int = 1):
+        # pos is basically argval of the instruction
+        ans = self.state.stack[-pos]
         temp_name = self.get_temp_name()
         self.state.source_code += f"{temp_name} = {ans}\n"
-        self.state.stack.append(temp_name)
+        self.state.stack[-pos] = temp_name
         return temp_name
 
     @staticmethod
@@ -1181,8 +1185,13 @@ class Decompiler:
             source_code = self.state.source_code
             # the header might have invalid function name in torchdynamo. only
             # optimize the function body.
-            source_code = remove_some_temp(
-                source_code, self.temp_prefix, indentation)
+            if os.environ.get("DEPYF_REMOVE_TEMP", "1") == "1":
+                # remove temp can be dangerous if some code in between contains
+                # mutation, e.g. as described in https://github.com/thuml/depyf/issues/85 .
+                # doing a full mutation analysis in python is too complex, so we remove temp by default,
+                # and only disable it when users set the environment variable DEPYF_REMOVE_TEMP to 0.
+                source_code = remove_some_temp(
+                    source_code, self.temp_prefix, indentation)
             header = get_function_signature(self.code, overwite_fn_name)
             # we cannot rely on `co_names`. For example, `from math import sqrt` will make `math` and `sqrt` in `co_names`.
             global_names = set(inst.argval for inst in dis.get_instructions(self.code) if inst.opname == "STORE_GLOBAL")
