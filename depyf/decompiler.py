@@ -300,7 +300,11 @@ class Decompiler:
     def DELETE_SUBSCR(self, inst: Instruction):
         index = self.state.stack.pop()
         x = self.state.stack.pop()
-        self.state.source_code += f"del {x}[{index}]\n"
+        if not f"{x}[{index}]" in self.state.stack:
+            # if f"{x}[{index}]" already exists somewhere in the stack,
+            # we don't need to delete it, otherwise that reference will be invalidated.
+            # TODO: this is a hack, we should use a more robust way to track the references.
+            self.state.source_code += f"del {x}[{index}]\n"
 
     def generic_delete(self, inst: Instruction):
         self.state.source_code += f"del {inst.argval}\n"
