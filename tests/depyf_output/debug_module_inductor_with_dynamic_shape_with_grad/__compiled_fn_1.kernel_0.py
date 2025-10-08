@@ -13,7 +13,6 @@ from torch._inductor.codegen.memory_planning import _align as align
 from torch import device, empty_strided
 from torch._inductor.async_compile import AsyncCompile
 from torch._inductor.select_algorithm import extern_kernels
-from torch._inductor.codegen.multi_kernel import MultiKernelCall
 
 aten = torch.ops.aten
 inductor_ops = torch.ops.inductor
@@ -21,21 +20,22 @@ _quantized = torch.ops._quantized
 assert_size_stride = torch._C._dynamo.guards.assert_size_stride
 assert_alignment = torch._C._dynamo.guards.assert_alignment
 empty_strided_cpu = torch._C._dynamo.guards._empty_strided_cpu
+empty_strided_cpu_pinned = torch._C._dynamo.guards._empty_strided_cpu_pinned
 empty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda
 empty_strided_xpu = torch._C._dynamo.guards._empty_strided_xpu
+empty_strided_mtia = torch._C._dynamo.guards._empty_strided_mtia
 reinterpret_tensor = torch._C._dynamo.guards._reinterpret_tensor
 alloc_from_pool = torch.ops.inductor._alloc_from_pool
 async_compile = AsyncCompile()
 empty_strided_p2p = torch._C._distributed_c10d._SymmetricMemory.empty_strided_p2p
 
 
-cpp_fused_abs_add_div_lt_sum_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'float*', 'bool*', 'float*'], '''
-#include "/var/folders/vm/ssf622nn02j77t14q1j8_88w0000gn/T/torchinductor_youkaichao/do/cdoggdcp7ux2jv5ebkajvacaprabp6b4h4m2o3zifjj6xwp2kz4n.h"
-extern "C"  void kernel(const float* in_ptr0,
+cpp_fused_abs_add_div_mul_sum_0 = async_compile.cpp_pybinding(['const float*', 'const float*', 'float*', 'float*'], r'''
+#include <torch/csrc/inductor/cpp_prefix.h>
+extern "C"  void  kernel(const float* in_ptr0,
                        const float* in_ptr1,
                        float* out_ptr0,
-                       bool* out_ptr1,
-                       float* out_ptr2)
+                       float* out_ptr1)
 {
     {
         {
@@ -61,38 +61,44 @@ extern "C"  void kernel(const float* in_ptr0,
         }
     }
     {
-        {
-            {
-                auto tmp0 = out_ptr0[static_cast<int64_t>(0LL)];
-                auto tmp1 = static_cast<float>(0.0);
-                auto tmp2 = tmp0 < tmp1;
-                out_ptr1[static_cast<int64_t>(0LL)] = tmp2;
-            }
-        }
-    }
-    {
         for(int64_t x0=static_cast<int64_t>(0LL); x0<static_cast<int64_t>(10LL); x0+=static_cast<int64_t>(4LL))
         {
             {
                 if(C10_LIKELY(x0 >= static_cast<int64_t>(0) && x0 < static_cast<int64_t>(8LL)))
                 {
                     auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr1 + static_cast<int64_t>(x0), static_cast<int64_t>(4));
+                    auto tmp6 = at::vec::Vectorized<float>::loadu(in_ptr0 + static_cast<int64_t>(x0), static_cast<int64_t>(4));
+                    auto tmp10 = out_ptr0[static_cast<int64_t>(0LL)];
                     auto tmp1 = tmp0.abs();
                     auto tmp2 = static_cast<float>(1.0);
                     auto tmp3 = at::vec::Vectorized<float>(tmp2);
                     auto tmp4 = tmp1 + tmp3;
                     auto tmp5 = tmp0 / tmp4;
-                    tmp5.store(out_ptr2 + static_cast<int64_t>(x0));
+                    auto tmp7 = static_cast<float>(-1.0);
+                    auto tmp8 = at::vec::Vectorized<float>(tmp7);
+                    auto tmp9 = tmp6 * tmp8;
+                    auto tmp11 = at::vec::Vectorized<float>(tmp10);
+                    auto tmp12 = tmp9 + tmp11;
+                    auto tmp13 = tmp5 * tmp12;
+                    tmp13.store(out_ptr1 + static_cast<int64_t>(x0));
                 }
                 if(C10_UNLIKELY(x0 >= static_cast<int64_t>(8LL) && x0 < static_cast<int64_t>(10LL)))
                 {
                     auto tmp0 = at::vec::Vectorized<float>::loadu(in_ptr1 + static_cast<int64_t>(x0), static_cast<int64_t>(2LL));
+                    auto tmp6 = at::vec::Vectorized<float>::loadu(in_ptr0 + static_cast<int64_t>(x0), static_cast<int64_t>(2LL));
+                    auto tmp10 = out_ptr0[static_cast<int64_t>(0LL)];
                     auto tmp1 = tmp0.abs();
                     auto tmp2 = static_cast<float>(1.0);
                     auto tmp3 = at::vec::Vectorized<float>(tmp2);
                     auto tmp4 = tmp1 + tmp3;
                     auto tmp5 = tmp0 / tmp4;
-                    tmp5.store(out_ptr2 + static_cast<int64_t>(x0), static_cast<int64_t>(2LL));
+                    auto tmp7 = static_cast<float>(-1.0);
+                    auto tmp8 = at::vec::Vectorized<float>(tmp7);
+                    auto tmp9 = tmp6 * tmp8;
+                    auto tmp11 = at::vec::Vectorized<float>(tmp10);
+                    auto tmp12 = tmp9 + tmp11;
+                    auto tmp13 = tmp5 * tmp12;
+                    tmp13.store(out_ptr1 + static_cast<int64_t>(x0), static_cast<int64_t>(2LL));
                 }
             }
         }
@@ -104,18 +110,29 @@ extern "C"  void kernel(const float* in_ptr0,
 async_compile.wait(globals())
 del async_compile
 
-def call(args):
-    primals_1, primals_2 = args
-    args.clear()
-    assert_size_stride(primals_1, (10, ), (1, ))
-    assert_size_stride(primals_2, (10, ), (1, ))
-    buf1 = empty_strided_cpu((), (), torch.float32)
-    buf2 = empty_strided_cpu((), (), torch.bool)
-    buf0 = empty_strided_cpu((10, ), (1, ), torch.float32)
-    cpp_fused_abs_add_div_lt_sum_0(primals_2, primals_1, buf1, buf2, buf0)
-    del buf1
-    del primals_2
-    return (buf2, buf0, primals_1, )
+class Runner:
+    def __init__(self, partitions):
+        self.partitions = partitions
+
+    def recursively_apply_fns(self, fns):
+        new_callables = []
+        for fn, c in zip(fns, self.partitions):
+            new_callables.append(fn(c))
+        self.partitions = new_callables
+
+    def call(self, args):
+        primals_1, primals_2 = args
+        args.clear()
+        assert_size_stride(primals_1, (10, ), (1, ))
+        assert_size_stride(primals_2, (10, ), (1, ))
+        buf0 = empty_strided_cpu((), (), torch.float32)
+        buf1 = empty_strided_cpu((10, ), (1, ), torch.float32)
+        cpp_fused_abs_add_div_mul_sum_0(primals_2, primals_1, buf0, buf1)
+        return (buf1, primals_1, primals_2, buf0, )
+
+runner = Runner(partitions=[])
+call = runner.call
+recursively_apply_fns = runner.recursively_apply_fns
 
 
 def benchmark_compiled_module(times=10, repeat=10):

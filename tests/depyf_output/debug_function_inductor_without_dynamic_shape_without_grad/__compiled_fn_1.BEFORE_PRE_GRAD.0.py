@@ -11,8 +11,12 @@ class GraphModule(torch.nn.Module):
         add: "f32[10]" = abs_1 + 1;  abs_1 = None
         x: "f32[10]" = l_a_ / add;  l_a_ = add = None
         
-         # File: /Users/youkaichao/data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:5 in toy_function, code: if b.sum() < 0:
+         # File: /Users/youkaichao/data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:5 in toy_function, code: b = b * -1 + b.sum()
+        mul: "f32[10]" = l_b_ * -1
         sum_1: "f32[]" = l_b_.sum();  l_b_ = None
-        lt: "b8[]" = sum_1 < 0;  sum_1 = None
-        return (lt, x)
+        b: "f32[10]" = mul + sum_1;  mul = sum_1 = None
+        
+         # File: /Users/youkaichao/data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:6 in toy_function, code: return x * b
+        mul_1: "f32[10]" = x * b;  x = b = None
+        return (mul_1,)
         

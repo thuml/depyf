@@ -2,445 +2,159 @@
 # Note: the following variables are used inside the guard function.
 ___check_tensors = '''None'''
 ___check_tensors_verbose = '''None'''
-___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x1698406b0>'''
-___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x16f93dfc0>'''
-IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x152e8feb0>'''
-cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x152ea40d0>'''
-math = '''<module 'math' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/lib-dynload/math.cpython-310-darwin.so'>'''
-torch = '''<module 'torch' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/__init__.py'>'''
+___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x13110c170>'''
+___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x137111580>'''
+IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x124e50a40>'''
+cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x124e50c20>'''
+math = '''<module 'math' (built-in)>'''
+torch = '''<module 'torch' from '/Users/youkaichao/uv_envs/py312/lib/python3.12/site-packages/torch/__init__.py'>'''
 ___check_type_id = '''<built-in function check_type_id>'''
 ___check_obj_id = '''<built-in function check_obj_id>'''
 ___odict_getitem = '''<method '__getitem__' of 'dict' objects>'''
-___key_to_id = '''<function key_to_id at 0x153091cf0>'''
+___key_to_id = '''<function key_to_id at 0x1250a8540>'''
 ___dict_version = '''<built-in function dict_version>'''
-___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x169e90a60>'''
+___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x131803060>'''
 ___tuple_iterator_len = '''<method '__length_hint__' of 'tuple_iterator' objects>'''
-___normalize_range_iter = '''<function normalize_range_iter at 0x153091870>'''
-___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x1530917e0>'''
-___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x1530ad000>'''
+___normalize_range_iter = '''<function normalize_range_iter at 0x12508be20>'''
+___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x12508bce0>'''
+___dataclass_fields = '''<function dataclass_fields at 0x12508bd80>'''
+___namedtuple_fields = '''<function _get_closure_vars.<locals>.<lambda> at 0x131803100>'''
+___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x1250940e0>'''
 __math_isnan = '''<built-in function isnan>'''
 __numpy_isnan = '''<ufunc 'isnan'>'''
 inf = '''inf'''
-__load_module = '''<function import_module at 0x1049bf490>'''
-utils_device = '''<module 'torch.utils._device' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/utils/_device.py'>'''
+__load_module = '''<function import_module at 0x104cca840>'''
+utils_device = '''<module 'torch.utils._device' from '/Users/youkaichao/uv_envs/py312/lib/python3.12/site-packages/torch/utils/_device.py'>'''
 device = '''<class 'torch.device'>'''
-___from_numpy = '''<function from_numpy at 0x15310b7f0>'''
-___as_tensor = '''<function _as_tensor_fullprec at 0x13c1fe9e0>'''
-inspect = '''<module 'inspect' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/inspect.py'>'''
-def __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L, G, **___kwargs_ignored):
+___from_numpy = '''<function from_numpy at 0x1255f8ae0>'''
+___as_tensor = '''<function _as_tensor_fullprec at 0x122ad6e80>'''
+inspect = '''<module 'inspect' from '/Users/youkaichao/.local/share/uv/python/cpython-3.12.8-macos-aarch64-none/lib/python3.12/inspect.py'>'''
+def __guard_4_for_toy_function(L, G, **___kwargs_ignored):
     __guard_hit = True
-    __guard_hit = __guard_hit and utils_device.CURRENT_DEVICE == None                           # _dynamo/output_graph.py:551 in init_ambient_guards
+    __guard_hit = __guard_hit and torch._functorch.aot_autograd.utils.top_saved_tensors_hooks ids == None  # _dynamo/output_graph.py:800 in init_ambient_guards
+    __guard_hit = __guard_hit and utils_device.CURRENT_DEVICE == None                           # _dynamo/output_graph.py:788 in init_ambient_guards
     __guard_hit = __guard_hit and ___check_global_state()
     __guard_hit = __guard_hit and ___check_torch_function_mode_stack()
-    __guard_hit = __guard_hit and check_tensor(L['b'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[10], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['b'], '_dynamo_dynamic_indices') == False
-    __guard_hit = __guard_hit and check_no_aliasing(L['b'], L['x'])
-    __guard_hit = __guard_hit and check_tensor(L['x'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[10], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['x'], '_dynamo_dynamic_indices') == False
+    __guard_hit = __guard_hit and check_tensor(L['a'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[None], stride=[1])  # x = a / (torch.abs(a) + 1)  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:4 in toy_function
+    __guard_hit = __guard_hit and hasattr(L['a'], '_dynamo_dynamic_indices') == False           # x = a / (torch.abs(a) + 1)  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:4 in toy_function
+    __guard_hit = __guard_hit and check_no_aliasing(L['a'], L['b'])
+    __guard_hit = __guard_hit and L['b'].size()[0] == L['a'].size()[0]  # (unknown var s52, please file a bug)
+    __guard_hit = __guard_hit and 2 <= L['a'].size()[0] <= 10485760  # b = b * -1 + b.sum()  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:5 in toy_function (user code shown is first use of this value--the guard itself is not due user code but due to 0/1 specialization in the framework; to avoid specialization try torch._dynamo.decorators.mark_unbacked(tensor, dim)) and (_inductor/codegen/cpp.py:2213 in need_use_acc_helper)
+    __guard_hit = __guard_hit and check_tensor(L['b'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[None], stride=[1])  # b = b * -1 + b.sum()  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:5 in toy_function
+    __guard_hit = __guard_hit and hasattr(L['b'], '_dynamo_dynamic_indices') == False           # b = b * -1 + b.sum()  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:5 in toy_function
+    __guard_hit = __guard_hit and L['b'].size()[0] == L['a'].size()[0]  # (unknown var s52, please file a bug)
+    __guard_hit = __guard_hit and 2 <= L['a'].size()[0] <= 10485760  # b = b * -1 + b.sum()  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:5 in toy_function (user code shown is first use of this value--the guard itself is not due user code but due to 0/1 specialization in the framework; to avoid specialization try torch._dynamo.decorators.mark_unbacked(tensor, dim)) and (_inductor/codegen/cpp.py:2213 in need_use_acc_helper)
+    __guard_hit = __guard_hit and ___check_obj_id(G['torch'], 4386783696)                       # x = a / (torch.abs(a) + 1)  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:4 in toy_function
+    __guard_hit = __guard_hit and ___check_obj_id(G['torch'].abs, 4654686640)                   # x = a / (torch.abs(a) + 1)  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:4 in toy_function
     return __guard_hit
 
-# Note: please refer to the graph code in __compiled_fn_5*.py.
+# Note: please refer to the graph code in __compiled_fn_3_d3943044_1472_48cc_9e1f_a5a2330e6e98*.py.
 # Captured Graph: Dynamo generated graph (debuggable when using eager backend).
 # Joint graph: joint forward+backward graph from aot autograd.
 # Forward graph: forward graph from aot autograd (debuggable when using aot_eager backend).
 # Backward graph: backward graph from aot autograd (debuggable when using aot_eager backend).
 # AFTER XXX: graph processed by inductor (not debuggable).
-def __compiled_fn_5(*args, **kwargs):
+def __compiled_fn_3_d3943044_1472_48cc_9e1f_a5a2330e6e98(*args, **kwargs):
     pass
 
-def __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
-    a = None # this line helps Python to generate bytecode with at least the same number of local variables as the original function
-    tmp_1 = x
-    tmp_2 = b
-    graph_out_0 = __compiled_fn_5(x, b)
+def __transformed_code_4_for_toy_function(a, b):
+    x = None # this line helps Python to generate bytecode with at least the same number of local variables as the original function
+    tmp_1 = __import_torch_dot__dynamo_dot_utils.record_pregraph_bytecode_enter
+    tmp_2 = __import_torch_dot__dynamo_dot_utils.record_pregraph_bytecode_enter()
+    tmp_3 = __import_torch_dot__dynamo_dot_utils.call_size
+    tmp_4 = a
+    tmp_5 = __import_torch_dot__dynamo_dot_utils.record_pregraph_bytecode_exit
+    __import_torch_dot__dynamo_dot_utils.record_pregraph_bytecode_exit(tmp_2)
+    graph_out_0 = __compiled_fn_3_d3943044_1472_48cc_9e1f_a5a2330e6e98(
+        __import_torch_dot__dynamo_dot_utils.call_size(a, 0), tmp_4, b)
+    []
+    __temp_16 = []
+    __temp_16.extend([])
+    [__temp_16]
     return graph_out_0[0]
 
-
-# Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.
-def __resume_at_38_3(b, x):
-    return x * b
-
-def transformed___resume_at_38_3(b, x):
-    __local_dict = {"b": b, "x": x}
-    __global_dict = globals()
-    if __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(__local_dict, __global_dict):
-        return __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
-    # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
-    return __resume_at_38_3(b, x)
-
-#============ end of __resume_at_38_3 ============#
 
 # Note: the following variables are used inside the guard function.
 ___check_tensors = '''None'''
 ___check_tensors_verbose = '''None'''
-___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x305bce0f0>'''
-___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x305a124d0>'''
-IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x152e8feb0>'''
-cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x152ea40d0>'''
-math = '''<module 'math' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/lib-dynload/math.cpython-310-darwin.so'>'''
-torch = '''<module 'torch' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/__init__.py'>'''
+___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x1310ba770>'''
+___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x1318039c0>'''
+IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x124e50a40>'''
+cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x124e50c20>'''
+math = '''<module 'math' (built-in)>'''
+torch = '''<module 'torch' from '/Users/youkaichao/uv_envs/py312/lib/python3.12/site-packages/torch/__init__.py'>'''
 ___check_type_id = '''<built-in function check_type_id>'''
 ___check_obj_id = '''<built-in function check_obj_id>'''
 ___odict_getitem = '''<method '__getitem__' of 'dict' objects>'''
-___key_to_id = '''<function key_to_id at 0x153091cf0>'''
+___key_to_id = '''<function key_to_id at 0x1250a8540>'''
 ___dict_version = '''<built-in function dict_version>'''
-___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x169e90a60>'''
+___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x131803060>'''
 ___tuple_iterator_len = '''<method '__length_hint__' of 'tuple_iterator' objects>'''
-___normalize_range_iter = '''<function normalize_range_iter at 0x153091870>'''
-___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x1530917e0>'''
-___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x1530ad000>'''
+___normalize_range_iter = '''<function normalize_range_iter at 0x12508be20>'''
+___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x12508bce0>'''
+___dataclass_fields = '''<function dataclass_fields at 0x12508bd80>'''
+___namedtuple_fields = '''<function _get_closure_vars.<locals>.<lambda> at 0x131803100>'''
+___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x1250940e0>'''
 __math_isnan = '''<built-in function isnan>'''
 __numpy_isnan = '''<ufunc 'isnan'>'''
 inf = '''inf'''
-__load_module = '''<function import_module at 0x1049bf490>'''
-utils_device = '''<module 'torch.utils._device' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/utils/_device.py'>'''
+__load_module = '''<function import_module at 0x104cca840>'''
+utils_device = '''<module 'torch.utils._device' from '/Users/youkaichao/uv_envs/py312/lib/python3.12/site-packages/torch/utils/_device.py'>'''
 device = '''<class 'torch.device'>'''
-___from_numpy = '''<function from_numpy at 0x15310b7f0>'''
-___as_tensor = '''<function _as_tensor_fullprec at 0x13c1fe9e0>'''
-inspect = '''<module 'inspect' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/inspect.py'>'''
-def __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L, G, **___kwargs_ignored):
-    __guard_hit = True
-    __guard_hit = __guard_hit and utils_device.CURRENT_DEVICE == None                           # _dynamo/output_graph.py:551 in init_ambient_guards
-    __guard_hit = __guard_hit and ___check_global_state()
-    __guard_hit = __guard_hit and ___check_torch_function_mode_stack()
-    __guard_hit = __guard_hit and check_tensor(L['b'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[None], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['b'], '_dynamo_dynamic_indices') == False
-    __guard_hit = __guard_hit and check_no_aliasing(L['b'], L['x'])
-    __guard_hit = __guard_hit and check_tensor(L['x'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[None], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['x'], '_dynamo_dynamic_indices') == False
-    __guard_hit = __guard_hit and L['x'].size()[0] == L['b'].size()[0]  # return x * b  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:7 in torch_dynamo_resume_in_toy_function_at_5 (_subclasses/fake_impls.py:915 in infer_size)
-    __guard_hit = __guard_hit and 2 <= L['b'].size()[0]  # b = b * -1  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:6 in torch_dynamo_resume_in_toy_function_at_5 (user code shown is first use of this value--the guard itself is not due user code but due to 0/1 specialization in the framework; to avoid specialization try torch._dynamo.mark_unbacked(tensor, dim))
-    return __guard_hit
-
-# Note: please refer to the graph code in __compiled_fn_11*.py.
-# Captured Graph: Dynamo generated graph (debuggable when using eager backend).
-# Joint graph: joint forward+backward graph from aot autograd.
-# Forward graph: forward graph from aot autograd (debuggable when using aot_eager backend).
-# Backward graph: backward graph from aot autograd (debuggable when using aot_eager backend).
-# AFTER XXX: graph processed by inductor (not debuggable).
-def __compiled_fn_11(*args, **kwargs):
-    pass
-
-def __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
-    a = None # this line helps Python to generate bytecode with at least the same number of local variables as the original function
-    tmp_1 = __import_torch_dot__dynamo_dot_utils
-    tmp_2 = __import_torch_dot__dynamo_dot_utils.call_size
-    tmp_3 = b
-    __temp_10 = __import_torch_dot__dynamo_dot_utils.call_size(b, 0)
-    tmp_4 = __temp_10
-    tmp_5 = x
-    graph_out_0 = __compiled_fn_11(__temp_10, tmp_3, x)
-    return graph_out_0[0]
-
-
-# Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.
-def __resume_at_30_2(b, x):
-    b = b * -1
-    return x * b
-
-def transformed___resume_at_30_2(b, x):
-    __local_dict = {"b": b, "x": x}
-    __global_dict = globals()
-    if __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(__local_dict, __global_dict):
-        return __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
-    # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
-    return __resume_at_30_2(b, x)
-
-#============ end of __resume_at_30_2 ============#
-
-# Note: the following variables are used inside the guard function.
-___check_tensors = '''None'''
-___check_tensors_verbose = '''None'''
-___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x1698406b0>'''
-___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x16f93dfc0>'''
-IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x152e8feb0>'''
-cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x152ea40d0>'''
-math = '''<module 'math' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/lib-dynload/math.cpython-310-darwin.so'>'''
-torch = '''<module 'torch' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/__init__.py'>'''
-___check_type_id = '''<built-in function check_type_id>'''
-___check_obj_id = '''<built-in function check_obj_id>'''
-___odict_getitem = '''<method '__getitem__' of 'dict' objects>'''
-___key_to_id = '''<function key_to_id at 0x153091cf0>'''
-___dict_version = '''<built-in function dict_version>'''
-___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x169e90a60>'''
-___tuple_iterator_len = '''<method '__length_hint__' of 'tuple_iterator' objects>'''
-___normalize_range_iter = '''<function normalize_range_iter at 0x153091870>'''
-___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x1530917e0>'''
-___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x1530ad000>'''
-__math_isnan = '''<built-in function isnan>'''
-__numpy_isnan = '''<ufunc 'isnan'>'''
-inf = '''inf'''
-__load_module = '''<function import_module at 0x1049bf490>'''
-utils_device = '''<module 'torch.utils._device' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/utils/_device.py'>'''
-device = '''<class 'torch.device'>'''
-___from_numpy = '''<function from_numpy at 0x15310b7f0>'''
-___as_tensor = '''<function _as_tensor_fullprec at 0x13c1fe9e0>'''
-inspect = '''<module 'inspect' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/inspect.py'>'''
-def __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(L, G, **___kwargs_ignored):
-    __guard_hit = True
-    __guard_hit = __guard_hit and utils_device.CURRENT_DEVICE == None                           # _dynamo/output_graph.py:551 in init_ambient_guards
-    __guard_hit = __guard_hit and ___check_global_state()
-    __guard_hit = __guard_hit and ___check_torch_function_mode_stack()
-    __guard_hit = __guard_hit and check_tensor(L['b'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[10], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['b'], '_dynamo_dynamic_indices') == False
-    __guard_hit = __guard_hit and check_no_aliasing(L['b'], L['x'])
-    __guard_hit = __guard_hit and check_tensor(L['x'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[10], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['x'], '_dynamo_dynamic_indices') == False
-    return __guard_hit
-
-# Note: please refer to the graph code in __compiled_fn_5*.py.
-# Captured Graph: Dynamo generated graph (debuggable when using eager backend).
-# Joint graph: joint forward+backward graph from aot autograd.
-# Forward graph: forward graph from aot autograd (debuggable when using aot_eager backend).
-# Backward graph: backward graph from aot autograd (debuggable when using aot_eager backend).
-# AFTER XXX: graph processed by inductor (not debuggable).
-def __compiled_fn_5(*args, **kwargs):
-    pass
-
-def __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
-    a = None # this line helps Python to generate bytecode with at least the same number of local variables as the original function
-    tmp_1 = x
-    tmp_2 = b
-    graph_out_0 = __compiled_fn_5(x, b)
-    return graph_out_0[0]
-
-
-# Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.
-def __resume_at_38_9(b, x):
-    return x * b
-
-def transformed___resume_at_38_9(b, x):
-    __local_dict = {"b": b, "x": x}
-    __global_dict = globals()
-    if __guard_0_for_torch_dynamo_resume_in_toy_function_at_5(__local_dict, __global_dict):
-        return __transformed_code_0_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
-    # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
-    return __resume_at_38_9(b, x)
-
-#============ end of __resume_at_38_9 ============#
-
-# Note: the following variables are used inside the guard function.
-___check_tensors = '''None'''
-___check_tensors_verbose = '''None'''
-___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x305bce0f0>'''
-___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x305a124d0>'''
-IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x152e8feb0>'''
-cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x152ea40d0>'''
-math = '''<module 'math' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/lib-dynload/math.cpython-310-darwin.so'>'''
-torch = '''<module 'torch' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/__init__.py'>'''
-___check_type_id = '''<built-in function check_type_id>'''
-___check_obj_id = '''<built-in function check_obj_id>'''
-___odict_getitem = '''<method '__getitem__' of 'dict' objects>'''
-___key_to_id = '''<function key_to_id at 0x153091cf0>'''
-___dict_version = '''<built-in function dict_version>'''
-___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x169e90a60>'''
-___tuple_iterator_len = '''<method '__length_hint__' of 'tuple_iterator' objects>'''
-___normalize_range_iter = '''<function normalize_range_iter at 0x153091870>'''
-___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x1530917e0>'''
-___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x1530ad000>'''
-__math_isnan = '''<built-in function isnan>'''
-__numpy_isnan = '''<ufunc 'isnan'>'''
-inf = '''inf'''
-__load_module = '''<function import_module at 0x1049bf490>'''
-utils_device = '''<module 'torch.utils._device' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/utils/_device.py'>'''
-device = '''<class 'torch.device'>'''
-___from_numpy = '''<function from_numpy at 0x15310b7f0>'''
-___as_tensor = '''<function _as_tensor_fullprec at 0x13c1fe9e0>'''
-inspect = '''<module 'inspect' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/inspect.py'>'''
-def __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(L, G, **___kwargs_ignored):
-    __guard_hit = True
-    __guard_hit = __guard_hit and utils_device.CURRENT_DEVICE == None                           # _dynamo/output_graph.py:551 in init_ambient_guards
-    __guard_hit = __guard_hit and ___check_global_state()
-    __guard_hit = __guard_hit and ___check_torch_function_mode_stack()
-    __guard_hit = __guard_hit and check_tensor(L['b'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[None], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['b'], '_dynamo_dynamic_indices') == False
-    __guard_hit = __guard_hit and check_no_aliasing(L['b'], L['x'])
-    __guard_hit = __guard_hit and check_tensor(L['x'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[None], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['x'], '_dynamo_dynamic_indices') == False
-    __guard_hit = __guard_hit and L['x'].size()[0] == L['b'].size()[0]  # return x * b  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:7 in torch_dynamo_resume_in_toy_function_at_5 (_subclasses/fake_impls.py:915 in infer_size)
-    __guard_hit = __guard_hit and 2 <= L['b'].size()[0]  # b = b * -1  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:6 in torch_dynamo_resume_in_toy_function_at_5 (user code shown is first use of this value--the guard itself is not due user code but due to 0/1 specialization in the framework; to avoid specialization try torch._dynamo.mark_unbacked(tensor, dim))
-    return __guard_hit
-
-# Note: please refer to the graph code in __compiled_fn_11*.py.
-# Captured Graph: Dynamo generated graph (debuggable when using eager backend).
-# Joint graph: joint forward+backward graph from aot autograd.
-# Forward graph: forward graph from aot autograd (debuggable when using aot_eager backend).
-# Backward graph: backward graph from aot autograd (debuggable when using aot_eager backend).
-# AFTER XXX: graph processed by inductor (not debuggable).
-def __compiled_fn_11(*args, **kwargs):
-    pass
-
-def __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x):
-    a = None # this line helps Python to generate bytecode with at least the same number of local variables as the original function
-    tmp_1 = __import_torch_dot__dynamo_dot_utils
-    tmp_2 = __import_torch_dot__dynamo_dot_utils.call_size
-    tmp_3 = b
-    __temp_10 = __import_torch_dot__dynamo_dot_utils.call_size(b, 0)
-    tmp_4 = __temp_10
-    tmp_5 = x
-    graph_out_0 = __compiled_fn_11(__temp_10, tmp_3, x)
-    return graph_out_0[0]
-
-
-# Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.
-def __resume_at_30_8(b, x):
-    b = b * -1
-    return x * b
-
-def transformed___resume_at_30_8(b, x):
-    __local_dict = {"b": b, "x": x}
-    __global_dict = globals()
-    if __guard_1_for_torch_dynamo_resume_in_toy_function_at_5(__local_dict, __global_dict):
-        return __transformed_code_1_for_torch_dynamo_resume_in_toy_function_at_5(b, x)
-    # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
-    return __resume_at_30_8(b, x)
-
-#============ end of __resume_at_30_8 ============#
-
-# Note: the following variables are used inside the guard function.
-___check_tensors = '''None'''
-___check_tensors_verbose = '''None'''
-___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x1698bd8f0>'''
-___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x305a10700>'''
-IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x152e8feb0>'''
-cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x152ea40d0>'''
-math = '''<module 'math' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/lib-dynload/math.cpython-310-darwin.so'>'''
-torch = '''<module 'torch' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/__init__.py'>'''
-___check_type_id = '''<built-in function check_type_id>'''
-___check_obj_id = '''<built-in function check_obj_id>'''
-___odict_getitem = '''<method '__getitem__' of 'dict' objects>'''
-___key_to_id = '''<function key_to_id at 0x153091cf0>'''
-___dict_version = '''<built-in function dict_version>'''
-___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x169e90a60>'''
-___tuple_iterator_len = '''<method '__length_hint__' of 'tuple_iterator' objects>'''
-___normalize_range_iter = '''<function normalize_range_iter at 0x153091870>'''
-___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x1530917e0>'''
-___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x1530ad000>'''
-__math_isnan = '''<built-in function isnan>'''
-__numpy_isnan = '''<ufunc 'isnan'>'''
-inf = '''inf'''
-__load_module = '''<function import_module at 0x1049bf490>'''
-utils_device = '''<module 'torch.utils._device' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/utils/_device.py'>'''
-device = '''<class 'torch.device'>'''
-___from_numpy = '''<function from_numpy at 0x15310b7f0>'''
-___as_tensor = '''<function _as_tensor_fullprec at 0x13c1fe9e0>'''
-inspect = '''<module 'inspect' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/inspect.py'>'''
+___from_numpy = '''<function from_numpy at 0x1255f8ae0>'''
+___as_tensor = '''<function _as_tensor_fullprec at 0x122ad6e80>'''
+inspect = '''<module 'inspect' from '/Users/youkaichao/.local/share/uv/python/cpython-3.12.8-macos-aarch64-none/lib/python3.12/inspect.py'>'''
 def __guard_1_for_toy_function(L, G, **___kwargs_ignored):
     __guard_hit = True
-    __guard_hit = __guard_hit and utils_device.CURRENT_DEVICE == None                           # _dynamo/output_graph.py:551 in init_ambient_guards
+    __guard_hit = __guard_hit and torch._functorch.aot_autograd.utils.top_saved_tensors_hooks ids == None  # _dynamo/output_graph.py:800 in init_ambient_guards
+    __guard_hit = __guard_hit and utils_device.CURRENT_DEVICE == None                           # _dynamo/output_graph.py:788 in init_ambient_guards
     __guard_hit = __guard_hit and ___check_global_state()
     __guard_hit = __guard_hit and ___check_torch_function_mode_stack()
-    __guard_hit = __guard_hit and check_tensor(L['a'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[None], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['a'], '_dynamo_dynamic_indices') == False
+    __guard_hit = __guard_hit and check_tensor(L['a'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[10], stride=[1])  # x = a / (torch.abs(a) + 1)  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:4 in toy_function
+    __guard_hit = __guard_hit and hasattr(L['a'], '_dynamo_dynamic_indices') == False           # x = a / (torch.abs(a) + 1)  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:4 in toy_function
     __guard_hit = __guard_hit and check_no_aliasing(L['a'], L['b'])
-    __guard_hit = __guard_hit and check_tensor(L['b'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[None], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['b'], '_dynamo_dynamic_indices') == False
-    __guard_hit = __guard_hit and ___check_obj_id(G['torch'], 4391712816)
-    __guard_hit = __guard_hit and ___check_obj_id(G['torch'].abs, 4393025600)
-    __guard_hit = __guard_hit and 2 <= L['a'].size()[0]  # x = a / (torch.abs(a) + 1)  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:4 in toy_function (user code shown is first use of this value--the guard itself is not due user code but due to 0/1 specialization in the framework; to avoid specialization try torch._dynamo.mark_unbacked(tensor, dim))
-    __guard_hit = __guard_hit and 2 <= L['b'].size()[0]  # if b.sum() < 0:  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:5 in toy_function (user code shown is first use of this value--the guard itself is not due user code but due to 0/1 specialization in the framework; to avoid specialization try torch._dynamo.mark_unbacked(tensor, dim))
+    __guard_hit = __guard_hit and check_tensor(L['b'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[10], stride=[1])  # b = b * -1 + b.sum()  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:5 in toy_function
+    __guard_hit = __guard_hit and hasattr(L['b'], '_dynamo_dynamic_indices') == False           # b = b * -1 + b.sum()  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:5 in toy_function
+    __guard_hit = __guard_hit and ___check_obj_id(G['torch'], 4386783696)                       # x = a / (torch.abs(a) + 1)  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:4 in toy_function
+    __guard_hit = __guard_hit and ___check_obj_id(G['torch'].abs, 4654686640)                   # x = a / (torch.abs(a) + 1)  # data/DeepLearning/depyf/tests/test_pytorch/test_pytorch.py:4 in toy_function
     return __guard_hit
 
-# Note: please refer to the graph code in __compiled_fn_7*.py.
+# Note: please refer to the graph code in __compiled_fn_1_243d0f02_a332_4d14_a6d6_ff8437959c41*.py.
 # Captured Graph: Dynamo generated graph (debuggable when using eager backend).
 # Joint graph: joint forward+backward graph from aot autograd.
 # Forward graph: forward graph from aot autograd (debuggable when using aot_eager backend).
 # Backward graph: backward graph from aot autograd (debuggable when using aot_eager backend).
 # AFTER XXX: graph processed by inductor (not debuggable).
-def __compiled_fn_7(*args, **kwargs):
+def __compiled_fn_1_243d0f02_a332_4d14_a6d6_ff8437959c41(*args, **kwargs):
     pass
 
 def __transformed_code_1_for_toy_function(a, b):
-    tmp_1 = __import_torch_dot__dynamo_dot_utils
-    tmp_2 = __import_torch_dot__dynamo_dot_utils.call_size
-    tmp_3 = a
-    __temp_5 = __import_torch_dot__dynamo_dot_utils.call_size(a, 0)
-    tmp_4 = __temp_5
-    tmp_5 = b
-    __temp_6 = tmp_2(b, 0)
-    tmp_6 = __temp_6
-    graph_out_0 = __compiled_fn_7(__temp_5, tmp_3, __temp_6, tmp_5)
-    x = graph_out_0[1]
-    if graph_out_0[0]:
-        return __resume_at_30_8(b, x)
-    return __resume_at_38_9(b, x)
-
-
-# Note: the following variables are used inside the guard function.
-___check_tensors = '''None'''
-___check_tensors_verbose = '''None'''
-___check_global_state = '''<built-in method check of torch._C._dynamo.guards.GlobalStateGuard object at 0x167cbdb70>'''
-___check_torch_function_mode_stack = '''<function make_torch_function_mode_stack_guard.<locals>.check_torch_function_mode_stack at 0x169e91870>'''
-IsNonOverlappingAndDenseIndicator = '''<function eval_is_non_overlapping_and_dense at 0x152e8feb0>'''
-cast_symbool_to_symint_guardless = '''<function cast_symbool_to_symint_guardless at 0x152ea40d0>'''
-math = '''<module 'math' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/lib-dynload/math.cpython-310-darwin.so'>'''
-torch = '''<module 'torch' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/__init__.py'>'''
-___check_type_id = '''<built-in function check_type_id>'''
-___check_obj_id = '''<built-in function check_obj_id>'''
-___odict_getitem = '''<method '__getitem__' of 'dict' objects>'''
-___key_to_id = '''<function key_to_id at 0x153091cf0>'''
-___dict_version = '''<built-in function dict_version>'''
-___dict_contains = '''<function _get_closure_vars.<locals>.<lambda> at 0x169e90a60>'''
-___tuple_iterator_len = '''<method '__length_hint__' of 'tuple_iterator' objects>'''
-___normalize_range_iter = '''<function normalize_range_iter at 0x153091870>'''
-___tuple_iterator_getitem = '''<function tuple_iterator_getitem at 0x1530917e0>'''
-___get_torch_function_mode_stack_at = '''<function get_torch_function_mode_stack_at at 0x1530ad000>'''
-__math_isnan = '''<built-in function isnan>'''
-__numpy_isnan = '''<ufunc 'isnan'>'''
-inf = '''inf'''
-__load_module = '''<function import_module at 0x1049bf490>'''
-utils_device = '''<module 'torch.utils._device' from '/Users/youkaichao/uv_envs/py310/lib/python3.10/site-packages/torch/utils/_device.py'>'''
-device = '''<class 'torch.device'>'''
-___from_numpy = '''<function from_numpy at 0x15310b7f0>'''
-___as_tensor = '''<function _as_tensor_fullprec at 0x13c1fe9e0>'''
-inspect = '''<module 'inspect' from '/opt/homebrew/Cellar/python@3.10/3.10.16/Frameworks/Python.framework/Versions/3.10/lib/python3.10/inspect.py'>'''
-def __guard_0_for_toy_function(L, G, **___kwargs_ignored):
-    __guard_hit = True
-    __guard_hit = __guard_hit and utils_device.CURRENT_DEVICE == None                           # _dynamo/output_graph.py:551 in init_ambient_guards
-    __guard_hit = __guard_hit and ___check_global_state()
-    __guard_hit = __guard_hit and ___check_torch_function_mode_stack()
-    __guard_hit = __guard_hit and check_tensor(L['a'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[10], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['a'], '_dynamo_dynamic_indices') == False
-    __guard_hit = __guard_hit and check_no_aliasing(L['a'], L['b'])
-    __guard_hit = __guard_hit and check_tensor(L['b'], Tensor, DispatchKeySet(CPU, BackendSelect, ADInplaceOrView, AutogradCPU), torch.float32, device=None, requires_grad=True, size=[10], stride=[1])
-    __guard_hit = __guard_hit and hasattr(L['b'], '_dynamo_dynamic_indices') == False
-    __guard_hit = __guard_hit and ___check_obj_id(G['torch'], 4391712816)
-    __guard_hit = __guard_hit and ___check_obj_id(G['torch'].abs, 4393025600)
-    return __guard_hit
-
-# Note: please refer to the graph code in __compiled_fn_1*.py.
-# Captured Graph: Dynamo generated graph (debuggable when using eager backend).
-# Joint graph: joint forward+backward graph from aot autograd.
-# Forward graph: forward graph from aot autograd (debuggable when using aot_eager backend).
-# Backward graph: backward graph from aot autograd (debuggable when using aot_eager backend).
-# AFTER XXX: graph processed by inductor (not debuggable).
-def __compiled_fn_1(*args, **kwargs):
-    pass
-
-def __transformed_code_0_for_toy_function(a, b):
-    tmp_1 = a
-    tmp_2 = b
-    graph_out_0 = __compiled_fn_1(a, b)
-    x = graph_out_0[1]
-    if graph_out_0[0]:
-        return __resume_at_30_2(b, x)
-    return __resume_at_38_3(b, x)
+    x = None # this line helps Python to generate bytecode with at least the same number of local variables as the original function
+    tmp_1 = __import_torch_dot__dynamo_dot_utils.record_pregraph_bytecode_enter
+    tmp_2 = __import_torch_dot__dynamo_dot_utils.record_pregraph_bytecode_enter()
+    tmp_3 = __import_torch_dot__dynamo_dot_utils.record_pregraph_bytecode_exit
+    __import_torch_dot__dynamo_dot_utils.record_pregraph_bytecode_exit(tmp_2)
+    graph_out_0 = __compiled_fn_1_243d0f02_a332_4d14_a6d6_ff8437959c41(a, b)
+    []
+    __temp_7 = []
+    __temp_7.extend([])
+    [__temp_7]
+    return graph_out_0[0]
 
 
 # Note: if there is a transformed version below, this function might well not be executed directly. Please check the transformed version if possible.
 def toy_function(a, b):
     x = a / (torch.abs(a) + 1)
-    if b.sum() < 0:
-        b = b * -1
+    b = b * -1 + b.sum()
     return x * b
 
 def transformed_toy_function(a, b):
     __local_dict = {"a": a, "b": b}
     __global_dict = globals()
+    if __guard_4_for_toy_function(__local_dict, __global_dict):
+        return __transformed_code_4_for_toy_function(a, b)
     if __guard_1_for_toy_function(__local_dict, __global_dict):
         return __transformed_code_1_for_toy_function(a, b)
-    if __guard_0_for_toy_function(__local_dict, __global_dict):
-        return __transformed_code_0_for_toy_function(a, b)
     # Note: this function might well not be executed directly. It might well be transformed again, i.e. adding one more guards and transformed code.
     return toy_function(a, b)
 
