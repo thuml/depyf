@@ -2,8 +2,7 @@ import torch
 
 def toy_function(a, b):
     x = a / (torch.abs(a) + 1)
-    if b.sum() < 0:
-        b = b * -1
+    b = b * -1 + b.sum()
     return x * b
 
 class ToyModule(torch.nn.Module):
@@ -12,8 +11,7 @@ class ToyModule(torch.nn.Module):
 
     def forward(self, a, b):
         x = a / (torch.abs(a) + 1)
-        if b.sum() < 0:
-            b = b * -1
+        b = b * -1 + b.sum()
         return x * b
 
 
