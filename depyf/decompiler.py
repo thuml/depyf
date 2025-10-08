@@ -1185,8 +1185,13 @@ class Decompiler:
             source_code = self.state.source_code
             # the header might have invalid function name in torchdynamo. only
             # optimize the function body.
-            source_code = remove_some_temp(
-                source_code, self.temp_prefix, indentation)
+            if os.environ.get("DEPYF_REMOVE_TEMP", "1") == "1":
+                # remove temp can be dangerous if some code in between contains
+                # mutation, e.g. as described in https://github.com/thuml/depyf/issues/85 .
+                # doing a full mutation analysis in python is too complex, so we remove temp by default,
+                # and only disable it when users set the environment variable DEPYF_REMOVE_TEMP to 0.
+                source_code = remove_some_temp(
+                    source_code, self.temp_prefix, indentation)
             header = get_function_signature(self.code, overwite_fn_name)
             # we cannot rely on `co_names`. For example, `from math import sqrt` will make `math` and `sqrt` in `co_names`.
             global_names = set(inst.argval for inst in dis.get_instructions(self.code) if inst.opname == "STORE_GLOBAL")
