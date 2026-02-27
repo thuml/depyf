@@ -638,6 +638,17 @@ class Decompiler:
 
         end_index = min(end_index_candidates)
 
+        # When the if-body ends with RETURN/RAISE, end_index == jump_index,
+        # making the else-body range empty. In this case, find the actual end
+        # of the else-body so it gets decompiled with the correct stack state.
+        else_end = end_index
+        if end_index == jump_index and jump_index < len(self.instructions):
+            last_if_inst = self.instructions[jump_index - 1]
+            if "RETURN" in last_if_inst.opname or "RAISE" in last_if_inst.opname:
+                else_end = len(self.instructions)
+                if self.state.inside_loop:
+                    else_end = min(else_end, self.state.loop_end_index)
+
         with self.new_state(fallthrough_stack):
             self.decompile_range(this_index + 1, end_index)
             if_body = self.state.source_code
@@ -647,7 +658,7 @@ class Decompiler:
         self.state.source_code += if_code
 
         with self.new_state(jump_stack):
-            self.decompile_range(jump_index, end_index)
+            self.decompile_range(jump_index, else_end)
             else_body = self.state.source_code
         if else_body:
             else_body = add_indentation(else_body, self.indentation)
@@ -655,7 +666,7 @@ class Decompiler:
             self.state.source_code += else_code
 
         self.state.stack = if_end_stack
-        return end_index
+        return else_end
 
 
     POP_JUMP_IF_TRUE = POP_JUMP_IF_FALSE = generic_jump_if
