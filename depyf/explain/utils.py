@@ -334,5 +334,5 @@ def get_current_compiled_fn_name():
     from copy import copy
     # torch.compile already called the next, we should add minus 1 to get the
     # correct name
-    current_count = next(copy(_unique_id_counter)) - 1
+    current_count = int(str(_unique_id_counter).replace("count(","").replace(")","")) - 1
     return "__compiled_fn_" + str(current_count)
