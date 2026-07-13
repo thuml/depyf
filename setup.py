@@ -11,7 +11,10 @@ def get_git_commit_id(n_digits=8) -> Optional[str]:
         # Decode bytes to string (Python 3.x)
         commit_id = commit_id.decode('utf-8')
         return commit_id[:n_digits]
-    except subprocess.CalledProcessError as e:
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        # FileNotFoundError: git is not installed / not on PATH, e.g. when
+        # building from a released source tarball. Fall back to the plain
+        # version from VERSION.txt instead of aborting metadata generation.
         print("Failed to get Git commit ID:", e)
         return None
 
